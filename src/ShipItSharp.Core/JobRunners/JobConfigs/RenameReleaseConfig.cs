@@ -25,7 +25,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 return Result.Failure<RenameReleaseConfig>("Release name is not a valid semantic version!");
             }
 
-            return Result.Ok(new RenameReleaseConfig
+            return Result.Success(new RenameReleaseConfig
             {
                 GroupFilter = filter,
                 ReleaseName = releaseName,

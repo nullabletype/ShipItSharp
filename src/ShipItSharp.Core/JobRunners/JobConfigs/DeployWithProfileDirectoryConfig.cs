@@ -42,11 +42,11 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
             var config = new DeployWithProfileDirectoryConfig
             {
                 Directory = directory,
-                MonitorDelay = delay.HasValue ? delay.Value : 0,
+                MonitorDelay = delay ?? 0,
                 MonitorDirectory = delay.HasValue,
                 ForceRedeploy = forceRedploy
             };
-            return Result.Ok(config);
+            return Result.Success(config);
         }
 
         public string Directory { get; private set; }

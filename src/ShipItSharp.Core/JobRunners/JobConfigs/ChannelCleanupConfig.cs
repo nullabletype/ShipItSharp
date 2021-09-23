@@ -12,7 +12,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public static Result<ChannelCleanupConfig> Create(string filter, bool testMode)
         {
 
-            return Result.Ok(new ChannelCleanupConfig
+            return Result.Success(new ChannelCleanupConfig
             {
                 GroupFilter = filter,
                 TestMode = testMode

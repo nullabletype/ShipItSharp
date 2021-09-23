@@ -26,7 +26,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 return Result.Failure<PromotionConfig>("source environment is not set correctly");
             }
 
-            return Result.Ok(new PromotionConfig
+            return Result.Success(new PromotionConfig
             {
                 DestinationEnvironment = destEnv,
                 SourceEnvironment = srcEnv,

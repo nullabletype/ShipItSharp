@@ -52,7 +52,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 }
             }
 
-            return Result.Ok(new DeployConfig
+            return Result.Success(new DeployConfig
             {
                 Environment = env,
                 Channel = channel,

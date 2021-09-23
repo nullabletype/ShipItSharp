@@ -68,10 +68,12 @@ namespace ShipItSharp.Console
             }
             var container = initResult.Item2;
 
-            var app = new CommandLineApplication();
-            app.Name = "ShipItSharp";
+            var app = new CommandLineApplication
+            {
+                Name = "ShipItSharp"
+            };
             app.HelpOption("-?|-h|--help");
-            app.ThrowOnUnexpectedArgument = true;
+            app.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             app.Conventions.UseConstructorInjection(container);
 
             var deployer = container.GetService<Deploy>();
@@ -97,11 +99,11 @@ namespace ShipItSharp.Console
 
         private static void HandleException(object sender, UnhandledExceptionEventArgs e)
         {
-            if(e.ExceptionObject is CommandParsingException)
+            if(e.ExceptionObject is CommandParsingException exception)
             {
                 var colorBefore = System.Console.ForegroundColor;
                 System.Console.ForegroundColor = ConsoleColor.Red;
-                System.Console.WriteLine($"Error: {(((CommandParsingException)e.ExceptionObject).Message)}");
+                System.Console.WriteLine($"Error: {(exception.Message)}");
                 System.Console.ForegroundColor = colorBefore;
                 System.Console.WriteLine();
                 System.Console.WriteLine("Command wasn't recognised. Try -? for help if you're stuck.");

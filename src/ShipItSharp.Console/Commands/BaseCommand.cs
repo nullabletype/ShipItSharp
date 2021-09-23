@@ -43,7 +43,6 @@ namespace ShipItSharp.Console.Commands {
 
         protected const string HelpOption = "-?|-h|--help";
         private readonly Dictionary<string, CommandOption> _optionRegister;
-        private readonly List<BaseCommand> _subCommands;
         protected bool InInteractiveMode { get; private set; }
         protected IOctopusHelper octoHelper;
         protected ILanguageProvider languageProvider;
@@ -52,7 +51,6 @@ namespace ShipItSharp.Console.Commands {
         protected BaseCommand(IOctopusHelper octoHelper, ILanguageProvider languageProvider)
         {
             _optionRegister = new Dictionary<string, CommandOption>();
-            _subCommands = new List<BaseCommand>();
             this.octoHelper = octoHelper;
             this.languageProvider = languageProvider;
         }
@@ -60,7 +58,7 @@ namespace ShipItSharp.Console.Commands {
         public virtual void Configure(CommandLineApplication command) 
         {
             command.HelpOption(HelpOption);
-            command.ThrowOnUnexpectedArgument = true;
+            command.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", languageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
             AddToRegister(OptionNames.Url, command.Option("-u|--url", languageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
             if (this.SupportsInteractiveMode)
@@ -85,7 +83,7 @@ namespace ShipItSharp.Console.Commands {
             });
         }
 
-        protected void ConfigureSubCommand(BaseCommand child, CommandLineApplication command)
+        protected static void ConfigureSubCommand(BaseCommand child, CommandLineApplication command)
         {
             command.Command(child.CommandName, child.Configure);
         }
@@ -161,7 +159,7 @@ namespace ShipItSharp.Console.Commands {
             return option;
         }
 
-        protected string PromptForStringWithoutQuitting(string prompt)
+        protected static string PromptForStringWithoutQuitting(string prompt)
         {
             string channel;
             do
@@ -208,7 +206,7 @@ namespace ShipItSharp.Console.Commands {
         {
             var matchingEnvironments = await octoHelper.GetMatchingEnvironments(environmentName);
 
-            if (matchingEnvironments.Count() > 1)
+            if (matchingEnvironments.Count > 1)
             {
                 System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "TooManyMatchingEnvironments") + string.Join(", ", matchingEnvironments.Select(e => e.Name)));
                 return null;
@@ -235,7 +233,7 @@ namespace ShipItSharp.Console.Commands {
                             var prompt = String.Format(languageProvider.GetString(LanguageSection.UiStrings, "VariablePrompt"), requirement.Name, project.ProjectName);
                             if (!string.IsNullOrEmpty(requirement.ExtraOptions))
                             {
-                                prompt = prompt + String.Format(languageProvider.GetString(LanguageSection.UiStrings, "VariablePromptAllowedValues"), requirement.ExtraOptions);
+                                prompt += String.Format(languageProvider.GetString(LanguageSection.UiStrings, "VariablePromptAllowedValues"), requirement.ExtraOptions);
                             }
                             requirement.Value = PromptForStringWithoutQuitting(prompt);
                         } while (InInteractiveMode && string.IsNullOrEmpty(requirement.Value));

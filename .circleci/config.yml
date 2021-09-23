@@ -1,0 +1,102 @@
+version: 2.0
+jobs:
+    build:
+        docker:
+            - image: mcr.microsoft.com/dotnet/core/sdk:3.0
+        steps:
+            - checkout
+            - run:
+                name: build
+                command: dotnet build -c Release src/ShipItSharp.sln
+            - run:
+                name: publish-portable
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/portable /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-win-x64
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/win-x64 -r win-x64 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-win-x32
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/win-x86 -r win-x86 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-linux-x64
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/linux-x64 -r linux-x64 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-linux-arm
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/linux-arm -r linux-arm /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-mac-x64
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/osx-x64 -r osx-x64 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true /p:CopyOutputSymbolsToPublishDirectory=false
+            - run:
+                name: publish-debug-symbols
+                command: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o /shipitsharp-release/debug-symbols-tmp -r win-x64 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true
+            - run: 
+                name: cp-debug-symbols-to-output
+                command: mkdir /shipitsharp-release/debug-symbols && cp /shipitsharp-release/debug-symbols-tmp/*.pdb /shipitsharp-release/debug-symbols
+            - run:
+                name: install-zip
+                command: apt update && apt install zip unzip
+            - run:
+                name: make-zip-dir
+                command: mkdir /shipitsharp-release/zips
+            - run:
+                name: compress-portable
+                command: pushd /shipitsharp-release/portable && zip -r /shipitsharp-release/zips/shipitsharp-portable.zip * && popd
+            - run:
+                name: compress-win-x64
+                command: pushd /shipitsharp-release/win-x64 && zip -r /shipitsharp-release/zips/shipitsharp-win-x64.zip * && popd
+            - run:
+                name: compress-win-x86
+                command: pushd /shipitsharp-release/win-x86 && zip -r /shipitsharp-release/zips/shipitsharp-win-x86.zip * && popd
+            - run:
+                name: compress-linux-x64
+                command: pushd /shipitsharp-release/linux-x64 && zip -r /shipitsharp-release/zips/shipitsharp-linux-x64.zip * && popd
+            - run:
+                name: compress-linux-arm
+                command: pushd /shipitsharp-release/linux-arm && zip -r /shipitsharp-release/zips/shipitsharp-linux-arm.zip * && popd
+            - run:
+                name: compress-mac-x64
+                command: pushd /shipitsharp-release/osx-x64 && zip -r /shipitsharp-release/zips/shipitsharp-osx-x64.zip * && popd
+            - run:
+                name: compress-debug
+                command: pushd /shipitsharp-release/debug-symbols && zip -r /shipitsharp-release/zips/shipitsharp-debug-symbols.zip * && popd
+            - store_artifacts:
+                path: /shipitsharp-release/zips
+
+    nuget-publish:
+        docker:
+            - image: mcr.microsoft.com/dotnet/core/sdk:3.0
+        steps:
+            - checkout
+            - run:
+                name: download-powershellcore
+                command: curl -L -o /tmp/powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v6.2.0/powershell-6.2.0-linux-x64.tar.gz
+            - run:
+                name: mk-powershell-dir
+                command: mkdir -p /opt/microsoft/powershell/6.2.0
+            - run:
+                name: uncompress-powershell
+                command: tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/6.2.0
+            - run:
+                name: grant-powershell-perms
+                command: chmod +x /opt/microsoft/powershell/6.2.0/pwsh
+            - run:
+                name: add-powershell-symlink
+                command: ln -s /opt/microsoft/powershell/6.2.0/pwsh /usr/bin/pwsh
+            - run:
+                name: set-script-perms
+                command: chmod +x src/package.ps1
+            - run:
+                name: run-package-script
+                command: src/package.ps1 -nugetKey "$NUGETKEY"
+
+workflows:
+    version: 2
+    build-and-publish:
+        jobs:
+            - build
+            - nuget-publish:
+                requires:
+                    - build
+                filters:
+                    branches:
+                        only: master

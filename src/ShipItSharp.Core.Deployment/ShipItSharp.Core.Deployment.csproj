@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShipItSharp.Core.Configuration\ShipItSharp.Core.Configuration.csproj" />
+    <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
+    <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj" />
+    <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\DeploymentStrings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DeploymentStrings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\DeploymentStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DeploymentStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

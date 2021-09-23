@@ -79,7 +79,7 @@ jobs:
         name: shipitsharp-debug-symbol
         path: /home/runner/work/shipitsharp-release/zips/shipitsharp-debug-symbols.zip
     - name: send-nuget-packages
-      if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/main'
       env:
         NUGET_KEY: ${{ secrets.nuget_key }}
       run: sudo src/Core/package.ps1 -nugetKey "$NUGET_KEY"

@@ -24,11 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Logging;
 using ShipItSharp.Core.Logging.Interfaces;
 
@@ -47,10 +45,9 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
         {
             try
             {
-                var client = new WebClient();
-                client.Headers.Add("user-agent", "ShipItSharp");
-                var response =
-                    await client.DownloadStringTaskAsync("https://api.github.com/repos/nullabletype/ShipItSharp/releases");
+                var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
+                var response = await client.GetStringAsync("https://api.github.com/repos/nullabletype/ShipItSharp/releases");
                 var release = JsonConvert.DeserializeObject<List<Release>>(response).First();
                 return release;
             }

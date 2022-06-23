@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -47,10 +48,9 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
         {
             try
             {
-                var client = new WebClient();
-                client.Headers.Add("user-agent", "ShipItSharp");
-                var response =
-                    await client.DownloadStringTaskAsync("https://gitlab.com/api/v4/projects/10756071/releases");
+                var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
+                var response = await client.GetStringAsync("https://gitlab.com/api/v4/projects/10756071/releases");
                 var release = JsonConvert.DeserializeObject<List<Release>>(response).First();
                 return release;
             }

@@ -21,16 +21,13 @@
 #endregion
 
 
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Http;
 using System.Xml.Serialization;
 
-namespace ShipItSharp.Core.Utilities {
+namespace ShipItSharp.Core.Utilities
+{
     public interface IWebRequestHelper
     {
         T GetXmlWebRequestWithBasicAuth<T>(string url, string username, string password);
@@ -40,13 +37,15 @@ namespace ShipItSharp.Core.Utilities {
     {
 
         public T GetXmlWebRequestWithBasicAuth<T>(string url, string username, string password) {
-            WebRequest request = WebRequest.Create(url);
-            request.Credentials = new NetworkCredential(username, password);
-            request.PreAuthenticate = true;
-            var response = request.GetResponse();
-            using (Stream stream = response.GetResponseStream()) {
+            var credentials = new NetworkCredential(username, password);
+            var handler = new HttpClientHandler { Credentials = credentials, PreAuthenticate = true };
+            var client = new HttpClient(handler);
+
+            using (Stream stream = client.GetStreamAsync(url).GetAwaiter().GetResult())
+            {
                 var serializer = new XmlSerializer(typeof(T));
-                if (stream != null) {
+                if (stream != null)
+                {
                     var document = (T)serializer.Deserialize(stream);
                     return document;
                 }

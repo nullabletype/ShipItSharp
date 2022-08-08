@@ -19,7 +19,7 @@ namespace ShipItSharp.Core.Language.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class UiStrings {
@@ -147,6 +147,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string CurrentVersion {
             get {
                 return ResourceManager.GetString("CurrentVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploying release {0} to {1}. Please select the projects you wish to deploy..
+        /// </summary>
+        internal static string DeployingSpecificRelease {
+            get {
+                return ResourceManager.GetString("DeployingSpecificRelease", resourceCulture);
             }
         }
         
@@ -282,6 +291,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string FailedUpdatingVariableSet {
             get {
                 return ResourceManager.GetString("FailedUpdatingVariableSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What channel do you wish to fall back to? (Optional).
+        /// </summary>
+        internal static string FallbackToChannel {
+            get {
+                return ResourceManager.GetString("FallbackToChannel", resourceCulture);
             }
         }
         
@@ -484,7 +502,7 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to On source.
+        ///   Looks up a localized string similar to On Source.
         /// </summary>
         internal static string OnSource {
             get {
@@ -592,11 +610,38 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Do you wish to name your release? (Must follow semver, leave blank for sequentially generated).
+        ///   Looks up a localized string similar to What is the name (version) of the release you want to deploy?.
+        /// </summary>
+        internal static string ReleaseName {
+            get {
+                return ResourceManager.GetString("ReleaseName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What name do you want to use for your release? (Must follow semantic versioning, leave blank for sequentially generated).
         /// </summary>
         internal static string ReleaseNamePrompt {
             get {
                 return ResourceManager.GetString("ReleaseNamePrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There is no release available to deploy for the following projects:.
+        /// </summary>
+        internal static string ReleaseNotSelectable {
+            get {
+                return ResourceManager.GetString("ReleaseNotSelectable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to To Deploy.
+        /// </summary>
+        internal static string ReleaseToDeploy {
+            get {
+                return ResourceManager.GetString("ReleaseToDeploy", resourceCulture);
             }
         }
         
@@ -610,7 +655,7 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Do you want to restrict to certain product groups?.
+        ///   Looks up a localized string similar to What groups do you want to restrict to? (Optional).
         /// </summary>
         internal static string RestrictToGroupsPrompt {
             get {

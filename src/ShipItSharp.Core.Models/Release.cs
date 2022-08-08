@@ -34,6 +34,7 @@ namespace ShipItSharp.Core.Models
         }
 
         public string Id { get; set; }
+        public string ProjectId { get; set; }
         public string Version { get; set; }
         public string DisplayPackageVersion { get; set; }
         public string ReleaseNotes { get; set; }

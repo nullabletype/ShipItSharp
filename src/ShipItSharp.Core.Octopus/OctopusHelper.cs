@@ -366,6 +366,49 @@ namespace ShipItSharp.Core.Octopus
             return await ConvertRelease(await GetReleaseInternal(releaseIdOrHref));
         }
 
+        public async Task<Release> GetRelease(string name, Project project)
+        {
+            var projectRes = await client.Repository.Projects.Get(project.ProjectId);
+            ReleaseResource release;
+            try
+            {
+                release = await client.Repository.Projects.GetReleaseByVersion(projectRes, name);
+            }
+            catch
+            {
+                return null;
+            }
+            if (release == null)
+            {
+                return null;
+            }
+            return await ConvertRelease(release);
+        }
+
+        public async Task<Release> GetLatestRelease(Project project, string channelname)
+        {
+            ReleaseResource release;
+            try
+            {
+                var projectRes = await client.Repository.Projects.Get(project.ProjectId);
+                var channelRes = await client.Repository.Channels.FindByName(projectRes, channelname);
+                if (channelRes == null)
+                {
+                    return null;
+                }
+                release = (await client.Repository.Channels.GetReleases(channelRes, 0, 1)).Items.FirstOrDefault();
+            }
+            catch
+            {
+                return null;
+            }
+            if (release == null)
+            {
+                return null;
+            }
+            return await ConvertRelease(release);
+        }
+
         public async Task<LifeCycle> GetLifeCycle(string idOrHref) 
         {
             return ConvertLifeCycle(await client.Repository.Lifecycles.Get(idOrHref));
@@ -839,6 +882,7 @@ namespace ShipItSharp.Core.Octopus
             return new Release
             {
                 Id = release.Id,
+                ProjectId = release.ProjectId,
                 Version = release.Version,
                 SelectedPackages = packages,
                 DisplayPackageVersion = packages.Any() ? packages.First().Version : string.Empty,

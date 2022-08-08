@@ -74,5 +74,7 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         Task UpdateVariableSet(VariableSet varSet);
         Task<IEnumerable<Deployment>> GetDeployments(string[] deploymentIds);
         Task<(bool Success, LifecycleErrorType ErrorType, string Error)> AddEnvironmentToLifecyclePhase(string envId, string lcId, int phaseId, bool automatic);
+        Task<Release> GetRelease(string name, Project project);
+        Task<Release> GetLatestRelease(Project project, string channelname);
     }
 }

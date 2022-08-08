@@ -153,6 +153,9 @@
   <data name="EnvironmentName" xml:space="preserve">
     <value>Name the of the environment to deploy to</value>
   </data>
+  <data name="FallbackToChannel" xml:space="preserve">
+    <value>Fallback to this channel if there are no releases available for the selected channel for a project.</value>
+  </data>
   <data name="FallbackToDefault" xml:space="preserve">
     <value>Fallback to the default channel if there are no packages available for the selected channel for a project. Be careful, as this disables validation of packages for channels before deploy.</value>
   </data>
@@ -188,6 +191,9 @@
   </data>
   <data name="PromoteProjects" xml:space="preserve">
     <value>Promote project releases between environments</value>
+  </data>
+  <data name="Redeploy" xml:space="preserve">
+    <value>Full name of the release you wish to redeploy</value>
   </data>
   <data name="Release" xml:space="preserve">
     <value>Options pertaining to releases</value>

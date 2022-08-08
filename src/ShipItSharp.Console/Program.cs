@@ -183,6 +183,7 @@ namespace ShipItSharp.Console
             .AddTransient<RenameRelease, RenameRelease>()
             .AddTransient<UpdateReleaseVariables, UpdateReleaseVariables>()
             .AddTransient<DeployWithProfile, DeployWithProfile>()
+            .AddTransient<DeploySpecific, DeploySpecific>()
             .AddTransient<DeployWithProfileDirectory, DeployWithProfileDirectory>()
             .AddTransient<EnsureEnvironment, EnsureEnvironment>()
             .AddTransient<DeleteEnvironment, DeleteEnvironment>()
@@ -199,6 +200,7 @@ namespace ShipItSharp.Console
             .AddTransient<DeployWithProfileDirectoryRunner, DeployWithProfileDirectoryRunner>()
             .AddTransient<PromotionRunner, PromotionRunner>()
             .AddTransient<DeployRunner, DeployRunner>()
+            .AddTransient<DeploySpecificRunner, DeploySpecificRunner>()
             .AddTransient<ChannelsRunner, ChannelsRunner>();
         }
     }

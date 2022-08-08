@@ -44,18 +44,20 @@ namespace ShipItSharp.Console.Commands
         private IProgressBar progressBar;
         private readonly DeployWithProfile profile;
         private readonly DeployWithProfileDirectory profileDir;
+        private readonly DeploySpecific deploySpecific;
         private readonly DeployRunner runner;
 
         protected override bool SupportsInteractiveMode => true;
         public override string CommandName => "deploy";
 
-        public Deploy(DeployRunner deployRunner, IConfiguration configuration, IOctopusHelper octoHelper, DeployWithProfile profile, DeployWithProfileDirectory profileDir, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
+        public Deploy(DeployRunner deployRunner, IConfiguration configuration, IOctopusHelper octoHelper, DeployWithProfile profile, DeployWithProfileDirectory profileDir, DeploySpecific deploySpecific, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
         {
             this.configuration = configuration;
             this.profile = profile;
             this.profileDir = profileDir;
             this.progressBar = progressBar;
             this.runner = deployRunner;
+            this.deploySpecific = deploySpecific;
         }
 
         public override void Configure(CommandLineApplication command) 
@@ -65,7 +67,8 @@ namespace ShipItSharp.Console.Commands
 
             ConfigureSubCommand(profile, command);
             ConfigureSubCommand(profileDir, command);
-            
+            ConfigureSubCommand(deploySpecific, command);
+
             AddToRegister(DeployOptionNames.ChannelName, command.Option("-c|--channel", languageProvider.GetString(LanguageSection.OptionsStrings, "DeployChannel"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.Environment, command.Option("-e|--environment", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));

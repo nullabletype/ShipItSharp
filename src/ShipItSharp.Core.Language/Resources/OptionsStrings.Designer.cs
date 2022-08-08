@@ -19,7 +19,7 @@ namespace ShipItSharp.Core.Language.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class OptionsStrings {
@@ -169,6 +169,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Fallback to this channel if there are no releases available for the selected channel for a project..
+        /// </summary>
+        internal static string FallbackToChannel {
+            get {
+                return ResourceManager.GetString("FallbackToChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Fallback to the default channel if there are no packages available for the selected channel for a project. Be careful, as this disables validation of packages for channels before deploy..
         /// </summary>
         internal static string FallbackToDefault {
@@ -273,6 +282,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string PromoteProjects {
             get {
                 return ResourceManager.GetString("PromoteProjects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Full name of the release you wish to redeploy.
+        /// </summary>
+        internal static string Redeploy {
+            get {
+                return ResourceManager.GetString("Redeploy", resourceCulture);
             }
         }
         

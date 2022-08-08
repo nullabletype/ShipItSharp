@@ -244,7 +244,7 @@
     <value>Nothing selected!</value>
   </data>
   <data name="OnSource" xml:space="preserve">
-    <value>On source</value>
+    <value>On Source</value>
   </data>
   <data name="OnTarget" xml:space="preserve">
     <value>On Target</value>
@@ -277,10 +277,10 @@
     <value>Promoting from {0} to {1}. Please select the projects you wish to promote.</value>
   </data>
   <data name="ReleaseNamePrompt" xml:space="preserve">
-    <value>Do you wish to name your release? (Must follow semver, leave blank for sequentially generated)</value>
+    <value>What name do you want to use for your release? (Must follow semantic versioning, leave blank for sequentially generated)</value>
   </data>
   <data name="RestrictToGroupsPrompt" xml:space="preserve">
-    <value>Do you want to restrict to certain product groups?</value>
+    <value>What groups do you want to restrict to? (Optional)</value>
   </data>
   <data name="SleepingForSeconds" xml:space="preserve">
     <value>Sleeping for {0} seconds...</value>
@@ -344,5 +344,20 @@
   </data>
   <data name="PackageLastModified" xml:space="preserve">
     <value>Package last mod</value>
+  </data>
+  <data name="DeployingSpecificRelease" xml:space="preserve">
+    <value>Deploying release {0} to {1}. Please select the projects you wish to deploy.</value>
+  </data>
+  <data name="ReleaseName" xml:space="preserve">
+    <value>What is the name (version) of the release you want to deploy?</value>
+  </data>
+  <data name="ReleaseToDeploy" xml:space="preserve">
+    <value>To Deploy</value>
+  </data>
+  <data name="FallbackToChannel" xml:space="preserve">
+    <value>What channel do you wish to fall back to? (Optional)</value>
+  </data>
+  <data name="ReleaseNotSelectable" xml:space="preserve">
+    <value>There is no release available to deploy for the following projects:</value>
   </data>
 </root>

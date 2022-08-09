@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="CSharpFunctionalExtensions" Version="2.29.4" />
+    <PackageReference Include="CSharpFunctionalExtensions" Version="2.31.1" />
     <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.1" />
     <PackageReference Include="McMaster.Extensions.Hosting.CommandLine" Version="4.0.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />

@@ -295,7 +295,7 @@ namespace ShipItSharp.Core.Octopus
                 CacheObject(project.Id, project);
                 converted.Add(ConvertProject(project));
             }
-            return converted;
+            return converted.OrderBy(project => project.ProjectName).ToList();
         }
 
         public async Task<Project> GetProject(string idOrHref, string environment, string channelRange, string tag) 

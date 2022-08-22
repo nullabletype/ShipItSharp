@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <AssemblyName>ShipItSharp</AssemblyName>
+    <AssemblyName>ShipIt</AssemblyName>
     <ApplicationIcon>ShipItSharp.ico</ApplicationIcon>
     <Version>0.0.19</Version>
     <Authors>Steven Davies</Authors>

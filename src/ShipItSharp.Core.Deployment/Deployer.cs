@@ -179,7 +179,6 @@ namespace ShipItSharp.Core.Deployment {
                 await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister);
             }
 
-            uiLogger.WriteLine("Done deploying!");
             if (failedProjects.Any())
             {
                 uiLogger.WriteLine("Some projects didn't deploy successfully: ");

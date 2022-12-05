@@ -24,7 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Octopus.Client;
 using Octopus.Client.Model;
@@ -71,11 +71,11 @@ namespace ShipItSharp.Core.Octopus
             return client;
         }
 
-        public void SetCacheImplementation(IMemoryCache cache, int cacheTimeout)
+        public void SetCacheImplementation(IMemoryCache memoryCache, int cacheTimeoutToSet)
         {
-            this.cache = cache;
-            this.cacheTimeout = cacheTimeout;
-            if (cacheTimeout < 1)
+            this.cache = memoryCache;
+            this.cacheTimeout = cacheTimeoutToSet;
+            if (cacheTimeoutToSet < 1)
             {
                 this.cacheTimeout = 1;
             }
@@ -167,7 +167,7 @@ namespace ShipItSharp.Core.Octopus
                     if (template == null)
                     {
                         template =
-                            (await client.Repository.Feeds.Get("feeds-builtin")).Links["SearchTemplate"];
+                            (await client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["SearchTemplate"];
                         CacheObject("feeds-builtin", template);
                     }
 
@@ -199,7 +199,7 @@ namespace ShipItSharp.Core.Octopus
         public async Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId) 
         {
             var deployment =
-                (await client.Repository.Deployments.FindOne(resource => Search(resource, projectId, envId), pathParameters: new { take = 1, projects = projectId, environments = envId }));
+                (await client.Repository.Deployments.FindOne(search:resource => Search(resource, projectId, envId), pathParameters: new { take = 1, projects = projectId, environments = envId }, cancellationToken:CancellationToken.None, path:null));
             if (deployment != null) 
             {
                 var release = await GetReleaseInternal(deployment.ReleaseId);
@@ -213,28 +213,28 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<bool> UpdateReleaseVariables(string releaseId)
         {
-            var release = await this.client.Repository.Releases.Get(releaseId);
+            var release = await this.client.Repository.Releases.Get(releaseId, CancellationToken.None);
             if(release == null)
             {
                 return false;
             }
-            await this.client.Repository.Releases.SnapshotVariables(release);
+            await this.client.Repository.Releases.SnapshotVariables(release, CancellationToken.None);
             return true;
         }
 
         public async Task<List<Environment>> GetEnvironments() 
         {
-            var envs = await client.Repository.Environments.GetAll();
+            var envs = await client.Repository.Environments.GetAll(CancellationToken.None);
             return envs.Select(ConvertEnvironment).ToList();
         }
 
         public async Task<List<Environment>> GetMatchingEnvironments(string keyword, bool extactMatch = false)
         {
             var environments = await GetEnvironments();
-            var matchingEnvironments = environments.Where(env => env.Name.Equals(keyword, StringComparison.CurrentCultureIgnoreCase));
-            if (matchingEnvironments.Count() == 0 && !extactMatch)
+            var matchingEnvironments = environments.Where(env => env.Name.Equals(keyword, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+            if (matchingEnvironments.Length == 0 && !extactMatch)
             {
-                matchingEnvironments = environments.Where(env => env.Name.ToLower().Contains(keyword.ToLower()));
+                matchingEnvironments = environments.Where(env => env.Name.ToLower().Contains(keyword.ToLower())).ToArray();
             }
             return matchingEnvironments.ToList();
         }
@@ -245,51 +245,42 @@ namespace ShipItSharp.Core.Octopus
                 Name = name,
                 Description = description
             };
-            env = await client.Repository.Environments.Create(env);
+            env = await client.Repository.Environments.Create(env, CancellationToken.None);
             
             return ConvertEnvironment(env);
         }
 
         public async Task<Environment> GetEnvironment(string idOrName) 
         {
-            return ConvertEnvironment(await client.Repository.Environments.Get(idOrName));
+            return ConvertEnvironment(await client.Repository.Environments.Get(idOrName, CancellationToken.None));
         }
 
-        public async Task<IEnumerable<Environment>> GetEnvironment(string[] idOrNames)
+        public async Task<IEnumerable<Environment>> GetEnvironments(string[] idOrNames)
         {
-            return (await client.Repository.Environments.Get(idOrNames)).Select(e => ConvertEnvironment(e));
+            var environments = new List<Environment>();
+            foreach (var envId in idOrNames.Distinct())
+            {
+                var env = await client.Repository.Environments.Get(envId, CancellationToken.None);
+                environments.Add(ConvertEnvironment(env));
+            }
+            return environments;
         }
 
         public async Task DeleteEnvironment(string idOrhref) 
         {
-            var env = await client.Repository.Environments.Get(idOrhref);
-            await client.Repository.Environments.Delete(env);
+            var env = await client.Repository.Environments.Get(idOrhref, CancellationToken.None);
+            await client.Repository.Environments.Delete(env, CancellationToken.None);
         }
 
         public async Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter) 
         {
-            var groups = await client.Repository.ProjectGroups.GetAll();
+            var groups = await client.Repository.ProjectGroups.GetAll(CancellationToken.None);
             return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
-        }
-
-        public async Task<List<ProjectGroup>> GetProjectGroups() 
-        {
-            return (await client.Repository.ProjectGroups.GetAll()).Select(ConvertProjectGroup).ToList();
-        }
-
-        public async Task<List<Project>> GetProjects(string environment, string channelRange, string tag) 
-        {
-            var projects = await client.Repository.Projects.GetAll();
-            var converted = new List<Project>();
-            foreach (var project in projects) {
-                converted.Add(await ConvertProject(project, environment, channelRange, tag));
-            }
-            return converted;
         }
 
         public async Task<List<ProjectStub>> GetProjectStubs() 
         {
-            var projects = await client.Repository.Projects.GetAll();
+            var projects = await client.Repository.Projects.GetAll(CancellationToken.None);
             var converted = new List<ProjectStub>();
             foreach (var project in projects) {
                 CacheObject(project.Id, project);
@@ -305,29 +296,14 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<bool> ValidateProjectName(string name) 
         {
-            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name);
+            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
             return project != null;
-        }
-
-        public async Task<Project> GetProjectByName(string name, string environment, string channelRange, string tag) 
-        {
-            return await ConvertProject(await client.Repository.Projects.FindOne(resource => resource.Name == name),
-                environment,
-                channelRange,
-                tag);
         }
 
         public async Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName) 
         {
-            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name);
+            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
             return ConvertChannel(await client.Repository.Channels.FindByName(project, channelName));
-        }
-
-        public async Task<List<Channel>> GetChannelsByProjectName(string name) 
-        {
-            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name);
-            var channels = await client.Repository.Projects.GetChannels(project);
-            return channels.Items.Select(ConvertChannel).ToList();
         }
 
         public async Task<Channel> GetChannelByName(string projectIdOrName, string channelName) 
@@ -336,25 +312,20 @@ namespace ShipItSharp.Core.Octopus
             return ConvertChannel(await client.Repository.Channels.FindByName(project, channelName));
         }
 
-        public async Task<Channel> GetChannel(string channelIdOrHref) 
-        {
-            return ConvertChannel(await client.Repository.Channels.Get(channelIdOrHref));
-        }
-
         public async Task<List<Channel>> GetChannelsForProject(string projectIdOrHref, int take = 30) 
         {
             var project = await GetProject(projectIdOrHref);
-            var channels = await client.List<ChannelResource>(project.Link("Channels"), new { take = 9999 });
+            var channels = await client.List<ChannelResource>(project.Link("Channels"), new { take = 9999 }, CancellationToken.None);
             return channels.Items.Select(ConvertChannel).ToList();
         }
 
         public async Task<(bool Success, IEnumerable<Release> Releases)> RemoveChannel(string channelId)
         {
-            var channel = await client.Repository.Channels.Get(channelId);
+            var channel = await client.Repository.Channels.Get(channelId, CancellationToken.None);
             var allReleases = await client.Repository.Channels.GetAllReleases(channel);
             if (!allReleases.Any())
             {
-                await client.Repository.Channels.Delete(channel);
+                await client.Repository.Channels.Delete(channel, CancellationToken.None);
                 return (true, null);
             }
 
@@ -368,11 +339,11 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<Release> GetRelease(string name, Project project)
         {
-            var projectRes = await client.Repository.Projects.Get(project.ProjectId);
+            var projectRes = await client.Repository.Projects.Get(project.ProjectId, CancellationToken.None);
             ReleaseResource release;
             try
             {
-                release = await client.Repository.Projects.GetReleaseByVersion(projectRes, name);
+                release = await client.Repository.Projects.GetReleaseByVersion(projectRes, name, CancellationToken.None);
             }
             catch
             {
@@ -385,13 +356,13 @@ namespace ShipItSharp.Core.Octopus
             return await ConvertRelease(release);
         }
 
-        public async Task<Release> GetLatestRelease(Project project, string channelname)
+        public async Task<Release> GetLatestRelease(Project project, string channelName)
         {
             ReleaseResource release;
             try
             {
-                var projectRes = await client.Repository.Projects.Get(project.ProjectId);
-                var channelRes = await client.Repository.Channels.FindByName(projectRes, channelname);
+                var projectRes = await client.Repository.Projects.Get(project.ProjectId, CancellationToken.None);
+                var channelRes = await client.Repository.Channels.FindByName(projectRes, channelName);
                 if (channelRes == null)
                 {
                     return null;
@@ -411,7 +382,7 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<LifeCycle> GetLifeCycle(string idOrHref) 
         {
-            return ConvertLifeCycle(await client.Repository.Lifecycles.Get(idOrHref));
+            return ConvertLifeCycle(await client.Repository.Lifecycles.Get(idOrHref, CancellationToken.None));
         }
 
         public async Task<PackageFull> GetFullPackage(PackageStub stub) 
@@ -421,14 +392,14 @@ namespace ShipItSharp.Core.Octopus
                 Version = stub.Version,
                 StepName = stub.StepName
             };
-            var template = (await client.Repository.Feeds.Get("feeds-builtin")).Links["NotesTemplate"];
+            var template = (await client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["NotesTemplate"];
             package.Message =
                 await
                     client.Get<string>(template,
                         new {
                             packageId = stub.Id,
                             version = stub.Version
-                        });
+                        }, CancellationToken.None);
             return package;
         }
 
@@ -457,7 +428,7 @@ namespace ShipItSharp.Core.Octopus
             }
             var result =
                     await
-                        client.Repository.Releases.Create(release, ignoreChannelRules: ignoreChannelRules);
+                        client.Repository.Releases.Create(release, ignoreChannelRules: ignoreChannelRules, CancellationToken.None);
             return new Release {
                 Version = result.Version,
                 Id = result.Id,
@@ -487,7 +458,7 @@ namespace ShipItSharp.Core.Octopus
                     deployment.FormValues.Add(variable.Id, variable.Value);
                 }
             }
-            var deployResult = await client.Repository.Deployments.Create(deployment);
+            var deployResult = await client.Repository.Deployments.Create(deployment, CancellationToken.None);
             return new Deployment {
                 TaskId = deployResult.TaskId
             };
@@ -495,7 +466,7 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<TaskDetails> GetTaskDetails(string taskId) 
         {
-            var task = await client.Repository.Tasks.Get(taskId);
+            var task = await client.Repository.Tasks.Get(taskId, CancellationToken.None);
             var taskDeets = await client.Repository.Tasks.GetDetails(task);
 
             return new TaskDetails 
@@ -514,7 +485,7 @@ namespace ShipItSharp.Core.Octopus
         {
             //var taskDeets = await client.Repository.Tasks.FindAll(pathParameters: new { skip, take, name = "Deploy" });
 
-            var taskDeets = await client.Get<ResourceCollection<TaskResource>>((await client.Repository.LoadRootDocument()).Links["Tasks"], new { skip, take, name = "Deploy" });
+            var taskDeets = await client.Get<ResourceCollection<TaskResource>>((await client.Repository.LoadRootDocument(CancellationToken.None)).Links["Tasks"], new { skip, take, name = "Deploy" }, CancellationToken.None);
 
             var tasks = new List<TaskStub>();
 
@@ -545,12 +516,19 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<IEnumerable<Deployment>> GetDeployments(string[] deploymentIds)
         {
-            return (await client.Repository.Deployments.Get(deploymentIds)).Select(d => ConvertDeployment(d));
+            var deployments = new List<Deployment>();
+            foreach (var deploymentId in deploymentIds.Distinct())
+            {
+                var deployment = await client.Repository.Deployments.Get(deploymentId, CancellationToken.None);
+                deployments.Add(ConvertDeployment(deployment));
+            }
+
+            return deployments;
         }
 
         public async Task RemoveEnvironmentsFromTeams(string envId) 
         {
-            var teams = await client.Repository.Teams.FindAll();
+            var teams = await client.Repository.Teams.FindAll(CancellationToken.None);
             foreach (var team in teams) 
             {
                 var scopes = await client.Repository.Teams.GetScopedUserRoles(team);
@@ -558,7 +536,7 @@ namespace ShipItSharp.Core.Octopus
                 foreach (var scope in scopes.Where(s => s.EnvironmentIds.Contains(envId))) 
                 {
                     scope.EnvironmentIds.Remove(envId);
-                    var saved = await client.Repository.ScopedUserRoles.Modify(scope);
+                    await client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
                 }
                 
             }
@@ -567,7 +545,7 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task RemoveEnvironmentsFromLifecycles(string envId) 
         {
-            var env = await client.Repository.Environments.Get(envId);
+            await client.Repository.Environments.Get(envId, CancellationToken.None);
             var lifecycles = await client.Repository.Lifecycles.FindMany(lifecycle => 
                 { 
                     return lifecycle.Phases.Any(phase => 
@@ -583,7 +561,7 @@ namespace ShipItSharp.Core.Octopus
                             return false;
                         }
                     ); 
-                });
+                }, CancellationToken.None);
             foreach(var lifecycle in lifecycles) 
             {
                 foreach (var phase in lifecycle.Phases) 
@@ -597,14 +575,14 @@ namespace ShipItSharp.Core.Octopus
                         phase.OptionalDeploymentTargets.RemoveWhere(phaseEnvId => phaseEnvId.Equals(envId));
                     }
                 }
-                await client.Repository.Lifecycles.Modify(lifecycle);
+                await client.Repository.Lifecycles.Modify(lifecycle, CancellationToken.None);
             }
         }
 
         public async Task AddEnvironmentToTeam(string envId, string teamId) 
         {
-            var team = await client.Repository.Teams.Get(teamId);
-            var environment = await client.Repository.Environments.Get(envId);
+            var team = await client.Repository.Teams.Get(teamId, CancellationToken.None);
+            var environment = await client.Repository.Environments.Get(envId, CancellationToken.None);
             if (team == null || environment == null) 
             {
                 return;
@@ -615,7 +593,7 @@ namespace ShipItSharp.Core.Octopus
                 if (!scope.EnvironmentIds.Contains(envId))
                 {
                     scope.EnvironmentIds.Add(envId);
-                    var saved = await client.Repository.ScopedUserRoles.Modify(scope);
+                    await client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
                 }
             }
         }
@@ -623,11 +601,9 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<(bool Success, LifecycleErrorType ErrorType, string Error)> AddEnvironmentToLifecyclePhase(string envId, string lcId, int phaseId, bool automatic) {
             LifecycleResource lifecycle;
-            EnvironmentResource environment;
             try 
             {
-                lifecycle = await client.Repository.Lifecycles.Get(lcId);
-                environment = await client.Repository.Environments.Get(envId);
+                lifecycle = await client.Repository.Lifecycles.Get(lcId, CancellationToken.None);
             } 
             catch (Exception e) 
             {
@@ -653,20 +629,18 @@ namespace ShipItSharp.Core.Octopus
             }
             try 
             {
-                await client.Repository.Lifecycles.Modify(lifecycle);
+                await client.Repository.Lifecycles.Modify(lifecycle, CancellationToken.None);
             } 
             catch (Exception e) 
             {
                 return (false, LifecycleErrorType.UnexpectedError, e.Message);
             }
-            return (false, LifecycleErrorType.None, string.Empty); ;
-
-
+            return (false, LifecycleErrorType.None, string.Empty);
         }
 
         public async Task<string> GetTaskRawLog(string taskId) 
         {
-            var task = await client.Repository.Tasks.Get(taskId);
+            var task = await client.Repository.Tasks.Get(taskId, CancellationToken.None);
             return await client.Repository.Tasks.GetRawOutputLog(task);
         }
 
@@ -674,9 +648,9 @@ namespace ShipItSharp.Core.Octopus
         {
             if(string.IsNullOrEmpty(releaseId))
             {
-                return new Deployment[0];
+                return Array.Empty<Deployment>();
             }
-            var deployments = await client.Repository.Releases.GetDeployments(await GetReleaseInternal(releaseId), 0, 100);
+            var deployments = await client.Repository.Releases.GetDeployments(await GetReleaseInternal(releaseId), 0, 100, CancellationToken.None);
             return deployments.Items.ToList().Select(ConvertDeployment);
         }
 
@@ -691,7 +665,7 @@ namespace ShipItSharp.Core.Octopus
             {
                 var release = await GetReleaseInternal(releaseId);
                 release.Version = newReleaseVersion;
-                await client.Repository.Releases.Modify(release);
+                await client.Repository.Releases.Modify(release, CancellationToken.None);
             }
             catch (Exception e)
             {
@@ -706,9 +680,9 @@ namespace ShipItSharp.Core.Octopus
             var id = varSet.Id;
             if (varSet.IdType == VariableSet.VariableIdTypes.Library) 
             {
-                id = (await client.Repository.LibraryVariableSets.Get(id)).VariableSetId;
+                id = (await client.Repository.LibraryVariableSets.Get(id, CancellationToken.None)).VariableSetId;
             }
-            var set = await client.Repository.VariableSets.Get(id);
+            var set = await client.Repository.VariableSets.Get(id, CancellationToken.None);
             foreach(var variable in varSet.Variables) 
             {
                 var scope = new ScopeSpecification();
@@ -729,7 +703,7 @@ namespace ShipItSharp.Core.Octopus
                 set.AddOrUpdateVariableValue(variable.Key, variable.Value, scope);
             }
 
-            await client.Repository.VariableSets.Modify(set);
+            await client.Repository.VariableSets.Modify(set, CancellationToken.None);
         }
 
         private Environment ConvertEnvironment(EnvironmentResource env)
@@ -786,7 +760,7 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<List<RequiredVariable>> GetVariables(string variableSetId)
         {
-            var variables = await this.client.Repository.VariableSets.Get(variableSetId);
+            var variables = await this.client.Repository.VariableSets.Get(variableSetId, CancellationToken.None);
             var requiredVariables = new List<RequiredVariable>();
             foreach (var variable in variables.Variables)
             {
@@ -900,7 +874,7 @@ namespace ShipItSharp.Core.Octopus
 
         private PackageStub ConvertPackage(PackageResource package, string stepName)
         {
-            return new PackageStub {Id = package.PackageId, Version = package.Version, StepName = stepName, PublishedOn = package.Published.HasValue ? package.Published.Value.LocalDateTime as DateTime? : null };
+            return new PackageStub {Id = package.PackageId, Version = package.Version, StepName = stepName, PublishedOn = package.Published.HasValue ? package.Published.Value.LocalDateTime : null };
         }
 
         private async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)
@@ -908,7 +882,7 @@ namespace ShipItSharp.Core.Octopus
             var cached = GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
             if (cached == default(DeploymentProcessResource))
             {
-                var deployment = await client.Repository.DeploymentProcesses.Get(deploymentProcessId);
+                var deployment = await client.Repository.DeploymentProcesses.Get(deploymentProcessId, CancellationToken.None);
                 CacheObject(deployment.Id, deployment);
                 return deployment;
             }
@@ -920,7 +894,7 @@ namespace ShipItSharp.Core.Octopus
             var cached = GetCachedObject<ProjectResource>(projectId);
             if (cached == default(ProjectResource))
             {
-                var project = await client.Repository.Projects.Get(projectId);
+                var project = await client.Repository.Projects.Get(projectId, CancellationToken.None);
                 CacheObject(project.Id, project);
                 return project;
             }
@@ -932,7 +906,7 @@ namespace ShipItSharp.Core.Octopus
             var cached = GetCachedObject<ReleaseResource>(releaseId);
             if (cached == default(ReleaseResource))
             {
-                var release = await client.Repository.Releases.Get(releaseId);
+                var release = await client.Repository.Releases.Get(releaseId, CancellationToken.None);
                 CacheObject(release.Id, release);
                 return release;
             }

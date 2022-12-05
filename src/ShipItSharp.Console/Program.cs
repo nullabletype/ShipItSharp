@@ -44,7 +44,6 @@ using ShipItSharp.Console.ConsoleTools;
 using Microsoft.Extensions.Caching.Memory;
 using System.Linq;
 using System.IO;
-using ShipItSharp.Core.VersionChecking.GitLab;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Interfaces;
@@ -152,7 +151,7 @@ namespace ShipItSharp.Console
             if (checkResult.Release.Assets != null && checkResult.Release.Assets.Any())
             {
                 foreach(var asset in checkResult.Release.Assets)
-                System.Console.WriteLine(string.Format(languageProvider.GetString(LanguageSection.UiStrings, "DownloadAvailableHere"), asset.Name, asset.DownloadUrl));
+                    System.Console.WriteLine(string.Format(languageProvider.GetString(LanguageSection.UiStrings, "DownloadAvailableHere"), asset.Name, asset.DownloadUrl));
             }
             else
             {

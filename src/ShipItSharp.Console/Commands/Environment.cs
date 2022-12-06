@@ -64,7 +64,7 @@ namespace ShipItSharp.Console.Commands {
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var envs = await  OctopusHelper.Default.GetEnvironments();
+            var envs = await  OctopusHelper.Default.Environments.GetEnvironments();
             var table = new ConsoleTable(languageProvider.GetString(LanguageSection.UiStrings, "Name"), languageProvider.GetString(LanguageSection.UiStrings, "Id"));
             foreach (var env in envs)
             {

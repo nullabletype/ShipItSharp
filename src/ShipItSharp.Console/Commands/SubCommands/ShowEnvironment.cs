@@ -62,7 +62,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty, false);
             var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true);
 
-            var found = await this.octoHelper.GetEnvironment(id);
+            var found = await this.octoHelper.Environments.GetEnvironment(id);
             if (found != null) 
             {
                 progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
@@ -73,7 +73,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 {
                     progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                     groupIds =
-                        (await octoHelper.GetFilteredProjectGroups(groupFilter))
+                        (await octoHelper.Projects.GetFilteredProjectGroups(groupFilter))
                         .Select(g => g.Id).ToList();
                 }
 

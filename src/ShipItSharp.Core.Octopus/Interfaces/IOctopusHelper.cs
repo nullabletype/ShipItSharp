@@ -36,16 +36,10 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         IProjectRepository Projects { get; }
         IVariableRepository Variables { get; }
         IChannelRepository Channels { get; }
+        IEnvironmentRepository Environments { get; }
 
         void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
         Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId);
-        Task<List<Environment>> GetEnvironments();
-        Task<List<Environment>> GetMatchingEnvironments(string keyword, bool extactMatch = false);
-        Task<Environment> GetEnvironment(string idOrName);
-        Task<Environment> CreateEnvironment(string name, string description);
-        Task<IEnumerable<Environment>> GetEnvironments(string[] idOrNames);
-        Task DeleteEnvironment(string idOrhref);
-        Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter);
         Task<Release> GetRelease(string releaseIdOrHref);
         Task<TaskDetails> GetTaskDetails(string taskId);
         Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take);

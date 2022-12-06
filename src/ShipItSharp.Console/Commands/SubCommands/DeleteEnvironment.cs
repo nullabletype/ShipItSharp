@@ -49,7 +49,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var id = GetStringFromUser(EnsureEnvironmentOptionNames.Id, string.Empty, false);
             var skipConfirm = GetOption(EnsureEnvironmentOptionNames.SkipConfirmation);
-            var found = await this.octoHelper.GetEnvironment(id);
+            var found = await this.octoHelper.Environments.GetEnvironment(id);
             if (found != null) 
             {
                 System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), id));
@@ -64,7 +64,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 {
                     await octoHelper.RemoveEnvironmentsFromTeams(found.Id);
                     await octoHelper.RemoveEnvironmentsFromLifecycles(found.Id);
-                    await octoHelper.DeleteEnvironment(found.Id);
+                    await octoHelper.Environments.DeleteEnvironment(found.Id);
                 } 
                 catch (Exception e) 
                 {

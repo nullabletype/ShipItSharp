@@ -9,7 +9,8 @@ public interface IProjectRepository
 {
     Task<List<ProjectStub>> GetProjectStubs();
     Task<Project> GetProject(string idOrHref, string environment, string channelRange, string tag);
-    Task<ProjectResource> GetProject(string projectId);
     Task<bool> ValidateProjectName(string name);
     Task<Project> ConvertProject(ProjectStub project, string env, string channelRange, string tag);
+    Task<ProjectResource> GetProject(string projectId);
+    Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter);
 }

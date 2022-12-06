@@ -124,7 +124,7 @@ namespace ShipItSharp.Core.JobRunners
             {
                 progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await helper.GetFilteredProjectGroups(_currentConfig.GroupFilter))
+                    (await helper.Projects.GetFilteredProjectGroups(_currentConfig.GroupFilter))
                     .Select(g => g.Id).ToList();
             }
 

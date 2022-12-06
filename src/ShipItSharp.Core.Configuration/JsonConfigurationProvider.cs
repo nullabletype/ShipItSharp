@@ -106,7 +106,7 @@ namespace ShipItSharp.Core.Configuration
                 try
                 {
                     var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null);
-                    await octoHelper.GetEnvironments();
+                    await octoHelper.Environments.GetEnvironments();
                     try 
                     {
                         if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.Projects.ValidateProjectName(c)).Select(c => c.Result).All(c => c)) 

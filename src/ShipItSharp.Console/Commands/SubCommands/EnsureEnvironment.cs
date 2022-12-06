@@ -50,7 +50,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var name = GetStringFromUser(EnsureEnvironmentOptionNames.Name, string.Empty, false);
             var description = GetStringFromUser(EnsureEnvironmentOptionNames.Description, string.Empty, true);
-            var found = await this.octoHelper.GetMatchingEnvironments(name);
+            var found = await this.octoHelper.Environments.GetMatchingEnvironments(name);
             ShipItSharp.Core.Models.Environment env = null;
             if (found.Any()) 
             {
@@ -60,7 +60,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             else 
             {
                 System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), name));
-                env = await octoHelper.CreateEnvironment(name, description);
+                env = await octoHelper.Environments.CreateEnvironment(name, description);
             }
             System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvionmentId"), env.Id));
             return 0;

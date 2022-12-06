@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Octopus.Client.Model;
@@ -93,5 +94,16 @@ public class ProjectRepository : IProjectRepository
             return project;
         }
         return cached;
+    }
+    
+    public async Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter) 
+    {
+        var groups = await octoClient.client.Repository.ProjectGroups.GetAll(CancellationToken.None);
+        return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
+    }
+    
+    private ProjectGroup ConvertProjectGroup(ProjectGroupResource projectGroup)
+    {
+        return new ProjectGroup {Id = projectGroup.Id, Name = projectGroup.Name};
     }
 }

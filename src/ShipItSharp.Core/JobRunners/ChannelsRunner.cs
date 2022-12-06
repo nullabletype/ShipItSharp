@@ -33,7 +33,7 @@ namespace ShipItSharp.Core.JobRunners
 
             if (!string.IsNullOrEmpty(config.GroupFilter))
             {
-                var groupIds = (await octopusHelper.GetFilteredProjectGroups(config.GroupFilter)).Select(g => g.Id);
+                var groupIds = (await octopusHelper.Projects.GetFilteredProjectGroups(config.GroupFilter)).Select(g => g.Id);
                 var projectStubs = await octopusHelper.Projects.GetProjectStubs();
 
                 foreach (var projectStub in projectStubs)

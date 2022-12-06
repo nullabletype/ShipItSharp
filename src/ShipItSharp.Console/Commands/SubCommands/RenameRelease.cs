@@ -81,7 +81,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             {
                 progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await octoHelper.GetFilteredProjectGroups(groupRestriction))
+                    (await octoHelper.Projects.GetFilteredProjectGroups(groupRestriction))
                     .Select(g => g.Id).ToList();
             }
 

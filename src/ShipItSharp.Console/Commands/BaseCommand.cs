@@ -204,7 +204,7 @@ namespace ShipItSharp.Console.Commands {
 
         protected async Task<ShipItSharp.Core.Models.Environment> FetchEnvironmentFromUserInput(string environmentName)
         {
-            var matchingEnvironments = await octoHelper.GetMatchingEnvironments(environmentName);
+            var matchingEnvironments = await octoHelper.Environments.GetMatchingEnvironments(environmentName);
 
             if (matchingEnvironments.Count > 1)
             {

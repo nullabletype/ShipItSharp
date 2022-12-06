@@ -43,15 +43,18 @@ namespace ShipItSharp.Core.Octopus
         internal readonly ProjectRepository ProjectsInternal;
         internal readonly PackageRepository PackagesInternal;
         internal readonly VariableRepository VariablesInternal;
-        internal readonly ChannelRepository ChannelsInternal;
+        private readonly ChannelRepository ChannelsInternal;
+        private readonly EnvironmentRepository EnvironmentsInternal;
 
         public IPackageRepository Packages => PackagesInternal;
         public IProjectRepository Projects => ProjectsInternal;
         public IVariableRepository Variables => VariablesInternal;
         public IChannelRepository Channels => ChannelsInternal;
+        public IEnvironmentRepository Environments => EnvironmentsInternal;
 
         public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider) 
         {
+            EnvironmentsInternal = new EnvironmentRepository(this);
             ChannelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
@@ -63,6 +66,7 @@ namespace ShipItSharp.Core.Octopus
 
         public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
         {
+            EnvironmentsInternal = new EnvironmentRepository(this);
             ChannelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
@@ -114,68 +118,13 @@ namespace ShipItSharp.Core.Octopus
         public async Task<bool> UpdateReleaseVariables(string releaseId)
         {
             var release = await this.client.Repository.Releases.Get(releaseId, CancellationToken.None);
-            if(release == null)
+            if (release == null)
             {
                 return false;
             }
+
             await this.client.Repository.Releases.SnapshotVariables(release, CancellationToken.None);
             return true;
-        }
-
-        public async Task<List<Environment>> GetEnvironments() 
-        {
-            var envs = await client.Repository.Environments.GetAll(CancellationToken.None);
-            return envs.Select(ConvertEnvironment).ToList();
-        }
-
-        public async Task<List<Environment>> GetMatchingEnvironments(string keyword, bool extactMatch = false)
-        {
-            var environments = await GetEnvironments();
-            var matchingEnvironments = environments.Where(env => env.Name.Equals(keyword, StringComparison.CurrentCultureIgnoreCase)).ToArray();
-            if (matchingEnvironments.Length == 0 && !extactMatch)
-            {
-                matchingEnvironments = environments.Where(env => env.Name.ToLower().Contains(keyword.ToLower())).ToArray();
-            }
-            return matchingEnvironments.ToList();
-        }
-
-        public async Task<Environment> CreateEnvironment(string name, string description) 
-        {
-            var env = new EnvironmentResource {
-                Name = name,
-                Description = description
-            };
-            env = await client.Repository.Environments.Create(env, CancellationToken.None);
-            
-            return ConvertEnvironment(env);
-        }
-
-        public async Task<Environment> GetEnvironment(string idOrName) 
-        {
-            return ConvertEnvironment(await client.Repository.Environments.Get(idOrName, CancellationToken.None));
-        }
-
-        public async Task<IEnumerable<Environment>> GetEnvironments(string[] idOrNames)
-        {
-            var environments = new List<Environment>();
-            foreach (var envId in idOrNames.Distinct())
-            {
-                var env = await client.Repository.Environments.Get(envId, CancellationToken.None);
-                environments.Add(ConvertEnvironment(env));
-            }
-            return environments;
-        }
-
-        public async Task DeleteEnvironment(string idOrhref) 
-        {
-            var env = await client.Repository.Environments.Get(idOrhref, CancellationToken.None);
-            await client.Repository.Environments.Delete(env, CancellationToken.None);
-        }
-
-        public async Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter) 
-        {
-            var groups = await client.Repository.ProjectGroups.GetAll(CancellationToken.None);
-            return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
         }
 
         public async Task<Release> GetRelease(string releaseIdOrHref) 
@@ -502,11 +451,6 @@ namespace ShipItSharp.Core.Octopus
 
             return (string.Empty, true);
         }
-        
-        private Environment ConvertEnvironment(EnvironmentResource env)
-        {
-            return new Environment {Id = env.Id, Name = env.Name};
-        }
 
         private Deployment ConvertDeployment(DeploymentResource dep)
         {
@@ -533,7 +477,7 @@ namespace ShipItSharp.Core.Octopus
             {
                 foreach (var phase in lifeCycle.Phases)
                 {
-                    
+
                     var newPhase = new Phase
                     {
                         Name = phase.Name,
@@ -545,22 +489,21 @@ namespace ShipItSharp.Core.Octopus
                     {
                         newPhase.OptionalDeploymentTargetEnvironmentIds = phase.OptionalDeploymentTargets.ToList();
                     }
+
                     if (phase.AutomaticDeploymentTargets != null)
                     {
                         newPhase.AutomaticDeploymentTargetEnvironmentIds = phase.AutomaticDeploymentTargets.ToList();
                     }
-                    if (newPhase.AutomaticDeploymentTargetEnvironmentIds.Any() || newPhase.OptionalDeploymentTargetEnvironmentIds.Any())
+
+                    if (newPhase.AutomaticDeploymentTargetEnvironmentIds.Any() ||
+                        newPhase.OptionalDeploymentTargetEnvironmentIds.Any())
                     {
                         lc.Phases.Add(newPhase);
                     }
                 }
             }
-            return lc;
-        }
 
-        private ProjectGroup ConvertProjectGroup(ProjectGroupResource projectGroup)
-        {
-            return new ProjectGroup() {Id = projectGroup.Id, Name = projectGroup.Name};
+            return lc;
         }
 
         internal async Task<Release> ConvertRelease(ReleaseResource release)

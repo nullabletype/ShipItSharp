@@ -112,7 +112,7 @@ namespace ShipItSharp.Console.Commands
             ShipItSharp.Core.Models.Channel channel = null;
             foreach (var project in found)
             {
-                channel = await octoHelper.GetChannelByProjectNameAndChannelName(project.ProjectName, channelName);
+                channel = await octoHelper.Channels.GetChannelByProjectNameAndChannelName(project.ProjectName, channelName);
                 if (channel != null)
                 {
                     break;
@@ -128,7 +128,7 @@ namespace ShipItSharp.Console.Commands
             ShipItSharp.Core.Models.Channel defaultChannel = null;
 
             if (forceDefault && !string.IsNullOrEmpty(configuration.DefaultChannel)) {
-                defaultChannel = await octoHelper.GetChannelByProjectNameAndChannelName(found.First().ProjectName, configuration.DefaultChannel);
+                defaultChannel = await octoHelper.Channels.GetChannelByProjectNameAndChannelName(found.First().ProjectName, configuration.DefaultChannel);
             }
 
             var configResult = DeployConfig.Create(environment, channel, defaultChannel, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), this.InInteractiveMode);

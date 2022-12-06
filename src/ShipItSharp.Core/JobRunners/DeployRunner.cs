@@ -245,10 +245,10 @@ namespace ShipItSharp.Core.JobRunners
                 System.Console.WriteLine($"No packages found for {current.ProjectName}");
             }
 
-            var projectChannel = await this.helper.GetChannelByName(current.ProjectId, _currentConfig.Channel.Name);
+            var projectChannel = await this.helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.Channel.Name);
             if (_currentConfig.DefaultFallbackChannel != null && projectChannel == null)
             {
-                projectChannel = await this.helper.GetChannelByName(current.ProjectId, _currentConfig.DefaultFallbackChannel.Name);
+                projectChannel = await this.helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.DefaultFallbackChannel.Name);
             } 
             return new ProjectDeployment
             {

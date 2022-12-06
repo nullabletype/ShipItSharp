@@ -39,27 +39,31 @@ namespace ShipItSharp.Core.Octopus
     {
         internal IOctopusAsyncClient client;
         public static IOctopusHelper Default;
-        internal ICacheObjects memoryCache;
+        internal ICacheObjects cacheProvider;
         internal readonly ProjectRepository ProjectsInternal;
         internal readonly PackageRepository PackagesInternal;
         internal readonly VariableRepository VariablesInternal;
-        
+        internal readonly ChannelRepository ChannelsInternal;
+
         public IPackageRepository Packages => PackagesInternal;
         public IProjectRepository Projects => ProjectsInternal;
         public IVariableRepository Variables => VariablesInternal;
+        public IChannelRepository Channels => ChannelsInternal;
 
-        public OctopusHelper(string url, string apiKey, ICacheObjects memoryCache) 
+        public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider) 
         {
+            ChannelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
             
-            this.memoryCache = memoryCache;
+            this.cacheProvider = cacheProvider;
             this.client = InitClient(url, apiKey);
         }
 
         public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
         {
+            ChannelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
@@ -83,13 +87,13 @@ namespace ShipItSharp.Core.Octopus
 
         public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
         {
-            SetCacheImplementationInternal(memoryCache);
-            memoryCache.SetCacheTimeout(cacheTimeoutToSet);
+            SetCacheImplementationInternal(cacheProvider);
+            cacheProvider.SetCacheTimeout(cacheTimeoutToSet);
         }
         
         private void SetCacheImplementationInternal(ICacheObjects memoryCache)
         {
-            this.memoryCache = memoryCache ?? new NoCache();
+            this.cacheProvider = memoryCache ?? new NoCache();
         }
 
         public async Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId) 
@@ -172,38 +176,6 @@ namespace ShipItSharp.Core.Octopus
         {
             var groups = await client.Repository.ProjectGroups.GetAll(CancellationToken.None);
             return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
-        }
-
-        public async Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName) 
-        {
-            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
-            return ConvertChannel(await client.Repository.Channels.FindByName(project, channelName));
-        }
-
-        public async Task<Channel> GetChannelByName(string projectIdOrName, string channelName) 
-        {
-            var project = await ProjectsInternal.GetProject(projectIdOrName);
-            return ConvertChannel(await client.Repository.Channels.FindByName(project, channelName));
-        }
-
-        public async Task<List<Channel>> GetChannelsForProject(string projectIdOrHref, int take = 30) 
-        {
-            var project = await ProjectsInternal.GetProject(projectIdOrHref);
-            var channels = await client.List<ChannelResource>(project.Link("Channels"), new { take = 9999 }, CancellationToken.None);
-            return channels.Items.Select(ConvertChannel).ToList();
-        }
-
-        public async Task<(bool Success, IEnumerable<Release> Releases)> RemoveChannel(string channelId)
-        {
-            var channel = await client.Repository.Channels.Get(channelId, CancellationToken.None);
-            var allReleases = await client.Repository.Channels.GetAllReleases(channel);
-            if (!allReleases.Any())
-            {
-                await client.Repository.Channels.Delete(channel, CancellationToken.None);
-                return (true, null);
-            }
-
-            return (false, allReleases.Select(async r => await ConvertRelease(r)).Select(t => t.Result));
         }
 
         public async Task<Release> GetRelease(string releaseIdOrHref) 
@@ -586,28 +558,12 @@ namespace ShipItSharp.Core.Octopus
             return lc;
         }
 
-        private Channel ConvertChannel(ChannelResource channel)
-        {
-            if (channel == null)
-            {
-                return null;
-            }
-            var versionRange = String.Empty;
-            var versionTag = String.Empty;
-            if (channel.Rules.Any())
-            {
-                versionRange = channel.Rules[0].VersionRange;
-                versionTag = channel.Rules[0].Tag;
-            }
-            return new Channel {Id = channel.Id, Name = channel.Name, VersionRange = versionRange, VersionTag = versionTag};
-        }
-
         private ProjectGroup ConvertProjectGroup(ProjectGroupResource projectGroup)
         {
             return new ProjectGroup() {Id = projectGroup.Id, Name = projectGroup.Name};
         }
 
-        private async Task<Release> ConvertRelease(ReleaseResource release)
+        internal async Task<Release> ConvertRelease(ReleaseResource release)
         {
             var project = await ProjectsInternal.GetProject(release.ProjectId);
             var packages =
@@ -628,11 +584,11 @@ namespace ShipItSharp.Core.Octopus
 
         internal async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)
         {
-            var cached = memoryCache.GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
+            var cached = cacheProvider.GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
             if (cached == default(DeploymentProcessResource))
             {
                 var deployment = await client.Repository.DeploymentProcesses.Get(deploymentProcessId, CancellationToken.None);
-                memoryCache.CacheObject(deployment.Id, deployment);
+                cacheProvider.CacheObject(deployment.Id, deployment);
                 return deployment;
             }
             return cached;
@@ -640,11 +596,11 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<ReleaseResource> GetReleaseInternal(string releaseId)
         {
-            var cached = memoryCache.GetCachedObject<ReleaseResource>(releaseId);
+            var cached = cacheProvider.GetCachedObject<ReleaseResource>(releaseId);
             if (cached == default(ReleaseResource))
             {
                 var release = await client.Repository.Releases.Get(releaseId, CancellationToken.None);
-                memoryCache.CacheObject(release.Id, release);
+                cacheProvider.CacheObject(release.Id, release);
                 return release;
             }
             return cached;

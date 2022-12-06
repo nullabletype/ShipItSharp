@@ -48,7 +48,7 @@ namespace ShipItSharp.Core.JobRunners
                         }
                     }
 
-                    var channels = await octopusHelper.GetChannelsForProject(projectStub.ProjectId, 9999);
+                    var channels = await octopusHelper.Channels.GetChannelsForProject(projectStub.ProjectId, 9999);
                     var packageSteps = await octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, 9999);
                     var packages = packageSteps.SelectMany(p => p.AvailablePackages);
 
@@ -77,7 +77,7 @@ namespace ShipItSharp.Core.JobRunners
 
                 if (!config.TestMode)
                 {
-                    var result = await octopusHelper.RemoveChannel(current.ChannelId);
+                    var result = await octopusHelper.Channels.RemoveChannel(current.ChannelId);
                     if (!result.Success)
                     {
                         failed.Add((current.ProjectName, current.ChannelName, result.Releases));

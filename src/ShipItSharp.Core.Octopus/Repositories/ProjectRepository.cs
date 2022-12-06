@@ -21,7 +21,7 @@ public class ProjectRepository : IProjectRepository
         var projects = await octoClient.client.Repository.Projects.GetAll(CancellationToken.None);
         var converted = new List<ProjectStub>();
         foreach (var project in projects) {
-            octoClient.memoryCache.CacheObject(project.Id, project);
+            octoClient.cacheProvider.CacheObject(project.Id, project);
             converted.Add(ConvertProject(project));
         }
         return converted;
@@ -85,11 +85,11 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<ProjectResource> GetProject(string projectId)
     {
-        var cached = octoClient.memoryCache.GetCachedObject<ProjectResource>(projectId);
+        var cached = octoClient.cacheProvider.GetCachedObject<ProjectResource>(projectId);
         if (cached == default(ProjectResource))
         {
             var project = await octoClient.client.Repository.Projects.Get(projectId, CancellationToken.None);
-            octoClient.memoryCache.CacheObject(project.Id, project);
+            octoClient.cacheProvider.CacheObject(project.Id, project);
             return project;
         }
         return cached;

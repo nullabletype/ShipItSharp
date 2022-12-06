@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Models.Variables;
+using ShipItSharp.Core.Octopus.Repositories;
 using static ShipItSharp.Core.Octopus.OctopusHelper;
 
 namespace ShipItSharp.Core.Octopus.Interfaces
@@ -34,7 +35,8 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         IPackageRepository Packages { get; }
         IProjectRepository Projects { get; }
         IVariableRepository Variables { get; }
-        
+        IChannelRepository Channels { get; }
+
         void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
         Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId);
         Task<List<Environment>> GetEnvironments();
@@ -43,10 +45,6 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         Task<Environment> CreateEnvironment(string name, string description);
         Task<IEnumerable<Environment>> GetEnvironments(string[] idOrNames);
         Task DeleteEnvironment(string idOrhref);
-        Task<Channel> GetChannelByName(string projectIdOrName, string channelName);
-        Task<List<Channel>> GetChannelsForProject(string projectIdOrHref, int take = 30);
-        Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName);
-        Task<(bool Success, IEnumerable<Release> Releases)> RemoveChannel(string channelId);
         Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter);
         Task<Release> GetRelease(string releaseIdOrHref);
         Task<TaskDetails> GetTaskDetails(string taskId);

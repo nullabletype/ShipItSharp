@@ -99,13 +99,13 @@ public class PackageRepository : IPackageRepository
         {
             if (package != null && !string.IsNullOrEmpty(package.PackageId))
             {
-                var template = octopusHelper.memoryCache.GetCachedObject<Href>("feeds-builtin");
+                var template = octopusHelper.cacheProvider.GetCachedObject<Href>("feeds-builtin");
 
                 if (template == null)
                 {
                     template =
                         (await octopusHelper.client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["SearchTemplate"];
-                    octopusHelper.memoryCache.CacheObject("feeds-builtin", template);
+                    octopusHelper.cacheProvider.CacheObject("feeds-builtin", template);
                 }
 
                 var param = (dynamic)new

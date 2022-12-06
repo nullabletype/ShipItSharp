@@ -92,7 +92,7 @@ namespace ShipItSharp.Console {
                             {
                                 if (defaultPackages == null) 
                                 {
-                                    var defaultChannel = await this.helper.GetChannelByName(project.ProjectId, configuration.DefaultChannel);
+                                    var defaultChannel = await this.helper.Channels.GetChannelByName(project.ProjectId, configuration.DefaultChannel);
                                     defaultPackages = await this.helper.Packages.GetPackages(project.ProjectId, defaultChannel.VersionRange, defaultChannel.VersionTag);
                                     //  We're now using the default channel, so update the project release to have the correct channel info for the deployment.
                                     project.ChannelId = defaultChannel.Id;

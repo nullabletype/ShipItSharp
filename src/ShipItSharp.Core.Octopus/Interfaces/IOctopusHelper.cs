@@ -32,7 +32,7 @@ namespace ShipItSharp.Core.Octopus.Interfaces
 {
     public interface IOctopusHelper
     {
-        void SetCacheImplementation(IMemoryCache cache, int cacheTimeout);
+        void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
         Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, int take = 5);
         Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId);
         Task<List<Environment>> GetEnvironments();

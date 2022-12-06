@@ -21,7 +21,6 @@
 #endregion
 
 
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Xml.Serialization;
@@ -41,13 +40,12 @@ namespace ShipItSharp.Core.Utilities
             var handler = new HttpClientHandler { Credentials = credentials, PreAuthenticate = true };
             var client = new HttpClient(handler);
 
-            using (Stream stream = client.GetStreamAsync(url).GetAwaiter().GetResult())
+            using (var stream = client.GetStreamAsync(url).GetAwaiter().GetResult())
             {
                 var serializer = new XmlSerializer(typeof(T));
-                if (stream != null)
+                if (stream.CanRead)
                 {
-                    var document = (T)serializer.Deserialize(stream);
-                    return document;
+                    return (T)serializer.Deserialize(stream);
                 }
             }
             return default(T);

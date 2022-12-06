@@ -48,6 +48,7 @@ using ShipItSharp.Core.Language;
 using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using MemoryCache = ShipItSharp.Core.Octopus.MemoryCache;
 
 namespace ShipItSharp.Console
 {
@@ -131,7 +132,7 @@ namespace ShipItSharp.Console
 
             var serviceProvider = container.BuildServiceProvider();
             //Temporary filth
-            serviceProvider.GetService<IOctopusHelper>().SetCacheImplementation(serviceProvider.GetService<IMemoryCache>(), configurationLoadResult.Configuration.CacheTimeoutInSeconds);
+            serviceProvider.GetService<IOctopusHelper>().SetCacheImplementation(serviceProvider.GetService<ICacheObjects>(), configurationLoadResult.Configuration.CacheTimeoutInSeconds);
 
             var versionChecker = serviceProvider.GetService<IVersionChecker>();
             var checkResult = await versionChecker.GetLatestVersion();
@@ -200,7 +201,8 @@ namespace ShipItSharp.Console
             .AddTransient<PromotionRunner, PromotionRunner>()
             .AddTransient<DeployRunner, DeployRunner>()
             .AddTransient<DeploySpecificRunner, DeploySpecificRunner>()
-            .AddTransient<ChannelsRunner, ChannelsRunner>();
+            .AddTransient<ChannelsRunner, ChannelsRunner>()
+            .AddTransient<ICacheObjects, MemoryCache>();
         }
     }
 }

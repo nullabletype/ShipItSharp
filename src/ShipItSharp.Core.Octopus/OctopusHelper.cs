@@ -40,27 +40,25 @@ namespace ShipItSharp.Core.Octopus
     public class OctopusHelper : IOctopusHelper 
     {
         private IOctopusAsyncClient client;
-        private IMemoryCache cache;
-        private int cacheTimeout = 20;
         public static IOctopusHelper Default;
+        private ICacheObjects memoryCache;
 
-        public OctopusHelper() { }
-
-        public OctopusHelper(string url, string apiKey, IMemoryCache memoryCache) 
-        { 
-            this.client = InitClient(url, apiKey);
-            cache = memoryCache;
-        }
-
-        public OctopusHelper(IOctopusAsyncClient client, IMemoryCache memoryCache = null)
+        public OctopusHelper(string url, string apiKey, ICacheObjects memoryCache) 
         {
-            this.client = client;
-            cache = memoryCache;
+            this.memoryCache = memoryCache;
+            this.client = InitClient(url, apiKey);
         }
 
-        public static IOctopusHelper Init(string url, string apikey, IMemoryCache memoryCache = null) {
+        public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
+        {
+            SetCacheImplementationInternal(memoryCache);
+            this.client = client;
+        }
+
+        public static IOctopusHelper Init(string url, string apikey, ICacheObjects memoryCache = null) {
             var client = InitClient(url, apikey);
             Default = new OctopusHelper(client, memoryCache);
+            Default.SetCacheImplementation(memoryCache, 1);
             return Default;
         }
 
@@ -71,14 +69,15 @@ namespace ShipItSharp.Core.Octopus
             return client;
         }
 
-        public void SetCacheImplementation(IMemoryCache memoryCache, int cacheTimeoutToSet)
+        public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
         {
-            this.cache = memoryCache;
-            this.cacheTimeout = cacheTimeoutToSet;
-            if (cacheTimeoutToSet < 1)
-            {
-                this.cacheTimeout = 1;
-            }
+            SetCacheImplementationInternal(memoryCache);
+            memoryCache.SetCacheTimeout(cacheTimeoutToSet);
+        }
+        
+        private void SetCacheImplementationInternal(ICacheObjects memoryCache)
+        {
+            this.memoryCache = memoryCache ?? new NoCache();
         }
 
         public async Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, int take = 5) 
@@ -86,7 +85,7 @@ namespace ShipItSharp.Core.Octopus
             return await GetPackages(await GetProject(projectIdOrHref), versionRange, tag, take);
         }
 
-        private async Task<PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName) 
+        private async Task<OctopusHelper.PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName) 
         {
             var process = await GetDeploymentProcess(project.DeploymentProcessId);
             if (process != null) {
@@ -103,7 +102,7 @@ namespace ShipItSharp.Core.Octopus
                                 var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
                                 if (!string.IsNullOrEmpty(packageId)) 
                                 {
-                                    return new PackageIdResult 
+                                    return new OctopusHelper.PackageIdResult 
                                     {
                                         PackageId = packageId,
                                         StepName = step.Name,
@@ -119,9 +118,9 @@ namespace ShipItSharp.Core.Octopus
             return null;
         }
 
-        private async Task<IList<PackageIdResult>> GetPackages(ProjectResource project)
+        private async Task<IList<OctopusHelper.PackageIdResult>> GetPackages(ProjectResource project)
         {
-            var results = new List<PackageIdResult>();
+            var results = new List<OctopusHelper.PackageIdResult>();
             var process = await GetDeploymentProcess(project.DeploymentProcessId);
             if (process != null)
             {
@@ -138,7 +137,7 @@ namespace ShipItSharp.Core.Octopus
                                 var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
                                 if (!string.IsNullOrEmpty(packageId))
                                 {
-                                    results.Add(new PackageIdResult
+                                    results.Add(new OctopusHelper.PackageIdResult
                                     {
                                         PackageId = packageId,
                                         StepName = step.Name,
@@ -162,13 +161,13 @@ namespace ShipItSharp.Core.Octopus
             {
                 if (package != null && !string.IsNullOrEmpty(package.PackageId))
                 {
-                    var template = GetCachedObject<Href>("feeds-builtin");
+                    var template = memoryCache.GetCachedObject<Href>("feeds-builtin");
 
                     if (template == null)
                     {
                         template =
                             (await client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["SearchTemplate"];
-                        CacheObject("feeds-builtin", template);
+                        memoryCache.CacheObject("feeds-builtin", template);
                     }
 
                     var param = (dynamic)new
@@ -203,7 +202,7 @@ namespace ShipItSharp.Core.Octopus
             if (deployment != null) 
             {
                 var release = await GetReleaseInternal(deployment.ReleaseId);
-                if (release != null) 
+                if (release != null)
                 {
                     return (Release: await this.ConvertRelease(release), Deployment: this.ConvertDeployment(deployment));
                 }
@@ -283,7 +282,7 @@ namespace ShipItSharp.Core.Octopus
             var projects = await client.Repository.Projects.GetAll(CancellationToken.None);
             var converted = new List<ProjectStub>();
             foreach (var project in projects) {
-                CacheObject(project.Id, project);
+                memoryCache.CacheObject(project.Id, project);
                 converted.Add(ConvertProject(project));
             }
             return converted.OrderBy(project => project.ProjectName).ToList();
@@ -879,11 +878,11 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)
         {
-            var cached = GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
+            var cached = memoryCache.GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
             if (cached == default(DeploymentProcessResource))
             {
                 var deployment = await client.Repository.DeploymentProcesses.Get(deploymentProcessId, CancellationToken.None);
-                CacheObject(deployment.Id, deployment);
+                memoryCache.CacheObject(deployment.Id, deployment);
                 return deployment;
             }
             return cached;
@@ -891,11 +890,11 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<ProjectResource> GetProject(string projectId)
         {
-            var cached = GetCachedObject<ProjectResource>(projectId);
+            var cached = memoryCache.GetCachedObject<ProjectResource>(projectId);
             if (cached == default(ProjectResource))
             {
                 var project = await client.Repository.Projects.Get(projectId, CancellationToken.None);
-                CacheObject(project.Id, project);
+                memoryCache.CacheObject(project.Id, project);
                 return project;
             }
             return cached;
@@ -903,33 +902,14 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<ReleaseResource> GetReleaseInternal(string releaseId)
         {
-            var cached = GetCachedObject<ReleaseResource>(releaseId);
+            var cached = memoryCache.GetCachedObject<ReleaseResource>(releaseId);
             if (cached == default(ReleaseResource))
             {
                 var release = await client.Repository.Releases.Get(releaseId, CancellationToken.None);
-                CacheObject(release.Id, release);
+                memoryCache.CacheObject(release.Id, release);
                 return release;
             }
             return cached;
-        }
-
-        private T GetCachedObject<T>(string key)
-        {
-            if (cache != null && this.cache.TryGetValue(key + typeof(T).Name, out T cachedValue))
-            {
-                return cachedValue;
-            }
-            return default(T);
-        }
-
-        private void CacheObject<T>(string key, T value)
-        {
-            if(cache == null)
-            {
-                return;
-            }
-            var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(cacheTimeout));
-            cache.Set(key + typeof(T).Name, value, cacheEntryOptions);
         }
 
         private class PackageIdResult

@@ -85,7 +85,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                     .Select(g => g.Id).ToList();
             }
 
-            var projectStubs = await octoHelper.GetProjectStubs();
+            var projectStubs = await octoHelper.Projects.GetProjectStubs();
 
             var toRename = new List<ProjectRelease>();
 

@@ -63,7 +63,7 @@ namespace ShipItSharp.Console.Commands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-            var projectStubs = await octoHelper.GetProjectStubs();
+            var projectStubs = await octoHelper.Projects.GetProjectStubs();
 
             var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, languageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
             var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, languageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));

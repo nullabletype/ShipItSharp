@@ -109,7 +109,7 @@ namespace ShipItSharp.Core.Configuration
                     await octoHelper.GetEnvironments();
                     try 
                     {
-                        if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.ValidateProjectName(c)).Select(c => c.Result).All(c => c)) 
+                        if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.Projects.ValidateProjectName(c)).Select(c => c.Result).All(c => c)) 
                         {
                             validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid"));
                         }

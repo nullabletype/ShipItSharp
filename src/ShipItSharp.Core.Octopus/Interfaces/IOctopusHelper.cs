@@ -24,7 +24,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Models;
-using Microsoft.Extensions.Caching.Memory;
 using ShipItSharp.Core.Models.Variables;
 using static ShipItSharp.Core.Octopus.OctopusHelper;
 
@@ -32,8 +31,11 @@ namespace ShipItSharp.Core.Octopus.Interfaces
 {
     public interface IOctopusHelper
     {
+        IPackageRepository Packages { get; }
+        IProjectRepository Projects { get; }
+        IVariableRepository Variables { get; }
+        
         void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
-        Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, int take = 5);
         Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId);
         Task<List<Environment>> GetEnvironments();
         Task<List<Environment>> GetMatchingEnvironments(string keyword, bool extactMatch = false);
@@ -46,15 +48,12 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName);
         Task<(bool Success, IEnumerable<Release> Releases)> RemoveChannel(string channelId);
         Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter);
-        Task<Project> GetProject(string idOrHref, string environment, string channelRange, string tag);
         Task<Release> GetRelease(string releaseIdOrHref);
         Task<TaskDetails> GetTaskDetails(string taskId);
         Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take);
         Task<string> GetTaskRawLog(string taskId);
         Task<Release> CreateRelease(ProjectDeployment project, bool ignoreChannelRules = false);
         Task<Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId);
-        Task<List<ProjectStub>> GetProjectStubs();
-        Task<Project> ConvertProject(ProjectStub project, string env, string channelRange, string channelTag);
         Task<LifeCycle> GetLifeCycle(string idOrHref);
         Task<IEnumerable<Deployment>> GetDeployments(string releaseId);
         Task<(string error, bool success)> RenameRelease(string releaseId, string newReleaseVersion);
@@ -62,7 +61,6 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         Task RemoveEnvironmentsFromTeams(string envId);
         Task RemoveEnvironmentsFromLifecycles(string envId);
         Task AddEnvironmentToTeam(string envId, string teamId);
-        Task UpdateVariableSet(VariableSet varSet);
         Task<IEnumerable<Deployment>> GetDeployments(string[] deploymentIds);
         Task<(bool Success, LifecycleErrorType ErrorType, string Error)> AddEnvironmentToLifecyclePhase(string envId, string lcId, int phaseId, bool automatic);
         Task<Release> GetRelease(string name, Project project);

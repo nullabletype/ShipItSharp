@@ -86,7 +86,7 @@ namespace ShipItSharp.Console.Commands
                 System.Console.WriteLine(string.Format(languageProvider.GetString(LanguageSection.UiStrings, "GoingToSaveProfile"), profilePath));
             }
             progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-            var projectStubs = await octoHelper.GetProjectStubs();
+            var projectStubs = await octoHelper.Projects.GetProjectStubs();
             var found = projectStubs.Where(proj => configuration.ChannelSeedProjectNames.Select(c => c.ToLower()).Contains(proj.ProjectName.ToLower()));
 
             if (!found.Any())

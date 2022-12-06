@@ -142,7 +142,7 @@ namespace ShipItSharp.Core.JobRunners
                     }
                 }
 
-                var project = await helper.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.Channel.VersionRange, _currentConfig.Channel.VersionTag);
+                var project = await helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.Channel.VersionRange, _currentConfig.Channel.VersionTag);
                 var currentPackages = project.CurrentRelease.SelectedPackages;
                 project.Checked = false;
                 if (project.SelectedPackageStubs != null)
@@ -154,7 +154,7 @@ namespace ShipItSharp.Core.JobRunners
                         {
                             if (_currentConfig.DefaultFallbackChannel != null)
                             {
-                                project = await helper.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.DefaultFallbackChannel.VersionRange, _currentConfig.DefaultFallbackChannel.VersionTag);
+                                project = await helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.DefaultFallbackChannel.VersionRange, _currentConfig.DefaultFallbackChannel.VersionTag);
                                 stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == package.StepId).SelectedPackage;
                             }
                         }

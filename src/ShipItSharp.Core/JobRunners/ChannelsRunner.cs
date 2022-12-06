@@ -34,7 +34,7 @@ namespace ShipItSharp.Core.JobRunners
             if (!string.IsNullOrEmpty(config.GroupFilter))
             {
                 var groupIds = (await octopusHelper.GetFilteredProjectGroups(config.GroupFilter)).Select(g => g.Id);
-                var projectStubs = await octopusHelper.GetProjectStubs();
+                var projectStubs = await octopusHelper.Projects.GetProjectStubs();
 
                 foreach (var projectStub in projectStubs)
                 {
@@ -49,7 +49,7 @@ namespace ShipItSharp.Core.JobRunners
                     }
 
                     var channels = await octopusHelper.GetChannelsForProject(projectStub.ProjectId, 9999);
-                    var packageSteps = await octopusHelper.GetPackages(projectStub.ProjectId, null, null, 9999);
+                    var packageSteps = await octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, 9999);
                     var packages = packageSteps.SelectMany(p => p.AvailablePackages);
 
                     foreach (var channel in channels)

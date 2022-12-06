@@ -60,7 +60,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                     System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "UpdatingVariableSet"), varSet.Id, varSet.Variables.Count));
                     try 
                     {
-                        await octoHelper.UpdateVariableSet(varSet);
+                        await octoHelper.Variables.UpdateVariableSet(varSet);
                     } 
                     catch (Exception e) 
                     {

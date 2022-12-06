@@ -66,7 +66,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             if (found != null) 
             {
                 progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-                var projectStubs = await octoHelper.GetProjectStubs();
+                var projectStubs = await octoHelper.Projects.GetProjectStubs();
 
                 var groupIds = new List<string>();
                 if (!string.IsNullOrEmpty(groupFilter))

@@ -117,7 +117,7 @@ namespace ShipItSharp.Core.JobRunners
             var targetReleases = new List<Release>();
 
             progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-            var projectStubs = await helper.GetProjectStubs();
+            var projectStubs = await helper.Projects.GetProjectStubs();
 
             var groupIds = new List<string>();
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
@@ -142,7 +142,7 @@ namespace ShipItSharp.Core.JobRunners
                     }
                 }
 
-                var project = await helper.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
+                var project = await helper.Projects.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
 
                 var newRelease = await helper.GetRelease(this._currentConfig.ReleaseName, project);
 

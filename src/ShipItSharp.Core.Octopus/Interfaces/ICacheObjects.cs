@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-
-namespace ShipItSharp.Core.Octopus.Interfaces;
+﻿namespace ShipItSharp.Core.Octopus.Interfaces;
 
 public interface ICacheObjects
 {

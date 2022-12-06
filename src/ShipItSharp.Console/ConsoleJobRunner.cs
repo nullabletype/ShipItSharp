@@ -75,10 +75,10 @@ namespace ShipItSharp.Console {
                 {
                     var octoProject =
                         await
-                            this.helper.GetProject(project.ProjectId, job.EnvironmentId,
+                            this.helper.Projects.GetProject(project.ProjectId, job.EnvironmentId,
                                 project.ChannelVersionRange, project.ChannelVersionTag);
                         var packages =
-                        await this.helper.GetPackages(octoProject.ProjectId, project.ChannelVersionRange, project.ChannelVersionTag);
+                        await this.helper.Packages.GetPackages(octoProject.ProjectId, project.ChannelVersionRange, project.ChannelVersionTag);
                     IList<PackageStep> defaultPackages = null;
                     foreach (var package in project.Packages)
                     {
@@ -93,7 +93,7 @@ namespace ShipItSharp.Console {
                                 if (defaultPackages == null) 
                                 {
                                     var defaultChannel = await this.helper.GetChannelByName(project.ProjectId, configuration.DefaultChannel);
-                                    defaultPackages = await this.helper.GetPackages(project.ProjectId, defaultChannel.VersionRange, defaultChannel.VersionTag);
+                                    defaultPackages = await this.helper.Packages.GetPackages(project.ProjectId, defaultChannel.VersionRange, defaultChannel.VersionTag);
                                     //  We're now using the default channel, so update the project release to have the correct channel info for the deployment.
                                     project.ChannelId = defaultChannel.Id;
                                     project.ChannelName = defaultChannel.Name;

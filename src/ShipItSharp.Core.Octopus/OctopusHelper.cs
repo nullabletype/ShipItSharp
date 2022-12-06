@@ -30,27 +30,39 @@ using Octopus.Client;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
+using ShipItSharp.Core.Octopus.Repositories;
 using Environment = ShipItSharp.Core.Models.Environment;
-using Microsoft.Extensions.Caching.Memory;
-using Octopus.Client.Extensibility;
-using ShipItSharp.Core.Models.Variables;
 
 namespace ShipItSharp.Core.Octopus
 {
     public class OctopusHelper : IOctopusHelper 
     {
-        private IOctopusAsyncClient client;
+        internal IOctopusAsyncClient client;
         public static IOctopusHelper Default;
-        private ICacheObjects memoryCache;
+        internal ICacheObjects memoryCache;
+        internal readonly ProjectRepository ProjectsInternal;
+        internal readonly PackageRepository PackagesInternal;
+        internal readonly VariableRepository VariablesInternal;
+        
+        public IPackageRepository Packages => PackagesInternal;
+        public IProjectRepository Projects => ProjectsInternal;
+        public IVariableRepository Variables => VariablesInternal;
 
         public OctopusHelper(string url, string apiKey, ICacheObjects memoryCache) 
         {
+            VariablesInternal = new VariableRepository(this);
+            PackagesInternal = new PackageRepository(this);
+            ProjectsInternal = new ProjectRepository(this);
+            
             this.memoryCache = memoryCache;
             this.client = InitClient(url, apiKey);
         }
 
         public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
         {
+            VariablesInternal = new VariableRepository(this);
+            PackagesInternal = new PackageRepository(this);
+            ProjectsInternal = new ProjectRepository(this);
             SetCacheImplementationInternal(memoryCache);
             this.client = client;
         }
@@ -78,121 +90,6 @@ namespace ShipItSharp.Core.Octopus
         private void SetCacheImplementationInternal(ICacheObjects memoryCache)
         {
             this.memoryCache = memoryCache ?? new NoCache();
-        }
-
-        public async Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, int take = 5) 
-        {
-            return await GetPackages(await GetProject(projectIdOrHref), versionRange, tag, take);
-        }
-
-        private async Task<OctopusHelper.PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName) 
-        {
-            var process = await GetDeploymentProcess(project.DeploymentProcessId);
-            if (process != null) {
-                foreach (var step in process.Steps.Where(s => s.Name == stepName)) 
-                {
-                    foreach (var action in step.Actions.Where(a => a.Name == actionName)) 
-                    {
-                        if (action.Properties.ContainsKey("Octopus.Action.Package.FeedId") &&
-                            action.Properties["Octopus.Action.Package.FeedId"].Value == "feeds-builtin") 
-                        {
-                            if (action.Properties.ContainsKey("Octopus.Action.Package.PackageId") &&
-                                !string.IsNullOrEmpty(action.Properties["Octopus.Action.Package.PackageId"].Value)) 
-                            {
-                                var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
-                                if (!string.IsNullOrEmpty(packageId)) 
-                                {
-                                    return new OctopusHelper.PackageIdResult 
-                                    {
-                                        PackageId = packageId,
-                                        StepName = step.Name,
-                                        StepId = step.Id
-                                    };
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-            return null;
-        }
-
-        private async Task<IList<OctopusHelper.PackageIdResult>> GetPackages(ProjectResource project)
-        {
-            var results = new List<OctopusHelper.PackageIdResult>();
-            var process = await GetDeploymentProcess(project.DeploymentProcessId);
-            if (process != null)
-            {
-                foreach (var step in process.Steps)
-                {
-                    foreach (var action in step.Actions)
-                    {
-                        if (action.Properties.ContainsKey("Octopus.Action.Package.FeedId") &&
-                            action.Properties["Octopus.Action.Package.FeedId"].Value == "feeds-builtin")
-                        {
-                            if (action.Properties.ContainsKey("Octopus.Action.Package.PackageId") &&
-                                !string.IsNullOrEmpty(action.Properties["Octopus.Action.Package.PackageId"].Value))
-                            {
-                                var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
-                                if (!string.IsNullOrEmpty(packageId))
-                                {
-                                    results.Add(new OctopusHelper.PackageIdResult
-                                    {
-                                        PackageId = packageId,
-                                        StepName = step.Name,
-                                        StepId = step.Id
-                                    });
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-            return results;
-        }
-
-        private async Task<IList<PackageStep>> GetPackages(ProjectResource project, string versionRange, string tag, int take = 5) 
-        {
-            var packageIdResult = await this.GetPackages(project);
-            var allPackages = new List<PackageStep>();
-            foreach (var package in packageIdResult)
-            {
-                if (package != null && !string.IsNullOrEmpty(package.PackageId))
-                {
-                    var template = memoryCache.GetCachedObject<Href>("feeds-builtin");
-
-                    if (template == null)
-                    {
-                        template =
-                            (await client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["SearchTemplate"];
-                        memoryCache.CacheObject("feeds-builtin", template);
-                    }
-
-                    var param = (dynamic)new
-                    {
-                        packageId = package.PackageId,
-                        partialMatch = false,
-                        includeMultipleVersions = true,
-                        take,
-                        includePreRelease = true,
-                        versionRange,
-                        preReleaseTag = tag
-                    };
-
-                    var packages = await client.Get<List<PackageFromBuiltInFeedResource>>(template, param);
-
-                    var finalPackages = new List<PackageStub>();
-                    foreach (var currentPackage in packages)
-                    {
-                        finalPackages.Add(ConvertPackage(currentPackage, package.StepName));
-                    }
-                    allPackages.Add(new PackageStep { AvailablePackages = finalPackages, StepName = package.StepName, StepId = package.StepId });
-                }
-            }
-
-            return allPackages;
         }
 
         public async Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId) 
@@ -277,28 +174,6 @@ namespace ShipItSharp.Core.Octopus
             return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
         }
 
-        public async Task<List<ProjectStub>> GetProjectStubs() 
-        {
-            var projects = await client.Repository.Projects.GetAll(CancellationToken.None);
-            var converted = new List<ProjectStub>();
-            foreach (var project in projects) {
-                memoryCache.CacheObject(project.Id, project);
-                converted.Add(ConvertProject(project));
-            }
-            return converted.OrderBy(project => project.ProjectName).ToList();
-        }
-
-        public async Task<Project> GetProject(string idOrHref, string environment, string channelRange, string tag) 
-        {
-            return await ConvertProject(await GetProject(idOrHref), environment, channelRange, tag);
-        }
-
-        public async Task<bool> ValidateProjectName(string name) 
-        {
-            var project = await client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
-            return project != null;
-        }
-
         public async Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName) 
         {
             var project = await client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
@@ -307,13 +182,13 @@ namespace ShipItSharp.Core.Octopus
 
         public async Task<Channel> GetChannelByName(string projectIdOrName, string channelName) 
         {
-            var project = await GetProject(projectIdOrName);
+            var project = await ProjectsInternal.GetProject(projectIdOrName);
             return ConvertChannel(await client.Repository.Channels.FindByName(project, channelName));
         }
 
         public async Task<List<Channel>> GetChannelsForProject(string projectIdOrHref, int take = 30) 
         {
-            var project = await GetProject(projectIdOrHref);
+            var project = await ProjectsInternal.GetProject(projectIdOrHref);
             var channels = await client.List<ChannelResource>(project.Link("Channels"), new { take = 9999 }, CancellationToken.None);
             return channels.Items.Select(ConvertChannel).ToList();
         }
@@ -382,24 +257,6 @@ namespace ShipItSharp.Core.Octopus
         public async Task<LifeCycle> GetLifeCycle(string idOrHref) 
         {
             return ConvertLifeCycle(await client.Repository.Lifecycles.Get(idOrHref, CancellationToken.None));
-        }
-
-        public async Task<PackageFull> GetFullPackage(PackageStub stub) 
-        {
-            var package = new PackageFull {
-                Id = stub.Id,
-                Version = stub.Version,
-                StepName = stub.StepName
-            };
-            var template = (await client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["NotesTemplate"];
-            package.Message =
-                await
-                    client.Get<string>(template,
-                        new {
-                            packageId = stub.Id,
-                            version = stub.Version
-                        }, CancellationToken.None);
-            return package;
         }
 
         public async Task<Release> CreateRelease(ProjectDeployment project, bool ignoreChannelRules = false) 
@@ -673,38 +530,7 @@ namespace ShipItSharp.Core.Octopus
 
             return (string.Empty, true);
         }
-
-        public async Task UpdateVariableSet(VariableSet varSet) 
-        {
-            var id = varSet.Id;
-            if (varSet.IdType == VariableSet.VariableIdTypes.Library) 
-            {
-                id = (await client.Repository.LibraryVariableSets.Get(id, CancellationToken.None)).VariableSetId;
-            }
-            var set = await client.Repository.VariableSets.Get(id, CancellationToken.None);
-            foreach(var variable in varSet.Variables) 
-            {
-                var scope = new ScopeSpecification();
-
-                if (variable.EnvironmentIds.Any()) 
-                {
-                    scope.Add(ScopeField.Environment, new ScopeValue(variable.EnvironmentIds));
-                }
-                if (variable.TargetIds.Any()) 
-                {
-                    scope.Add(ScopeField.Machine, new ScopeValue(variable.TargetIds));
-                }
-                if (variable.RoleIds.Any()) 
-                {
-                    scope.Add(ScopeField.Role, new ScopeValue(variable.RoleIds));
-                }
-
-                set.AddOrUpdateVariableValue(variable.Key, variable.Value, scope);
-            }
-
-            await client.Repository.VariableSets.Modify(set, CancellationToken.None);
-        }
-
+        
         private Environment ConvertEnvironment(EnvironmentResource env)
         {
             return new Environment {Id = env.Id, Name = env.Name};
@@ -720,71 +546,6 @@ namespace ShipItSharp.Core.Octopus
                 LastModifiedBy = dep.LastModifiedBy,
                 LastModifiedOn = dep.LastModifiedOn,
                 Created = dep.Created
-            };
-        }
-
-        public async Task<Project> ConvertProject(ProjectStub project, string env, string channelRange, string tag)
-        {
-            var projectRes = await this.GetProject(project.ProjectId);
-            var packages = channelRange == null ? null : await this.GetPackages(projectRes, channelRange, tag);
-            List<RequiredVariable> requiredVariables = await GetVariables(projectRes.VariableSetId);
-            return new Project {
-                CurrentRelease = (await this.GetReleasedVersion(project.ProjectId, env)).Release,
-                ProjectName = project.ProjectName,
-                ProjectId = project.ProjectId,
-                Checked = true,
-                ProjectGroupId = project.ProjectGroupId,
-                AvailablePackages = packages,
-                LifeCycleId = project.LifeCycleId,
-                RequiredVariables = requiredVariables
-            };
-        }
-
-        private async Task<Project> ConvertProject(ProjectResource project, string env, string channelRange, string tag)
-        {
-            var packages = await this.GetPackages(project, channelRange, tag);
-            List<RequiredVariable> requiredVariables = await GetVariables(project.VariableSetId);
-            return new Project
-            {
-                CurrentRelease = (await this.GetReleasedVersion(project.Id, env)).Release,
-                ProjectName = project.Name,
-                ProjectId = project.Id,
-                Checked = true,
-                ProjectGroupId = project.ProjectGroupId,
-                AvailablePackages = packages,
-                LifeCycleId = project.LifecycleId,
-                RequiredVariables = requiredVariables
-            };
-        }
-
-        private async Task<List<RequiredVariable>> GetVariables(string variableSetId)
-        {
-            var variables = await this.client.Repository.VariableSets.Get(variableSetId, CancellationToken.None);
-            var requiredVariables = new List<RequiredVariable>();
-            foreach (var variable in variables.Variables)
-            {
-                if (variable.Prompt != null && variable.Prompt.Required)
-                {
-                    var requiredVariable = new RequiredVariable { Name = variable.Name, Type = variable.Type.ToString(), Id = variable.Id };
-                    if (variable.Prompt.DisplaySettings.ContainsKey("Octopus.SelectOptions"))
-                    {
-                        requiredVariable.ExtraOptions = string.Join(", ", variable.Prompt.DisplaySettings["Octopus.SelectOptions"].Split('\n').Select(s => s.Split('|')[0]));
-                    }
-                    requiredVariables.Add(requiredVariable);
-                }
-            }
-
-            return requiredVariables;
-        }
-
-        private ProjectStub ConvertProject(ProjectResource project) 
-        {
-            return new ProjectStub {
-                ProjectName = project.Name,
-                ProjectId = project.Id,
-                Checked = true,
-                ProjectGroupId = project.ProjectGroupId,
-                LifeCycleId = project.LifecycleId
             };
         }
 
@@ -848,10 +609,10 @@ namespace ShipItSharp.Core.Octopus
 
         private async Task<Release> ConvertRelease(ReleaseResource release)
         {
-            var project = await GetProject(release.ProjectId);
+            var project = await ProjectsInternal.GetProject(release.ProjectId);
             var packages =
                 release.SelectedPackages.Select(
-                    async p => await ConvertPackage(project, p)).Select(t => t.Result).ToList();
+                    async p => await PackagesInternal.ConvertPackage(project, p)).Select(t => t.Result).ToList();
             return new Release
             {
                 Id = release.Id,
@@ -865,18 +626,7 @@ namespace ShipItSharp.Core.Octopus
             };
         }
 
-        private async Task<PackageStub> ConvertPackage(ProjectResource project, SelectedPackage package)
-        {
-            var packageDetails = await GetPackageId(project, package.ActionName, package.ActionName);
-            return new PackageStub { Version = package.Version, StepName = packageDetails.StepName, StepId = packageDetails.StepId, Id = packageDetails.PackageId };
-        }
-
-        private PackageStub ConvertPackage(PackageResource package, string stepName)
-        {
-            return new PackageStub {Id = package.PackageId, Version = package.Version, StepName = stepName, PublishedOn = package.Published.HasValue ? package.Published.Value.LocalDateTime : null };
-        }
-
-        private async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)
+        internal async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)
         {
             var cached = memoryCache.GetCachedObject<DeploymentProcessResource>(deploymentProcessId);
             if (cached == default(DeploymentProcessResource))
@@ -884,18 +634,6 @@ namespace ShipItSharp.Core.Octopus
                 var deployment = await client.Repository.DeploymentProcesses.Get(deploymentProcessId, CancellationToken.None);
                 memoryCache.CacheObject(deployment.Id, deployment);
                 return deployment;
-            }
-            return cached;
-        }
-
-        private async Task<ProjectResource> GetProject(string projectId)
-        {
-            var cached = memoryCache.GetCachedObject<ProjectResource>(projectId);
-            if (cached == default(ProjectResource))
-            {
-                var project = await client.Repository.Projects.Get(projectId, CancellationToken.None);
-                memoryCache.CacheObject(project.Id, project);
-                return project;
             }
             return cached;
         }
@@ -910,13 +648,6 @@ namespace ShipItSharp.Core.Octopus
                 return release;
             }
             return cached;
-        }
-
-        private class PackageIdResult
-        {
-            public string PackageId { get; set; }
-            public string StepName { get; set; }
-            public string StepId { get; set; }
         }
 
         public enum LifecycleErrorType 

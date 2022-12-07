@@ -144,11 +144,11 @@ namespace ShipItSharp.Core.JobRunners
 
                 var project = await helper.Projects.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
 
-                var newRelease = await helper.GetRelease(this._currentConfig.ReleaseName, project);
+                var newRelease = await helper.Releases.GetRelease(this._currentConfig.ReleaseName, project);
 
                 if (newRelease == null && this._currentConfig.FallbackToDefaultChannel)
                 {
-                    newRelease = await helper.GetLatestRelease(project, this._currentConfig.DefaultFallbackChannel);
+                    newRelease = await helper.Releases.GetLatestRelease(project, this._currentConfig.DefaultFallbackChannel);
                 }
 
                 var currentRelease = project.CurrentRelease;

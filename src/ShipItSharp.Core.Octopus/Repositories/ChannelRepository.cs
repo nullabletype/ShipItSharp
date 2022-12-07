@@ -47,7 +47,7 @@ public class ChannelRepository : IChannelRepository
             return (true, null);
         }
 
-        return (false, allReleases.Select(async r => await octopusHelper.ConvertRelease(r)).Select(t => t.Result));
+        return (false, allReleases.Select(async r => await octopusHelper.ReleasesInternal.ConvertRelease(r)).Select(t => t.Result));
     }
 
     private Channel ConvertChannel(ChannelResource channel)

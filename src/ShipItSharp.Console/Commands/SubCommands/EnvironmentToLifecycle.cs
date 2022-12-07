@@ -74,7 +74,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             try 
             {
-                await octoHelper.AddEnvironmentToLifecyclePhase(environmentId, lcId, phaseId -1, auto);
+                await octoHelper.LifeCycles.AddEnvironmentToLifecyclePhase(environmentId, lcId, phaseId -1, auto);
             }
             catch (Exception e) 
             {

@@ -25,7 +25,7 @@ public class PackageRepository : IPackageRepository
 
     internal async Task<PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName) 
     {
-        var process = await octopusHelper.GetDeploymentProcess(project.DeploymentProcessId);
+        var process = await octopusHelper.DeploymentsInternal.GetDeploymentProcess(project.DeploymentProcessId);
         if (process != null) {
             foreach (var step in process.Steps.Where(s => s.Name == stepName)) 
             {
@@ -59,7 +59,7 @@ public class PackageRepository : IPackageRepository
     internal async Task<IList<PackageIdResult>> GetPackages(ProjectResource project)
     {
         var results = new List<PackageIdResult>();
-        var process = await octopusHelper.GetDeploymentProcess(project.DeploymentProcessId);
+        var process = await octopusHelper.DeploymentsInternal.GetDeploymentProcess(project.DeploymentProcessId);
         if (process != null)
         {
             foreach (var step in process.Steps)

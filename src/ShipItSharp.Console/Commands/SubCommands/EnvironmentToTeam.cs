@@ -64,7 +64,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             try 
             {
-                await octoHelper.AddEnvironmentToTeam(environmentId, teamId);
+                await octoHelper.Teams.AddEnvironmentToTeam(environmentId, teamId);
             }
             catch (Exception e) 
             {

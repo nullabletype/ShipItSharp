@@ -91,7 +91,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                         }
                     }
 
-                    var release = await octoHelper.GetReleasedVersion(projectStub.ProjectId, found.Id);
+                    var release = await octoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, found.Id);
 
                     table.AddRow(projectStub.ProjectName, release.Release.Version);
                 }

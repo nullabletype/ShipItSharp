@@ -21,12 +21,7 @@
 #endregion
 
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using ShipItSharp.Core.Models;
-using ShipItSharp.Core.Models.Variables;
-using ShipItSharp.Core.Octopus.Repositories;
-using static ShipItSharp.Core.Octopus.OctopusHelper;
 
 namespace ShipItSharp.Core.Octopus.Interfaces
 {
@@ -37,25 +32,11 @@ namespace ShipItSharp.Core.Octopus.Interfaces
         IVariableRepository Variables { get; }
         IChannelRepository Channels { get; }
         IEnvironmentRepository Environments { get; }
+        IReleaseRepository Releases { get; }
+        IDeploymentRepository Deployments { get; }
+        ILifeCycleRepository LifeCycles { get; }
+        ITeamsRepository Teams { get; }
 
         void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
-        Task<(Release Release, Deployment Deployment)> GetReleasedVersion(string projectId, string envId);
-        Task<Release> GetRelease(string releaseIdOrHref);
-        Task<TaskDetails> GetTaskDetails(string taskId);
-        Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take);
-        Task<string> GetTaskRawLog(string taskId);
-        Task<Release> CreateRelease(ProjectDeployment project, bool ignoreChannelRules = false);
-        Task<Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId);
-        Task<LifeCycle> GetLifeCycle(string idOrHref);
-        Task<IEnumerable<Deployment>> GetDeployments(string releaseId);
-        Task<(string error, bool success)> RenameRelease(string releaseId, string newReleaseVersion);
-        Task<bool> UpdateReleaseVariables(string releaseId);
-        Task RemoveEnvironmentsFromTeams(string envId);
-        Task RemoveEnvironmentsFromLifecycles(string envId);
-        Task AddEnvironmentToTeam(string envId, string teamId);
-        Task<IEnumerable<Deployment>> GetDeployments(string[] deploymentIds);
-        Task<(bool Success, LifecycleErrorType ErrorType, string Error)> AddEnvironmentToLifecyclePhase(string envId, string lcId, int phaseId, bool automatic);
-        Task<Release> GetRelease(string name, Project project);
-        Task<Release> GetLatestRelease(Project project, string channelName);
     }
 }

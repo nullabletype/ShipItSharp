@@ -45,7 +45,7 @@ public class ProjectRepository : IProjectRepository
         List<RequiredVariable> requiredVariables = await octoClient.VariablesInternal.GetVariables(project.VariableSetId);
         return new Project
         {
-            CurrentRelease = (await octoClient.GetReleasedVersion(project.Id, env)).Release,
+            CurrentRelease = (await octoClient.ReleasesInternal.GetReleasedVersion(project.Id, env)).Release,
             ProjectName = project.Name,
             ProjectId = project.Id,
             Checked = true,
@@ -73,7 +73,7 @@ public class ProjectRepository : IProjectRepository
         var packages = channelRange == null ? null : await octoClient.PackagesInternal.GetPackages(projectRes, channelRange, tag);
         List<RequiredVariable> requiredVariables = await octoClient.VariablesInternal.GetVariables(projectRes.VariableSetId);
         return new Project {
-            CurrentRelease = (await octoClient.GetReleasedVersion(project.ProjectId, env)).Release,
+            CurrentRelease = (await octoClient.ReleasesInternal.GetReleasedVersion(project.ProjectId, env)).Release,
             ProjectName = project.ProjectName,
             ProjectId = project.ProjectId,
             Checked = true,

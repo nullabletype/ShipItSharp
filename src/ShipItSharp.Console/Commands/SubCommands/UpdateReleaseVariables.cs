@@ -95,7 +95,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                     }
                 }
 
-                var release = (await this.octoHelper.GetReleasedVersion(projectStub.ProjectId, environment.Id)).Release;
+                var release = (await this.octoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, environment.Id)).Release;
                 if (release != null && !release.Version.Equals("none", StringComparison.InvariantCultureIgnoreCase))
                 {
                     toUpdate.Add(new ProjectRelease { Release = release, ProjectStub = projectStub});
@@ -119,7 +119,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 foreach (var release in toUpdate)
                 {
                     System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Processing"), release.ProjectStub.ProjectName);
-                    var result = await this.octoHelper.UpdateReleaseVariables(release.Release.Id);
+                    var result = await this.octoHelper.Releases.UpdateReleaseVariables(release.Release.Id);
                     if (result)
                     {
                         System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Done"), release.ProjectStub.ProjectName);

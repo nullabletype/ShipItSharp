@@ -55,7 +55,7 @@ namespace ShipItSharp.Core.Deployment {
         {
             foreach (var project in deployment.ProjectDeployments)
             {
-                var lifeCyle = await this.helper.GetLifeCycle(project.LifeCycleId);
+                var lifeCyle = await this.helper.LifeCycles.GetLifeCycle(project.LifeCycleId);
                 if (lifeCyle.Phases.Any())
                 {
                     var safe = false;
@@ -76,7 +76,7 @@ namespace ShipItSharp.Core.Deployment {
                     if (!safe)
                     {
                         var phaseCheck = true;
-                        var deployments = await this.helper.GetDeployments(project.ReleaseId);
+                        var deployments = await this.helper.Deployments.GetDeployments(project.ReleaseId);
                         var previousEnvs = deployments.Select(d => d.EnvironmentId);
                         foreach(var phase in lifeCyle.Phases)
                         {
@@ -141,19 +141,19 @@ namespace ShipItSharp.Core.Deployment {
                 if (string.IsNullOrEmpty(project.ReleaseId))
                 {
                     uiLogger.WriteLine("Creating a release for project " + project.ProjectName + "... ");
-                    result = await helper.CreateRelease(project, deployment.FallbackToDefaultChannel);
+                    result = await helper.Releases.CreateRelease(project, deployment.FallbackToDefaultChannel);
                 }
                 else
                 {
                     uiLogger.WriteLine("Fetching existing release for project " + project.ProjectName + "... ");
-                    result = await helper.GetRelease(project.ReleaseId);
+                    result = await helper.Releases.GetRelease(project.ReleaseId);
                 }
 
                 uiLogger.WriteLine("Creating deployment task for " + result.Version + " to " + deployment.EnvironmentName);
-                var deployResult = await helper.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id);
+                var deployResult = await helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id);
                 uiLogger.WriteLine("Created");
 
-                var taskDeets = await helper.GetTaskDetails(deployResult.TaskId);
+                var taskDeets = await helper.Deployments.GetTaskDetails(deployResult.TaskId);
                 //taskDeets = await StartDeployment(uiLogger, taskDeets, !deployment.DeployAsync);
                 if (deployment.DeployAsync) 
                 {
@@ -168,8 +168,8 @@ namespace ShipItSharp.Core.Deployment {
                     }
                     uiLogger.WriteLine("Deployed!");
                     uiLogger.WriteLine("Full Log: " + System.Environment.NewLine +
-                                     await this.helper.GetTaskRawLog(taskDeets.TaskId));
-                    taskDeets = await helper.GetTaskDetails(deployResult.TaskId);
+                                     await this.helper.Deployments.GetTaskRawLog(taskDeets.TaskId));
+                    taskDeets = await helper.Deployments.GetTaskDetails(deployResult.TaskId);
                 }
             }
 
@@ -209,7 +209,7 @@ namespace ShipItSharp.Core.Deployment {
 
             while (!done) 
             {
-                var tasks = await this.helper.GetDeploymentTasks(0, 100);
+                var tasks = await this.helper.Deployments.GetDeploymentTasks(0, 100);
                 foreach (var currentTask in taskRegister.ToList()) 
                 {
                     var found = tasks.FirstOrDefault(t => t.TaskId == currentTask.Key);
@@ -223,7 +223,7 @@ namespace ShipItSharp.Core.Deployment {
                     {
                         if (found.State == Models.TaskStatus.Done) 
                         {
-                            var finishedTask = await this.helper.GetTaskDetails(found.TaskId);
+                            var finishedTask = await this.helper.Deployments.GetTaskDetails(found.TaskId);
                             var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
                             uiLogger.WriteLine($"{project.ProjectName} deployed successfully");
@@ -231,7 +231,7 @@ namespace ShipItSharp.Core.Deployment {
                         }
                         else if (found.State == Models.TaskStatus.Failed) 
                         {
-                            var finishedTask = await this.helper.GetTaskDetails(found.TaskId);
+                            var finishedTask = await this.helper.Deployments.GetTaskDetails(found.TaskId);
                             var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
                             uiLogger.WriteLine($"{currentTask.Key} failed to deploy with error: {found.ErrorMessage}");
@@ -262,7 +262,7 @@ namespace ShipItSharp.Core.Deployment {
                 {
                     await Task.Delay(1000);
                 }
-                taskDeets = await this.helper.GetTaskDetails(taskDeets.TaskId);
+                taskDeets = await this.helper.Deployments.GetTaskDetails(taskDeets.TaskId);
             }
             while (doWait && (taskDeets.State == Models.TaskStatus.InProgress || taskDeets.State == Models.TaskStatus.Queued));
             return taskDeets;

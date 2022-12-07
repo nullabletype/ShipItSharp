@@ -25,12 +25,19 @@ using ShipItSharp.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ShipItSharp.Console.ConsoleTools {
     internal class ConsoleProgressBar : IProgressBar {
 
-        private int status = 0;
-        private string[] clocks = new string[] {"\\", "|", "/", "-"};
+        private int status;
+        private int currentItem;
+        private int totalItems;
+        private string[] clocks = {"\\", "|", "/", "-"};
+        private string currentMessage = string.Empty;
+        private bool spinning;
+        private CancellationTokenSource cancelToken;
 
         public void WriteStatusLine(string status) 
         {
@@ -46,6 +53,11 @@ namespace ShipItSharp.Console.ConsoleTools {
 
         public void CleanCurrentLine() 
         {
+            if (cancelToken != null && spinning)
+            {
+                cancelToken.Cancel();
+            }
+
             var builder = new StringBuilder("\r");
             while (builder.Length < System.Console.BufferWidth) 
             {
@@ -56,35 +68,79 @@ namespace ShipItSharp.Console.ConsoleTools {
             System.Console.SetCursorPosition(0, System.Console.CursorTop);
         }
 
-        public void WriteProgress(int current, int total, string message) 
+        public void StopAnimation()
         {
-            var builder = new StringBuilder("\r[");
-            for (int i = 1; i <= current; i++) 
+            if (cancelToken != null && !cancelToken.IsCancellationRequested)
             {
-                builder.Append("█");
+                cancelToken.Cancel();
             }
-            for (int i = current + 1; i <= total; i++) 
-            {
-                builder.Append("·");
-            }
-            builder.Append("]");
-            if (!string.IsNullOrEmpty(message)) 
-            {
-                builder.Append($" {clocks[status]} {message}");
-            }
-            while (builder.Length < System.Console.BufferWidth) 
-            {
-                builder.Append(" ");
-            }
+        }
+        
+        public void WriteProgress(int current, int total, string message)
+        {
+            currentMessage = message;
+            totalItems = total;
+            currentItem = current;
 
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.Write(builder.ToString());
-            status++;
-
-            if (status > clocks.Length - 1) 
+            if (spinning)
             {
-                status = 0;
+                return;
             }
+            
+            spinning = true;
+            cancelToken = new CancellationTokenSource();
+            _ = Task.Run(() => StartStatusThread(cancelToken.Token)).ConfigureAwait(false);
+        }
+
+        private async Task StartStatusThread(CancellationToken token)
+        {
+            await Task.Run(() =>
+            {
+                while (true)
+                {
+                    var builder = new StringBuilder("\r[");
+                    for (var i = 1; i <= currentItem; i++)
+                    {
+                        builder.Append("█");
+                    }
+
+                    for (var i = currentItem + 1; i <= totalItems; i++)
+                    {
+                        builder.Append("·");
+                    }
+
+                    builder.Append("]");
+                    if (!string.IsNullOrEmpty(currentMessage))
+                    {
+                        builder.Append($" {clocks[status]} {currentMessage}");
+                    }
+
+                    while (builder.Length < System.Console.BufferWidth)
+                    {
+                        builder.Append(" ");
+                    }
+
+                    if (token.IsCancellationRequested)
+                    {
+                        token.ThrowIfCancellationRequested();
+                    }
+                    else
+                    {
+                        System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                        System.Console.Write(builder.ToString());
+                        System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                    }
+
+                    status++;
+                    
+                    if (status > clocks.Length - 1)
+                    {
+                        status = 0;
+                    }
+
+                    Thread.Sleep(500);
+                }
+            }, token);
         }
     }
 }

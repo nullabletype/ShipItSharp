@@ -29,5 +29,6 @@ namespace ShipItSharp.Core.Logging.Interfaces
         void WriteStatusLine(string status);
         void CleanCurrentLine();
         void WriteProgress(int current, int total, string message);
+        void StopAnimation();
     }
 }

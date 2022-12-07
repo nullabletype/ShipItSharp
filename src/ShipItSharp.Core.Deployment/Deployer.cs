@@ -250,6 +250,7 @@ namespace ShipItSharp.Core.Deployment {
 
                 await Task.Delay(3000);
             }
+            uiLogger.StopAnimation();
             uiLogger.CleanCurrentLine();
         }
 

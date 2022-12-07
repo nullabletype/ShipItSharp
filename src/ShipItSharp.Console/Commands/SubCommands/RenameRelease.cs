@@ -109,7 +109,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                     toRename.Add(new ProjectRelease { Release = release, ProjectStub = projectStub});
                 }
             }
-
+            progressBar.StopAnimation();
             progressBar.CleanCurrentLine();
 
             System.Console.WriteLine();

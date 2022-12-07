@@ -102,6 +102,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 }
             }
 
+            progressBar.StopAnimation();
             progressBar.CleanCurrentLine();
 
             System.Console.WriteLine();

@@ -183,5 +183,10 @@ namespace ShipItSharp.Console {
         {
             this.progressBar.WriteProgress(current, total, message);
         }
+
+        public void StopAnimation()
+        {
+            this.progressBar.StopAnimation();
+        }
     }
 }

@@ -24,5 +24,6 @@
 ***.vscode/launch.json
 ***launchSettings.json
 .vs
+.idea/
 src/Core/publish/
 

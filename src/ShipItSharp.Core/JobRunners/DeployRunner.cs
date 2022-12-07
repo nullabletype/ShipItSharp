@@ -1,4 +1,27 @@
-﻿using System;
+﻿#region copyright
+// /*
+//     ShipItSharp Deployment Coordinator. Provides extra tooling to help
+//     deploy software through Octopus Deploy.
+// 
+//     Copyright (C) 2022  Steven Davies
+// 
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+// 
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+// 
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// */
+#endregion
+
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,9 +38,9 @@ namespace ShipItSharp.Core.JobRunners
 {
     public class DeployRunner
     {
-        private readonly ILanguageProvider _languageProvider;
         private readonly IDeployer _deployer;
         private readonly IOctopusHelper _helper;
+        private readonly ILanguageProvider _languageProvider;
         private readonly IUiLogger _uiLogger;
 
         private DeployConfig _currentConfig;
@@ -26,15 +49,15 @@ namespace ShipItSharp.Core.JobRunners
         public DeployRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger)
         {
             _languageProvider = languageProvider;
-            this._helper = helper;
-            this._deployer = deployer;
-            this._uiLogger = uiLogger;
+            _helper = helper;
+            _deployer = deployer;
+            _uiLogger = uiLogger;
         }
 
         public async Task<int> Run(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, Func<DeployConfig, List<Project>, IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt, Func<string, string> promptForReleaseName)
         {
             _currentConfig = config;
-            this._progressBar = progressBar;
+            _progressBar = progressBar;
             var groupIds = new List<string>();
 
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))

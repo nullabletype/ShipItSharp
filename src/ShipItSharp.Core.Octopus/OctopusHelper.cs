@@ -1,23 +1,23 @@
 ﻿#region copyright
-/*
-    ShipItSharp Deployment Coordinator. Provides extra tooling to help 
-    deploy software through Octopus Deploy.
-
-    Copyright (C) 2018  Steven Davies
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// /*
+//     ShipItSharp Deployment Coordinator. Provides extra tooling to help
+//     deploy software through Octopus Deploy.
+// 
+//     Copyright (C) 2022  Steven Davies
+// 
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+// 
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+// 
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// */
 #endregion
 
 
@@ -32,16 +32,16 @@ namespace ShipItSharp.Core.Octopus
     {
         public static IOctopusHelper Default;
         private readonly ChannelRepository _channelsInternal;
-        internal readonly DeploymentRepository DeploymentsInternal;
         private readonly EnvironmentRepository _environmentsInternal;
         private readonly LifeCycleRepository _lifeCyclesInternal;
+        private readonly TeamsRepository _teamsInternal;
+        internal readonly IOctopusAsyncClient Client;
+        internal readonly DeploymentRepository DeploymentsInternal;
         internal readonly PackageRepository PackagesInternal;
         internal readonly ProjectRepository ProjectsInternal;
         internal readonly ReleaseRepository ReleasesInternal;
-        private readonly TeamsRepository _teamsInternal;
         internal readonly VariableRepository VariablesInternal;
         internal ICacheObjects CacheProvider;
-        internal readonly IOctopusAsyncClient Client;
 
         public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider)
         {
@@ -55,7 +55,7 @@ namespace ShipItSharp.Core.Octopus
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
 
-            this.CacheProvider = cacheProvider;
+            CacheProvider = cacheProvider;
             Client = InitClient(url, apiKey);
         }
 
@@ -71,7 +71,7 @@ namespace ShipItSharp.Core.Octopus
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
             SetCacheImplementationInternal(memoryCache);
-            this.Client = client;
+            Client = client;
         }
 
         public IPackageRepository Packages => PackagesInternal;

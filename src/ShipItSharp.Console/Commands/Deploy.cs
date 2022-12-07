@@ -1,23 +1,23 @@
 ﻿#region copyright
-/*
-    ShipItSharp Deployment Coordinator. Provides extra tooling to help 
-    deploy software through Octopus Deploy.
-
-    Copyright (C) 2018  Steven Davies
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// /*
+//     ShipItSharp Deployment Coordinator. Provides extra tooling to help
+//     deploy software through Octopus Deploy.
+// 
+//     Copyright (C) 2022  Steven Davies
+// 
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+// 
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+// 
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// */
 #endregion
 
 
@@ -40,21 +40,21 @@ namespace ShipItSharp.Console.Commands
 {
     internal class Deploy : BaseCommand
     {
+        private readonly IConfiguration _configuration;
         private readonly DeploySpecific _deploySpecific;
         private readonly DeployWithProfile _profile;
         private readonly DeployWithProfileDirectory _profileDir;
-        private readonly DeployRunner _runner;
-        private readonly IConfiguration _configuration;
         private readonly IProgressBar _progressBar;
+        private readonly DeployRunner _runner;
 
         public Deploy(DeployRunner deployRunner, IConfiguration configuration, IOctopusHelper octoHelper, DeployWithProfile profile, DeployWithProfileDirectory profileDir, DeploySpecific deploySpecific, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
         {
-            this._configuration = configuration;
-            this._profile = profile;
-            this._profileDir = profileDir;
-            this._progressBar = progressBar;
+            _configuration = configuration;
+            _profile = profile;
+            _profileDir = profileDir;
+            _progressBar = progressBar;
             _runner = deployRunner;
-            this._deploySpecific = deploySpecific;
+            _deploySpecific = deploySpecific;
         }
 
         protected override bool SupportsInteractiveMode => true;

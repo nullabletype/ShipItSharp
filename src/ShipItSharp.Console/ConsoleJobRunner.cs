@@ -26,34 +26,33 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Interfaces;
-using ShipItSharp.Core.Models;
+using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Interfaces;
+using ShipItSharp.Core.JobRunners.Interfaces;
+using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Logging.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
-using ShipItSharp.Console.ConsoleTools;
-using System.Text;
-using ShipItSharp.Core.Configuration.Interfaces;
-using ShipItSharp.Core.Language;
-using ShipItSharp.Core.JobRunners.Interfaces;
-using ShipItSharp.Core.Interfaces;
 
-namespace ShipItSharp.Console {
+namespace ShipItSharp.Console
+{
     public class ConsoleJobRunner : IUiLogger, IJobRunner
     {
-        private IDeployer deployer;
-        private readonly IOctopusHelper helper;
-        private IProgressBar progressBar;
-        private IConfiguration configuration;
-        private ILanguageProvider languageProvider;
+        private readonly IOctopusHelper _helper;
+        private readonly IConfiguration _configuration;
+        private readonly IDeployer _deployer;
+        private readonly ILanguageProvider _languageProvider;
+        private readonly IProgressBar _progressBar;
 
         public ConsoleJobRunner(IOctopusHelper helper, IDeployer deployer, IProgressBar progressBar, IConfiguration configuration, ILanguageProvider languageProvider)
         {
-            this.helper = helper;
-            this.deployer = deployer;
-            this.progressBar = progressBar;
-            this.configuration = configuration;
-            this.languageProvider = languageProvider;
+            this._helper = helper;
+            this._deployer = deployer;
+            this._progressBar = progressBar;
+            this._configuration = configuration;
+            this._languageProvider = languageProvider;
         }
 
         public async Task StartJob(string pathToProfile, string message, string releaseVersion,
@@ -61,13 +60,13 @@ namespace ShipItSharp.Console {
         {
             if (!File.Exists(pathToProfile))
             {
-                this.WriteLine("Couldn't find file at " + pathToProfile);
+                WriteLine("Couldn't find file at " + pathToProfile);
                 return;
             }
             try
             {
                 var job =
-                    StandardSerialiser.DeserializeFromJsonNet<EnvironmentDeployment>(File.ReadAllText(pathToProfile));
+                    StandardSerialiser.DeserializeFromJsonNet<EnvironmentDeployment>(await File.ReadAllTextAsync(pathToProfile));
 
                 var projects = new List<ProjectDeployment>();
 
@@ -75,10 +74,10 @@ namespace ShipItSharp.Console {
                 {
                     var octoProject =
                         await
-                            this.helper.Projects.GetProject(project.ProjectId, job.EnvironmentId,
+                            _helper.Projects.GetProject(project.ProjectId, job.EnvironmentId,
                                 project.ChannelVersionRange, project.ChannelVersionTag);
-                        var packages =
-                        await this.helper.Packages.GetPackages(octoProject.ProjectId, project.ChannelVersionRange, project.ChannelVersionTag);
+                    var packages =
+                        await _helper.Packages.GetPackages(octoProject.ProjectId, project.ChannelVersionRange, project.ChannelVersionTag);
                     IList<PackageStep> defaultPackages = null;
                     foreach (var package in project.Packages)
                     {
@@ -88,12 +87,12 @@ namespace ShipItSharp.Console {
                             var availablePackages = packages.Where(pack => pack.StepId == package.StepId);
 
                             // If there are no packages for this step, check if we've been asked to jump back to default channel.
-                            if ((!availablePackages.Any() || availablePackages.First().SelectedPackage == null) && job.FallbackToDefaultChannel && !string.IsNullOrEmpty(configuration.DefaultChannel)) 
+                            if ((!availablePackages.Any() || availablePackages.First().SelectedPackage == null) && job.FallbackToDefaultChannel && !string.IsNullOrEmpty(_configuration.DefaultChannel))
                             {
-                                if (defaultPackages == null) 
+                                if (defaultPackages == null)
                                 {
-                                    var defaultChannel = await this.helper.Channels.GetChannelByName(project.ProjectId, configuration.DefaultChannel);
-                                    defaultPackages = await this.helper.Packages.GetPackages(project.ProjectId, defaultChannel.VersionRange, defaultChannel.VersionTag);
+                                    var defaultChannel = await _helper.Channels.GetChannelByName(project.ProjectId, _configuration.DefaultChannel);
+                                    defaultPackages = await _helper.Packages.GetPackages(project.ProjectId, defaultChannel.VersionRange, defaultChannel.VersionTag);
                                     //  We're now using the default channel, so update the project release to have the correct channel info for the deployment.
                                     project.ChannelId = defaultChannel.Id;
                                     project.ChannelName = defaultChannel.Name;
@@ -110,17 +109,16 @@ namespace ShipItSharp.Console {
                                 package.PackageId = selectedPackage.Id;
                                 package.PackageName = selectedPackage.Version;
                                 package.StepName = selectedPackage.StepName;
-                            } 
-                            else 
+                            }
+                            else
                             {
-                                System.Console.Out.WriteLine(string.Format(languageProvider.GetString(LanguageSection.UiStrings, "NoSuitablePackageFound"), package.StepName, project.ProjectName));
-                                continue;
+                                System.Console.Out.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NoSuitablePackageFound"), package.StepName, project.ProjectName);
                             }
                         }
                     }
                     if (!forceDeploymentIfSamePackage)
                     {
-                        if (!await IsDeploymentRequired(job, project)) 
+                        if (!await IsDeploymentRequired(job, project))
                         {
                             continue;
                         }
@@ -138,30 +136,12 @@ namespace ShipItSharp.Console {
 
                 job.ProjectDeployments = projects;
 
-                await this.deployer.StartJob(job, this, true);
+                await _deployer.StartJob(job, this, true);
             }
             catch (Exception e)
             {
-                this.WriteLine("Couldn't deploy! " + e.Message + e.StackTrace);
+                WriteLine("Couldn't deploy! " + e.Message + e.StackTrace);
             }
-        }
-
-        private async Task<bool> IsDeploymentRequired(EnvironmentDeployment job, ProjectDeployment project)
-        {
-            var needsDeploy = false;
-            var currentRelease = (await this.helper.Releases.GetReleasedVersion(project.ProjectId, job.EnvironmentId)).Release;
-            if (currentRelease != null && !string.IsNullOrEmpty(currentRelease.Id))
-            {
-                // Check if we have any packages that are different versions. If they're the same, we don't need to deploy.
-                foreach (var package in project.Packages)
-                {
-                    if (!currentRelease.SelectedPackages.Any(pack => pack.StepName == package.StepName && package.PackageName == pack.Version))
-                    {
-                        needsDeploy = true;
-                    }
-                }
-            }
-            return needsDeploy;
         }
 
         public void WriteLine(string toWrite)
@@ -169,24 +149,42 @@ namespace ShipItSharp.Console {
             System.Console.WriteLine(toWrite);
         }
 
-        public void WriteStatusLine(string status) 
+        public void WriteStatusLine(string status)
         {
-            this.progressBar.WriteStatusLine(status);
+            _progressBar.WriteStatusLine(status);
         }
 
-        public void CleanCurrentLine() 
+        public void CleanCurrentLine()
         {
-            this.progressBar.CleanCurrentLine();
+            _progressBar.CleanCurrentLine();
         }
 
-        public void WriteProgress(int current, int total, string message) 
+        public void WriteProgress(int current, int total, string message)
         {
-            this.progressBar.WriteProgress(current, total, message);
+            _progressBar.WriteProgress(current, total, message);
         }
 
         public void StopAnimation()
         {
-            this.progressBar.StopAnimation();
+            _progressBar.StopAnimation();
+        }
+
+        private async Task<bool> IsDeploymentRequired(EnvironmentDeployment job, ProjectDeployment project)
+        {
+            var needsDeploy = false;
+            var currentRelease = (await _helper.Releases.GetReleasedVersion(project.ProjectId, job.EnvironmentId)).Release;
+            if ((currentRelease != null) && !string.IsNullOrEmpty(currentRelease.Id))
+            {
+                // Check if we have any packages that are different versions. If they're the same, we don't need to deploy.
+                foreach (var package in project.Packages)
+                {
+                    if (!currentRelease.SelectedPackages.Any(pack => (pack.StepName == package.StepName) && (package.PackageName == pack.Version)))
+                    {
+                        needsDeploy = true;
+                    }
+                }
+            }
+            return needsDeploy;
         }
     }
 }

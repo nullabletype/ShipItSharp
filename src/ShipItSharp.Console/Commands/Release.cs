@@ -21,33 +21,33 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Octopus.Interfaces;
 using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands {
-    internal class Release : BaseCommand {
-
-
+namespace ShipItSharp.Console.Commands
+{
+    internal class Release : BaseCommand
+    {
         private readonly RenameRelease _renameRelease;
         private readonly UpdateReleaseVariables _updateVars;
-
-        protected override bool SupportsInteractiveMode => true;
-        public override string CommandName => "release";
 
         public Release(IOctopusHelper octoHelper, RenameRelease renameRelease, UpdateReleaseVariables updateVars, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
         {
 
-            this._renameRelease = renameRelease;
-            this._updateVars = updateVars;
+            _renameRelease = renameRelease;
+            _updateVars = updateVars;
         }
 
-        public override void Configure(CommandLineApplication command) 
+        protected override bool SupportsInteractiveMode => true;
+        public override string CommandName => "release";
+
+        public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
-            command.Description = languageProvider.GetString(LanguageSection.OptionsStrings, "Release");
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "Release");
 
             ConfigureSubCommand(_renameRelease, command);
             ConfigureSubCommand(_updateVars, command);
@@ -60,6 +60,5 @@ namespace ShipItSharp.Console.Commands {
             ts.SetResult(0);
             return ts.Task;
         }
-
     }
 }

@@ -21,8 +21,6 @@
 #endregion
 
 
-using System.Collections.Generic;
-
 namespace ShipItSharp.Core.Configuration.Interfaces
 {
     public class ChangeLogProviderConfiguration
@@ -33,6 +31,5 @@ namespace ShipItSharp.Core.Configuration.Interfaces
         public string IssueFormat { get; set; }
         public string IssueReplacementUrl { get; set; }
         public string BuildIdFormat { get; set; }
-
     }
 }

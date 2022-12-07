@@ -39,6 +39,5 @@ namespace ShipItSharp.Core.Configuration
         public bool Success => !Errors.Any();
 
         public List<string> Errors { get; set; }
-
     }
 }

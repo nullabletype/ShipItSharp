@@ -1,10 +1,13 @@
 ﻿using CSharpFunctionalExtensions;
+using ShipItSharp.Core.Deployment.Models;
 
 namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class DeploySpecificConfig
     {
-        public Models.Environment DestinationEnvironment { get; private set; }
+
+        private DeploySpecificConfig() { }
+        public Environment DestinationEnvironment { get; private set; }
         public string ReleaseName { get; private set; }
         public string GroupFilter { get; private set; }
         public bool RunningInteractively { get; private set; }
@@ -12,9 +15,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public string DefaultFallbackChannel { get; private set; }
         public bool FallbackToDefaultChannel => DefaultFallbackChannel != null;
 
-        private DeploySpecificConfig() { }
-
-        public static Result<DeploySpecificConfig> Create (Models.Environment destEnv, string release, string filter, bool runningInteractively, string fallbackToDefaultChannel)
+        public static Result<DeploySpecificConfig> Create(Environment destEnv, string release, string filter, bool runningInteractively, string fallbackToDefaultChannel)
         {
             if (destEnv == null || string.IsNullOrEmpty(destEnv.Id))
             {

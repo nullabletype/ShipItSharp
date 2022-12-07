@@ -23,9 +23,9 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models 
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class TaskStub 
+    public class TaskStub
     {
         public TaskStatus State { get; set; }
         public string TaskId { get; set; }

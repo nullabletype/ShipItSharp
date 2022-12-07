@@ -39,6 +39,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlElement("statusText")]
         public string Statustext { get; set; }
-
     }
 }

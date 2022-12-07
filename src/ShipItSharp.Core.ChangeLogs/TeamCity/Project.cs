@@ -46,6 +46,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlAttribute("parentProjectId")]
         public string ParentProjectId { get; set; }
-
     }
 }

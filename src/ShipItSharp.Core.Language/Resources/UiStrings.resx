@@ -1,363 +1,374 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
-    Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
-    associated with the data types.
-    
-    Example:
-    
-    ... ado.net/XML headers & schema ...
-    <resheader name="resmimetype">text/microsoft-resx</resheader>
-    <resheader name="version">2.0</resheader>
-    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
-    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
-    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
-    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
-    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
-        <value>[base64 mime encoded serialized .NET Framework object]</value>
-    </data>
-    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
-        <comment>This is a comment</comment>
-    </data>
-                
-    There are any number of "resheader" rows that contain simple 
-    name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
-    mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
-    extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
-    read any of the formats listed below.
-    
-    mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
-            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-            : and then encoded with base64 encoding.
-    
-    mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
-            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
-            : and then encoded with base64 encoding.
-
-    mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
-            : using a System.ComponentModel.TypeConverter
-            : and then encoded with base64 encoding.
-    -->
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="metadata">
+    <!-- 
+      Microsoft ResX Schema 
+      
+      Version 2.0
+      
+      The primary goals of this format is to allow a simple XML format 
+      that is mostly human readable. The generation and parsing of the 
+      various data types are done through the TypeConverter classes 
+      associated with the data types.
+      
+      Example:
+      
+      ... ado.net/XML headers & schema ...
+      <resheader name="resmimetype">text/microsoft-resx</resheader>
+      <resheader name="version">2.0</resheader>
+      <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+      <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+      <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+      <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+      <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+          <value>[base64 mime encoded serialized .NET Framework object]</value>
+      </data>
+      <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+          <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+          <comment>This is a comment</comment>
+      </data>
+                  
+      There are any number of "resheader" rows that contain simple 
+      name/value pairs.
+      
+      Each data row contains a name, and value. The row also contains a 
+      type or mimetype. Type corresponds to a .NET class that support 
+      text/value conversion through the TypeConverter architecture. 
+      Classes that don't support this are serialized and stored with the 
+      mimetype set.
+      
+      The mimetype is used for serialized objects, and tells the 
+      ResXResourceReader how to depersist the object. This is currently not 
+      extensible. For a given mimetype the value must be set accordingly:
+      
+      Note - application/x-microsoft.net.object.binary.base64 is the format 
+      that the ResXResourceWriter will generate, however the reader can 
+      read any of the formats listed below.
+      
+      mimetype: application/x-microsoft.net.object.binary.base64
+      value   : The object must be serialized with 
+              : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+              : and then encoded with base64 encoding.
+      
+      mimetype: application/x-microsoft.net.object.soap.base64
+      value   : The object must be serialized with 
+              : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+              : and then encoded with base64 encoding.
+  
+      mimetype: application/x-microsoft.net.object.bytearray.base64
+      value   : The object must be serialized into a byte array 
+              : using a System.ComponentModel.TypeConverter
+              : and then encoded with base64 encoding.
+      -->
+    <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root"
+                xmlns="">
+        <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+        <xsd:element name="root" msdata:IsDataSet="true">
             <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
+                <xsd:choice maxOccurs="unbounded">
+                    <xsd:element name="metadata">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                            </xsd:sequence>
+                            <xsd:attribute name="name" use="required" type="xsd:string"/>
+                            <xsd:attribute name="type" type="xsd:string"/>
+                            <xsd:attribute name="mimetype" type="xsd:string"/>
+                            <xsd:attribute ref="xml:space"/>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="assembly">
+                        <xsd:complexType>
+                            <xsd:attribute name="alias" type="xsd:string"/>
+                            <xsd:attribute name="name" type="xsd:string"/>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="data">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2"/>
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1"/>
+                            <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3"/>
+                            <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4"/>
+                            <xsd:attribute ref="xml:space"/>
+                        </xsd:complexType>
+                    </xsd:element>
+                    <xsd:element name="resheader">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1"/>
+                            </xsd:sequence>
+                            <xsd:attribute name="name" type="xsd:string" use="required"/>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:choice>
             </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="assembly">
-            <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <data name="AreYouSureUpdateVariables" xml:space="preserve">
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>2.0</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <data name="AreYouSureUpdateVariables" xml:space="preserve">
     <value>Are you sure you wish to update the variables for the above releases?</value>
   </data>
-  <data name="ChangeLog" xml:space="preserve">
+    <data name="ChangeLog" xml:space="preserve">
     <value>ChangeLog:</value>
   </data>
-  <data name="CheckingOptions" xml:space="preserve">
+    <data name="CheckingOptions" xml:space="preserve">
     <value>Checking your options...</value>
   </data>
-  <data name="ConfirmationCheck" xml:space="preserve">
+    <data name="ConfirmationCheck" xml:space="preserve">
     <value>Are you absolutely 100% sure you wish to delete {0}? There is no going back...</value>
   </data>
-  <data name="CouldntAddEnvToTeam" xml:space="preserve">
+    <data name="CouldntAddEnvToTeam" xml:space="preserve">
     <value>I couldn't add the environment to that team: {0}</value>
   </data>
-  <data name="CurrentPackage" xml:space="preserve">
+    <data name="CurrentPackage" xml:space="preserve">
     <value>Current Package</value>
   </data>
-  <data name="CurrentRelease" xml:space="preserve">
+    <data name="CurrentRelease" xml:space="preserve">
     <value>Current Release</value>
   </data>
-  <data name="CurrentVersion" xml:space="preserve">
+    <data name="CurrentVersion" xml:space="preserve">
     <value>Current version: {0}</value>
   </data>
-  <data name="DeployingTo" xml:space="preserve">
+    <data name="DeployingTo" xml:space="preserve">
     <value>Deploying channel {0} to {1}. Please select the projects you wish to deploy.</value>
   </data>
-  <data name="DeployingUsingConfig" xml:space="preserve">
+    <data name="DeployingUsingConfig" xml:space="preserve">
     <value>Deploying using config {0}</value>
   </data>
-  <data name="Done" xml:space="preserve">
+    <data name="Done" xml:space="preserve">
     <value>Done {0}</value>
   </data>
-  <data name="EnvionmentId" xml:space="preserve">
+    <data name="EnvionmentId" xml:space="preserve">
     <value>EnvironmentId: {0}</value>
   </data>
-  <data name="EnvironmentFound" xml:space="preserve">
+    <data name="EnvironmentFound" xml:space="preserve">
     <value>Environment found with name {0}</value>
   </data>
-  <data name="EnvironmentNotFound" xml:space="preserve">
+    <data name="EnvironmentNotFound" xml:space="preserve">
     <value>Environment not found with name {0}</value>
   </data>
-  <data name="Error" xml:space="preserve">
+    <data name="Error" xml:space="preserve">
     <value>Error: </value>
   </data>
-  <data name="ErrorColumnHeadingMismatch" xml:space="preserve">
+    <data name="ErrorColumnHeadingMismatch" xml:space="preserve">
     <value>You specified {0} columns but the table has {1} headings?</value>
   </data>
-  <data name="ExistingPackage" xml:space="preserve">
+    <data name="ExistingPackage" xml:space="preserve">
     <value>Existing Package</value>
   </data>
-  <data name="ExistingRelease" xml:space="preserve">
+    <data name="ExistingRelease" xml:space="preserve">
     <value>Existing Release</value>
   </data>
-  <data name="Exiting" xml:space="preserve">
+    <data name="Exiting" xml:space="preserve">
     <value>Exiting...</value>
   </data>
-  <data name="Failed" xml:space="preserve">
+    <data name="Failed" xml:space="preserve">
     <value>Failed {0} : {1}</value>
   </data>
-  <data name="FailedParsingVariableFile" xml:space="preserve">
+    <data name="FailedParsingVariableFile" xml:space="preserve">
     <value>Failed parsing the json file, please check your syntax!</value>
   </data>
-  <data name="FailedUpdatingVariableSet" xml:space="preserve">
+    <data name="FailedUpdatingVariableSet" xml:space="preserve">
     <value>Received an error from Octopus when updating variables: {0}</value>
   </data>
-  <data name="FetchingProjectList" xml:space="preserve">
+    <data name="FetchingProjectList" xml:space="preserve">
     <value>Fetching project list</value>
   </data>
-  <data name="ForceRedeploy" xml:space="preserve">
+    <data name="ForceRedeploy" xml:space="preserve">
     <value>Forces a redeploy of the same packages</value>
   </data>
-  <data name="GettingGroupInfo" xml:space="preserve">
+    <data name="GettingGroupInfo" xml:space="preserve">
     <value>Getting group info</value>
   </data>
-  <data name="GoingToRename" xml:space="preserve">
+    <data name="GoingToRename" xml:space="preserve">
     <value>Going to rename the following to {0}</value>
   </data>
-  <data name="GoingToSaveProfile" xml:space="preserve">
+    <data name="GoingToSaveProfile" xml:space="preserve">
     <value>No deployment will take place, saving a profile to {0}</value>
   </data>
-  <data name="Id" xml:space="preserve">
+    <data name="Id" xml:space="preserve">
     <value>Id</value>
   </data>
-  <data name="InteractiveRunnerInstructions" xml:space="preserve">
+    <data name="InteractiveRunnerInstructions" xml:space="preserve">
     <value>Update: 1 | Remove: 2 | Continue: c | Exit: e</value>
   </data>
-  <data name="InteractiveRunnerSelectionInstructions" xml:space="preserve">
+    <data name="InteractiveRunnerSelectionInstructions" xml:space="preserve">
     <value>Please make a selection using ranges 1-2 or comma separated 1,2,3 etc.</value>
   </data>
-  <data name="InvalidReleaseVersion" xml:space="preserve">
+    <data name="InvalidReleaseVersion" xml:space="preserve">
     <value>Release versions much follow the semantic versioning 2.0 spec!</value>
   </data>
-  <data name="LifecycleDoesntExist" xml:space="preserve">
+    <data name="LifecycleDoesntExist" xml:space="preserve">
     <value>The lifecycle you specified doesn't exist?</value>
   </data>
-  <data name="LifecyclePhaseIsInvalid" xml:space="preserve">
+    <data name="LifecyclePhaseIsInvalid" xml:space="preserve">
     <value>The phase number you provided is invalid. Please use a number, like 1 or 2</value>
   </data>
-  <data name="LoadingInfoFor" xml:space="preserve">
+    <data name="LoadingInfoFor" xml:space="preserve">
     <value>Loading Info for {0}</value>
   </data>
-  <data name="Multi" xml:space="preserve">
+    <data name="Multi" xml:space="preserve">
     <value>multi</value>
   </data>
-  <data name="Name" xml:space="preserve">
+    <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>
-  <data name="NewPackage" xml:space="preserve">
+    <data name="NewPackage" xml:space="preserve">
     <value>New Package</value>
   </data>
-  <data name="NewVersion" xml:space="preserve">
+    <data name="NewVersion" xml:space="preserve">
     <value>New version: {0}</value>
   </data>
-  <data name="NewVersionAvailable" xml:space="preserve">
+    <data name="NewVersionAvailable" xml:space="preserve">
     <value>There is a new version of ShipItSharp available</value>
   </data>
-  <data name="NoMatchingChannel" xml:space="preserve">
+    <data name="NoMatchingChannel" xml:space="preserve">
     <value>No channel found with the specified name! </value>
   </data>
-  <data name="NoMatchingEnvironments" xml:space="preserve">
+    <data name="NoMatchingEnvironments" xml:space="preserve">
     <value>No environments match your criteria!</value>
   </data>
-  <data name="NothingSelected" xml:space="preserve">
+    <data name="NothingSelected" xml:space="preserve">
     <value>Nothing selected!</value>
   </data>
-  <data name="OnSource" xml:space="preserve">
+    <data name="OnSource" xml:space="preserve">
     <value>On Source</value>
   </data>
-  <data name="OnTarget" xml:space="preserve">
+    <data name="OnTarget" xml:space="preserve">
     <value>On Target</value>
   </data>
-  <data name="PackageNotSelectable" xml:space="preserve">
+    <data name="PackageNotSelectable" xml:space="preserve">
     <value>There is no package available to deploy for the following projects: </value>
   </data>
-  <data name="NoSuitablePackageFound" xml:space="preserve">
+    <data name="NoSuitablePackageFound" xml:space="preserve">
     <value>No suitable package found for step {0} for project {1}</value>
   </data>
-  <data name="ParameterNotANumber" xml:space="preserve">
+    <data name="ParameterNotANumber" xml:space="preserve">
     <value>Parameter must be a number</value>
   </data>
-  <data name="PathDoesntExist" xml:space="preserve">
+    <data name="PathDoesntExist" xml:space="preserve">
     <value>The path doesn't exist!?</value>
   </data>
-  <data name="Processing" xml:space="preserve">
+    <data name="Processing" xml:space="preserve">
     <value>Processing {0}</value>
   </data>
-  <data name="ProfileSaved" xml:space="preserve">
+    <data name="ProfileSaved" xml:space="preserve">
     <value>Profile saved to {0}</value>
   </data>
-  <data name="ProjectName" xml:space="preserve">
+    <data name="ProjectName" xml:space="preserve">
     <value>Project Name</value>
   </data>
-  <data name="ProjectNotFound" xml:space="preserve">
+    <data name="ProjectNotFound" xml:space="preserve">
     <value>Provided seed project couldn't be found. I can't continue!</value>
   </data>
-  <data name="PromotingTo" xml:space="preserve">
+    <data name="PromotingTo" xml:space="preserve">
     <value>Promoting from {0} to {1}. Please select the projects you wish to promote.</value>
   </data>
-  <data name="ReleaseNamePrompt" xml:space="preserve">
+    <data name="ReleaseNamePrompt" xml:space="preserve">
     <value>What name do you want to use for your release? (Must follow semantic versioning, leave blank for sequentially generated)</value>
   </data>
-  <data name="RestrictToGroupsPrompt" xml:space="preserve">
+    <data name="RestrictToGroupsPrompt" xml:space="preserve">
     <value>What groups do you want to restrict to? (Optional)</value>
   </data>
-  <data name="SleepingForSeconds" xml:space="preserve">
+    <data name="SleepingForSeconds" xml:space="preserve">
     <value>Sleeping for {0} seconds...</value>
   </data>
-  <data name="SourceEnvironment" xml:space="preserve">
+    <data name="SourceEnvironment" xml:space="preserve">
     <value>Which environment do you wish to promote from?</value>
   </data>
-  <data name="TeamDoesntExist" xml:space="preserve">
+    <data name="TeamDoesntExist" xml:space="preserve">
     <value>The team you specified doesn't exist?</value>
   </data>
-  <data name="TooManyMatchingEnvironments" xml:space="preserve">
+    <data name="TooManyMatchingEnvironments" xml:space="preserve">
     <value>Too many enviroments match your criteria: </value>
   </data>
-  <data name="UnexpectedError" xml:space="preserve">
+    <data name="UnexpectedError" xml:space="preserve">
     <value>Unexpected error: {0}</value>
   </data>
-  <data name="UpdateAvailableHere" xml:space="preserve">
+    <data name="UpdateAvailableHere" xml:space="preserve">
     <value>Update here: {0}</value>
   </data>
-  <data name="UpdatingVariableSet" xml:space="preserve">
+    <data name="UpdatingVariableSet" xml:space="preserve">
     <value>Updating VariableSet {0} with {1} variables</value>
   </data>
-  <data name="UsingProfileAtPath" xml:space="preserve">
+    <data name="UsingProfileAtPath" xml:space="preserve">
     <value>Using profile at path </value>
   </data>
-  <data name="UsingProfileDirAtPath" xml:space="preserve">
+    <data name="UsingProfileDirAtPath" xml:space="preserve">
     <value>Using profile directory at path</value>
   </data>
-  <data name="VariablePrompt" xml:space="preserve">
+    <data name="VariablePrompt" xml:space="preserve">
     <value>Please provide a value for the variable {0} for project {1}. </value>
   </data>
-  <data name="VariablePromptAllowedValues" xml:space="preserve">
+    <data name="VariablePromptAllowedValues" xml:space="preserve">
     <value>Available values: {0}</value>
   </data>
-  <data name="WhichChannelPrompt" xml:space="preserve">
+    <data name="WhichChannelPrompt" xml:space="preserve">
     <value>Which channel do you wish to deploy?</value>
   </data>
-  <data name="WhichEnvironmentPrompt" xml:space="preserve">
+    <data name="WhichEnvironmentPrompt" xml:space="preserve">
     <value>Which environment do you wish to deploy to?</value>
   </data>
-  <data name="DownloadAvailableHere" xml:space="preserve">
+    <data name="DownloadAvailableHere" xml:space="preserve">
     <value>Download {0} available here: {1}</value>
   </data>
-  <data name="BuildingDeploymentJob" xml:space="preserve">
+    <data name="BuildingDeploymentJob" xml:space="preserve">
     <value>Building deployment job for {0}</value>
   </data>
-  <data name="CouldntRemoveChannelReleases" xml:space="preserve">
+    <data name="CouldntRemoveChannelReleases" xml:space="preserve">
     <value>Couldn't remove the channel {0} from {1} as its used in the following releases: {2}</value>
   </data>
-  <data name="RemovingChannel" xml:space="preserve">
+    <data name="RemovingChannel" xml:space="preserve">
     <value>Removing Channel {0} from Project {1}</value>
   </data>
-  <data name="Test" xml:space="preserve">
+    <data name="Test" xml:space="preserve">
     <value>[TEST]</value>
   </data>
-  <data name="OldestPackagePublish" xml:space="preserve">
+    <data name="OldestPackagePublish" xml:space="preserve">
     <value>Oldest package date</value>
   </data>
-  <data name="PackageAgeDays" xml:space="preserve">
+    <data name="PackageAgeDays" xml:space="preserve">
     <value>Age (Days)</value>
   </data>
-  <data name="PackageLastModified" xml:space="preserve">
+    <data name="PackageLastModified" xml:space="preserve">
     <value>Package last mod</value>
   </data>
-  <data name="DeployingSpecificRelease" xml:space="preserve">
+    <data name="DeployingSpecificRelease" xml:space="preserve">
     <value>Deploying release {0} to {1}. Please select the projects you wish to deploy.</value>
   </data>
-  <data name="ReleaseName" xml:space="preserve">
+    <data name="ReleaseName" xml:space="preserve">
     <value>What is the name (version) of the release you want to deploy?</value>
   </data>
-  <data name="ReleaseToDeploy" xml:space="preserve">
+    <data name="ReleaseToDeploy" xml:space="preserve">
     <value>To Deploy</value>
   </data>
-  <data name="FallbackToChannel" xml:space="preserve">
+    <data name="FallbackToChannel" xml:space="preserve">
     <value>What channel do you wish to fall back to? (Optional)</value>
   </data>
-  <data name="ReleaseNotSelectable" xml:space="preserve">
+    <data name="ReleaseNotSelectable" xml:space="preserve">
     <value>There is no release available to deploy for the following projects:</value>
   </data>
+    <data name="DeployRunner_GenerateProjectDeployment_No_packages_found_for__0_" xml:space="preserve">
+      <value>No packages found for {0}</value>
+    </data>
+    <data name="NoPackagesFound" xml:space="preserve">
+      <value>No packages found for {0}</value>
+    </data>
 </root>

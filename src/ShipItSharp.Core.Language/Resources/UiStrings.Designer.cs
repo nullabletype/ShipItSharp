@@ -177,6 +177,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No packages found for {0}.
+        /// </summary>
+        internal static string DeployRunner_GenerateProjectDeployment_No_packages_found_for__0_ {
+            get {
+                return ResourceManager.GetString("DeployRunner_GenerateProjectDeployment_No_packages_found_for__0_", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Done {0}.
         /// </summary>
         internal static string Done {
@@ -470,6 +479,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string NoMatchingEnvironments {
             get {
                 return ResourceManager.GetString("NoMatchingEnvironments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No packages found for {0}.
+        /// </summary>
+        internal static string NoPackagesFound {
+            get {
+                return ResourceManager.GetString("NoPackagesFound", resourceCulture);
             }
         }
         

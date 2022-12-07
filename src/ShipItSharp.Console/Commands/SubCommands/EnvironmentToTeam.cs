@@ -27,55 +27,55 @@ using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands.SubCommands 
+namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class EnvironmentToTeam : BaseCommand
+    internal class EnvironmentToTeam : BaseCommand
     {
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "addtoteam";
 
         public EnvironmentToTeam(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "addtoteam";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(EnvironmentToTeamOptionNames.EnvId, command.Option("-e|--envid", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnvironmentToTeamOptionNames.TeamId, command.Option("-t|--teamid", languageProvider.GetString(LanguageSection.OptionsStrings, "TeamId"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnvironmentToTeamOptionNames.EnvId, command.Option("-e|--envid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnvironmentToTeamOptionNames.TeamId, command.Option("-t|--teamid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "TeamId"), CommandOptionType.SingleValue).IsRequired());
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var environmentId = GetStringFromUser(EnvironmentToTeamOptionNames.EnvId, string.Empty, false);
+            var environmentId = GetStringFromUser(EnvironmentToTeamOptionNames.EnvId, string.Empty);
             var teamId = GetStringFromUser(EnvironmentToTeamOptionNames.TeamId, string.Empty, true);
 
-            if (string.IsNullOrEmpty(environmentId)) 
+            if (string.IsNullOrEmpty(environmentId))
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
                 return -1;
             }
 
-            if (string.IsNullOrEmpty(teamId)) 
+            if (string.IsNullOrEmpty(teamId))
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "TeamDoesntExist"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "TeamDoesntExist"));
                 return -1;
             }
 
-            try 
+            try
             {
-                await octoHelper.Teams.AddEnvironmentToTeam(environmentId, teamId);
+                await OctoHelper.Teams.AddEnvironmentToTeam(environmentId, teamId);
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "CouldntAddEnvToTeam"), e.Message));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CouldntAddEnvToTeam"), e.Message);
                 return -1;
             }
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "Done"), String.Empty));
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
             return 0;
         }
 
-        struct EnvironmentToTeamOptionNames 
+        private struct EnvironmentToTeamOptionNames
         {
             public const string EnvId = "envid";
             public const string TeamId = "teamid";

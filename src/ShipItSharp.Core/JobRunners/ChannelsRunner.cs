@@ -1,45 +1,44 @@
-﻿using ShipItSharp.Core.Interfaces;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ShipItSharp.Core.Deployment.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Logging.Interfaces;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ShipItSharp.Core.JobRunners
 {
     public class ChannelsRunner
     {
-        private IProgressBar progressBar;
-        private IOctopusHelper octopusHelper;
-        private ILanguageProvider languageProvider;
-        private IUiLogger uiLogger;
+        private readonly ILanguageProvider _languageProvider;
+        private readonly IOctopusHelper _octopusHelper;
+        private readonly IProgressBar _progressBar;
+        private readonly IUiLogger _uiLogger;
 
         public ChannelsRunner(IProgressBar progressBar, IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IUiLogger uiLogger)
         {
-            this.octopusHelper = octopusHelper;
-            this.progressBar = progressBar;
-            this.languageProvider = languageProvider;
-            this.uiLogger = uiLogger;
+            this._octopusHelper = octopusHelper;
+            this._progressBar = progressBar;
+            this._languageProvider = languageProvider;
+            this._uiLogger = uiLogger;
         }
 
         public async Task<bool> Cleanup(ChannelCleanupConfig config)
         {
-            List<(string ProjectId, string ProjectName, string ChannelId, string ChannelName)> toDelete = new List<(string ProjectId, string ProjectName, string ChannelId, string ChannelName)>();
+            var toDelete = new List<(string ProjectId, string ProjectName, string ChannelId, string ChannelName)>();
 
             if (!string.IsNullOrEmpty(config.GroupFilter))
             {
-                var groupIds = (await octopusHelper.Projects.GetFilteredProjectGroups(config.GroupFilter)).Select(g => g.Id);
-                var projectStubs = await octopusHelper.Projects.GetProjectStubs();
+                var groupIds = (await _octopusHelper.Projects.GetFilteredProjectGroups(config.GroupFilter)).Select(g => g.Id);
+                var projectStubs = await _octopusHelper.Projects.GetProjectStubs();
 
                 foreach (var projectStub in projectStubs)
                 {
-                    progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
-                                        String.Format(languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+                    _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
+                        string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
                     if (!string.IsNullOrEmpty(config.GroupFilter))
                     {
                         if (!groupIds.Contains(projectStub.ProjectGroupId))
@@ -48,8 +47,8 @@ namespace ShipItSharp.Core.JobRunners
                         }
                     }
 
-                    var channels = await octopusHelper.Channels.GetChannelsForProject(projectStub.ProjectId, 9999);
-                    var packageSteps = await octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, 9999);
+                    var channels = await _octopusHelper.Channels.GetChannelsForProject(projectStub.ProjectId, 9999);
+                    var packageSteps = await _octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, 9999);
                     var packages = packageSteps.SelectMany(p => p.AvailablePackages);
 
                     foreach (var channel in channels)
@@ -62,22 +61,22 @@ namespace ShipItSharp.Core.JobRunners
                 }
             }
 
-            List<(string ProjectName, string ChannelName, IEnumerable<Release> Releases)> failed = new List<(string ProjectName, string ChannelName, IEnumerable<Release> Releases)>();
+            var failed = new List<(string ProjectName, string ChannelName, IEnumerable<Release> Releases)>();
 
             foreach (var current in toDelete)
             {
                 var message = "";
                 if (config.TestMode)
                 {
-                    message += languageProvider.GetString(LanguageSection.UiStrings, "Test") + " ";
+                    message += _languageProvider.GetString(LanguageSection.UiStrings, "Test") + " ";
                 }
-                message += String.Format(languageProvider.GetString(LanguageSection.UiStrings, "RemovingChannel"), current.ChannelName, current.ProjectName);
+                message += string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "RemovingChannel"), current.ChannelName, current.ProjectName);
 
-                uiLogger.WriteLine(message);
+                _uiLogger.WriteLine(message);
 
                 if (!config.TestMode)
                 {
-                    var result = await octopusHelper.Channels.RemoveChannel(current.ChannelId);
+                    var result = await _octopusHelper.Channels.RemoveChannel(current.ChannelId);
                     if (!result.Success)
                     {
                         failed.Add((current.ProjectName, current.ChannelName, result.Releases));
@@ -86,13 +85,12 @@ namespace ShipItSharp.Core.JobRunners
 
             }
 
-            foreach(var current in failed)
+            foreach (var current in failed)
             {
-                uiLogger.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "CouldntRemoveChannelReleases"), current.ChannelName, current.ProjectName, string.Join(',', current.Releases.Select(r => r.Version))));
+                _uiLogger.WriteLine(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "CouldntRemoveChannelReleases"), current.ChannelName, current.ProjectName, string.Join(',', current.Releases.Select(r => r.Version))));
             }
 
             return !failed.Any();
         }
-
     }
 }

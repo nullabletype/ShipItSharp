@@ -52,6 +52,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlElement("vcsRootInstance")]
         public VcsRootInstance VcsRootInstance { get; set; }
-
     }
 }

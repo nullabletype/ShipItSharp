@@ -21,8 +21,10 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Models.Interfaces {
-    public interface IVersionedPackage {
+namespace ShipItSharp.Core.ChangeLogs.Interfaces
+{
+    public interface IVersionedPackage
+    {
         string Id { get; }
         string Message { get; }
         string StepName { get; }

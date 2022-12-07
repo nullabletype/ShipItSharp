@@ -25,7 +25,7 @@ namespace ShipItSharp.Core.ChangeLogs
 {
     public class Issue
     {
-        
+
         public string Name { get; set; }
         public string WebUrl { get; set; }
 
@@ -41,7 +41,7 @@ namespace ShipItSharp.Core.ChangeLogs
 
         public override int GetHashCode()
         {
-            return (Name != null ? Name.GetHashCode() : 0);
+            return Name != null ? Name.GetHashCode() : 0;
         }
     }
 }

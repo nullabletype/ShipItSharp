@@ -21,7 +21,7 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class PackageDeployment
     {

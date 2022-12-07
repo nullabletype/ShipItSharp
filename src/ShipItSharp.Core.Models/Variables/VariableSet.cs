@@ -23,12 +23,19 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models.Variables 
+namespace ShipItSharp.Core.Deployment.Models.Variables
 {
 
-    public class VariableSet 
+    public class VariableSet
     {
-        public VariableSet() 
+
+        public enum VariableIdTypes
+        {
+            Library,
+            VariableSet
+        }
+
+        public VariableSet()
         {
             Variables = new List<Variable>();
         }
@@ -36,10 +43,5 @@ namespace ShipItSharp.Core.Models.Variables
         public string Id { get; set; }
         public VariableIdTypes IdType { get; set; }
         public List<Variable> Variables { get; set; }
-
-        public enum VariableIdTypes {
-            Library,
-            VariableSet
-        }
     }
 }

@@ -39,6 +39,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlAttribute("href")]
         public string Href { get; set; }
-
     }
 }

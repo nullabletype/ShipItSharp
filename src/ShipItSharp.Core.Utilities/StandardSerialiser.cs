@@ -32,16 +32,16 @@ namespace ShipItSharp.Core.Utilities
     {
         public static T DeserializeFromJsonNet<T>(string form, bool handleDerivedTypes = false)
         {
-            T result = default(T);
+            var result = default(T);
 
             if (!string.IsNullOrEmpty(form))
             {
-                var settings = new JsonSerializerSettings {DateFormatHandling = DateFormatHandling.IsoDateFormat};
+                var settings = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat };
                 if (handleDerivedTypes)
                 {
                     settings.TypeNameHandling = TypeNameHandling.All;
                 }
-                JsonSerializer serializer = JsonSerializer.Create(settings);
+                var serializer = JsonSerializer.Create(settings);
 
                 using (var reader = new StringReader(form))
                 {
@@ -55,7 +55,7 @@ namespace ShipItSharp.Core.Utilities
 
                         if (typeof(T).IsArray)
                         {
-                            val = (T) Activator.CreateInstance(typeof(T), new[] {1});
+                            val = (T) Activator.CreateInstance(typeof(T), new[] { 1 });
                         }
                         else
                         {
@@ -81,12 +81,12 @@ namespace ShipItSharp.Core.Utilities
         {
             if (obj != null)
             {
-                var settings = new JsonSerializerSettings {DateFormatHandling = DateFormatHandling.IsoDateFormat};
+                var settings = new JsonSerializerSettings { DateFormatHandling = DateFormatHandling.IsoDateFormat };
                 if (handleDerivedTypes)
                 {
                     settings.TypeNameHandling = TypeNameHandling.All;
                 }
-                JsonSerializer serializer = JsonSerializer.Create(settings);
+                var serializer = JsonSerializer.Create(settings);
 
                 using (var textWriter = new StringWriter())
                 {

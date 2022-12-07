@@ -24,13 +24,13 @@
 using System;
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class Release
     {
         public Release()
         {
-            this.SelectedPackages = new List<PackageStub>();
+            SelectedPackages = new List<PackageStub>();
         }
 
         public string Id { get; set; }

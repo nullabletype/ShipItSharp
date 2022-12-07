@@ -21,9 +21,7 @@
 #endregion
 
 
-using System.Collections.Generic;
-
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class ProjectGroup
     {

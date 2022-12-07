@@ -21,28 +21,28 @@
 #endregion
 
 
-using ShipItSharp.Core.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ShipItSharp.Core.Interfaces;
 
-namespace ShipItSharp.Console.ConsoleTools {
-    internal class ConsoleProgressBar : IProgressBar {
+namespace ShipItSharp.Console.ConsoleTools
+{
+    internal class ConsoleProgressBar : IProgressBar
+    {
+        private CancellationTokenSource _cancelToken;
+        private readonly string[] _clocks = { "\\", "|", "/", "-" };
+        private int _currentItem;
+        private string _currentMessage = string.Empty;
+        private bool _spinning;
 
-        private int status;
-        private int currentItem;
-        private int totalItems;
-        private string[] clocks = {"\\", "|", "/", "-"};
-        private string currentMessage = string.Empty;
-        private bool spinning;
-        private CancellationTokenSource cancelToken;
+        private int _status;
+        private int _totalItems;
 
-        public void WriteStatusLine(string status) 
+        public void WriteStatusLine(string status)
         {
             var builder = new StringBuilder(status);
-            while (builder.Length < System.Console.BufferWidth) 
+            while (builder.Length < System.Console.BufferWidth)
             {
                 builder.Append(" ");
             }
@@ -51,15 +51,15 @@ namespace ShipItSharp.Console.ConsoleTools {
             System.Console.SetCursorPosition(0, System.Console.CursorTop);
         }
 
-        public void CleanCurrentLine() 
+        public void CleanCurrentLine()
         {
-            if (cancelToken != null && spinning)
+            if ((_cancelToken != null) && _spinning)
             {
-                cancelToken.Cancel();
+                _cancelToken.Cancel();
             }
 
             var builder = new StringBuilder("\r");
-            while (builder.Length < System.Console.BufferWidth) 
+            while (builder.Length < System.Console.BufferWidth)
             {
                 builder.Append(" ");
             }
@@ -70,26 +70,26 @@ namespace ShipItSharp.Console.ConsoleTools {
 
         public void StopAnimation()
         {
-            if (cancelToken != null && !cancelToken.IsCancellationRequested)
+            if ((_cancelToken != null) && !_cancelToken.IsCancellationRequested)
             {
-                cancelToken.Cancel();
+                _cancelToken.Cancel();
             }
         }
-        
+
         public void WriteProgress(int current, int total, string message)
         {
-            currentMessage = message;
-            totalItems = total;
-            currentItem = current;
+            _currentMessage = message;
+            _totalItems = total;
+            _currentItem = current;
 
-            if (spinning)
+            if (_spinning)
             {
                 return;
             }
-            
-            spinning = true;
-            cancelToken = new CancellationTokenSource();
-            _ = Task.Run(() => StartStatusThread(cancelToken.Token)).ConfigureAwait(false);
+
+            _spinning = true;
+            _cancelToken = new CancellationTokenSource();
+            _ = Task.Run(() => StartStatusThread(_cancelToken.Token)).ConfigureAwait(false);
         }
 
         private async Task StartStatusThread(CancellationToken token)
@@ -99,20 +99,20 @@ namespace ShipItSharp.Console.ConsoleTools {
                 while (true)
                 {
                     var builder = new StringBuilder("\r[");
-                    for (var i = 1; i <= currentItem; i++)
+                    for (var i = 1; i <= _currentItem; i++)
                     {
                         builder.Append("█");
                     }
 
-                    for (var i = currentItem + 1; i <= totalItems; i++)
+                    for (var i = _currentItem + 1; i <= _totalItems; i++)
                     {
                         builder.Append("·");
                     }
 
                     builder.Append("]");
-                    if (!string.IsNullOrEmpty(currentMessage))
+                    if (!string.IsNullOrEmpty(_currentMessage))
                     {
-                        builder.Append($" {clocks[status]} {currentMessage}");
+                        builder.Append($" {_clocks[_status]} {_currentMessage}");
                     }
 
                     while (builder.Length < System.Console.BufferWidth)
@@ -123,19 +123,18 @@ namespace ShipItSharp.Console.ConsoleTools {
                     if (token.IsCancellationRequested)
                     {
                         token.ThrowIfCancellationRequested();
+                        return;
                     }
-                    else
-                    {
-                        System.Console.SetCursorPosition(0, System.Console.CursorTop);
-                        System.Console.Write(builder.ToString());
-                        System.Console.SetCursorPosition(0, System.Console.CursorTop);
-                    }
-
-                    status++;
                     
-                    if (status > clocks.Length - 1)
+                    System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                    System.Console.Write(builder.ToString());
+                    System.Console.SetCursorPosition(0, System.Console.CursorTop);
+
+                    _status++;
+
+                    if (_status > _clocks.Length - 1)
                     {
-                        status = 0;
+                        _status = 0;
                     }
 
                     Thread.Sleep(500);

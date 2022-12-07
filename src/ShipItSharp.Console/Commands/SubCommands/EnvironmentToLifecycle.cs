@@ -27,65 +27,65 @@ using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands.SubCommands 
+namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class EnvironmentToLifecycle : BaseCommand
+    internal class EnvironmentToLifecycle : BaseCommand
     {
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "addtolifecycle";
 
         public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "addtolifecycle";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(EnvironmentToLifecycleOptions.EnvId, command.Option("-e|--envid", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnvironmentToLifecycleOptions.LcId, command.Option("-l|--lcid", languageProvider.GetString(LanguageSection.OptionsStrings, "LifecycleId"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnvironmentToLifecycleOptions.PhaseId, command.Option("-p|--phasenumber", languageProvider.GetString(LanguageSection.OptionsStrings, "PhaseNumber"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnvironmentToLifecycleOptions.Automatic, command.Option("-a|--auto", languageProvider.GetString(LanguageSection.OptionsStrings, "AutomaticDeploy"), CommandOptionType.NoValue));
+            AddToRegister(EnvironmentToLifecycleOptions.EnvId, command.Option("-e|--envid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnvironmentToLifecycleOptions.LcId, command.Option("-l|--lcid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "LifecycleId"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnvironmentToLifecycleOptions.PhaseId, command.Option("-p|--phasenumber", LanguageProvider.GetString(LanguageSection.OptionsStrings, "PhaseNumber"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnvironmentToLifecycleOptions.Automatic, command.Option("-a|--auto", LanguageProvider.GetString(LanguageSection.OptionsStrings, "AutomaticDeploy"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var environmentId = GetStringFromUser(EnvironmentToLifecycleOptions.EnvId, string.Empty, false);
+            var environmentId = GetStringFromUser(EnvironmentToLifecycleOptions.EnvId, string.Empty);
             var lcId = GetStringFromUser(EnvironmentToLifecycleOptions.LcId, string.Empty, true);
             var stringPhaseId = GetStringFromUser(EnvironmentToLifecycleOptions.PhaseId, string.Empty, true);
             var auto = GetOption(EnvironmentToLifecycleOptions.Automatic).HasValue();
 
-            if (string.IsNullOrEmpty(environmentId)) 
+            if (string.IsNullOrEmpty(environmentId))
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
                 return -1;
             }
 
-            if (string.IsNullOrEmpty(lcId)) 
+            if (string.IsNullOrEmpty(lcId))
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "LifecycleDoesntExist"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "LifecycleDoesntExist"));
                 return -1;
             }
 
-            if (string.IsNullOrEmpty(stringPhaseId) || !int.TryParse(stringPhaseId, out int phaseId)) 
+            if (string.IsNullOrEmpty(stringPhaseId) || !int.TryParse(stringPhaseId, out var phaseId))
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "LifecyclePhaseIsInvalid"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "LifecyclePhaseIsInvalid"));
                 return -1;
             }
 
-            try 
+            try
             {
-                await octoHelper.LifeCycles.AddEnvironmentToLifecyclePhase(environmentId, lcId, phaseId -1, auto);
+                await OctoHelper.LifeCycles.AddEnvironmentToLifecyclePhase(environmentId, lcId, phaseId - 1, auto);
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "CouldntAddEnvToTeam"), e.Message));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CouldntAddEnvToTeam"), e.Message);
                 return -1;
             }
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "Done"), String.Empty));
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
             return 0;
         }
 
-        struct EnvironmentToLifecycleOptions 
+        private struct EnvironmentToLifecycleOptions
         {
             public const string EnvId = "envid";
             public const string LcId = "lcid";

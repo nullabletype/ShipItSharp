@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
-using ShipItSharp.Core.Models.Variables;
+using ShipItSharp.Core.Deployment.Models.Variables;
 
-namespace ShipItSharp.Core.Octopus.Interfaces;
-
-public interface IVariableRepository
+namespace ShipItSharp.Core.Octopus.Interfaces
 {
-    Task UpdateVariableSet(VariableSet varSet);
+    public interface IVariableRepository
+    {
+        Task UpdateVariableSet(VariableSet varSet);
+    }
 }

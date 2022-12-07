@@ -21,31 +21,33 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Octopus.Interfaces;
 using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands {
-    internal class Channel : BaseCommand {
+namespace ShipItSharp.Console.Commands
+{
+    internal class Channel : BaseCommand
+    {
 
 
         private readonly CleanupChannels _cleanupChannels;
 
-        protected override bool SupportsInteractiveMode => true;
-        public override string CommandName => "channel";
-
         public Channel(IOctopusHelper octoHelper, CleanupChannels cleanupChannels, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
         {
 
-            this._cleanupChannels = cleanupChannels;
+            _cleanupChannels = cleanupChannels;
         }
 
-        public override void Configure(CommandLineApplication command) 
+        protected override bool SupportsInteractiveMode => true;
+        public override string CommandName => "channel";
+
+        public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
-            command.Description = languageProvider.GetString(LanguageSection.OptionsStrings, "Channel");
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "Channel");
 
             ConfigureSubCommand(_cleanupChannels, command);
         }
@@ -57,6 +59,5 @@ namespace ShipItSharp.Console.Commands {
             ts.SetResult(0);
             return ts.Task;
         }
-
     }
 }

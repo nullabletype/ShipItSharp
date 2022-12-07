@@ -24,17 +24,17 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class PackageStep
     {
         public string StepName { get; set; }
         public string StepId { get; set; }
         public List<PackageStub> AvailablePackages { get; set; }
-        public PackageStub SelectedPackage { get
-            {
-                return AvailablePackages == null || !AvailablePackages.Any() ? null : AvailablePackages.First();
-            }
-            set { } }
+        public PackageStub SelectedPackage
+        {
+            get => AvailablePackages == null || !AvailablePackages.Any() ? null : AvailablePackages.First();
+            set { }
+        }
     }
 }

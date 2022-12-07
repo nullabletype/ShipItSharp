@@ -31,6 +31,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
     {
         [XmlElement("buildType")]
         public List<BuildType> Builds { get; set; }
-
     }
 }

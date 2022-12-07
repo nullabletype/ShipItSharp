@@ -24,71 +24,67 @@
 using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Octopus.Interfaces;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
+using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class DeployWithProfileDirectory : BaseCommand
+    internal class DeployWithProfileDirectory : BaseCommand
     {
-        private readonly IJobRunner _consoleDoJob;
         private readonly DeployWithProfileDirectoryRunner _runner;
-
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "profiledirectory";
 
         public DeployWithProfileDirectory(IJobRunner consoleDoJob, IOctopusHelper octopusHelper, ILanguageProvider languageProvider, DeployWithProfileDirectoryRunner runner) : base(octopusHelper, languageProvider)
         {
-            this._consoleDoJob = consoleDoJob;
-            this._runner = runner;
+            _runner = runner;
         }
+
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "profiledirectory";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(DeployWithProfileDirectoryOptionNames.Directory, command.Option("-d|--directory", languageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFileDirectory"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
-            AddToRegister(DeployWithProfileDirectoryOptionNames.ForceRedeploy, command.Option("-r|--forceredeploy", languageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
-            AddToRegister(DeployWithProfileDirectoryOptionNames.Monitor, command.Option("-m|--monitor", languageProvider.GetString(LanguageSection.OptionsStrings, "MonitorForPackages"), CommandOptionType.SingleValue).Accepts(v => v.RegularExpression("[0-9]*", languageProvider.GetString(LanguageSection.UiStrings, "ParameterNotANumber"))));
-            
-            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionInstall, command.Option("--actioninstall", languageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
-            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionRun, command.Option("--actionrun", languageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.Directory, command.Option("-d|--directory", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFileDirectory"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.ForceRedeploy, command.Option("-r|--forceredeploy", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.Monitor, command.Option("-m|--monitor", LanguageProvider.GetString(LanguageSection.OptionsStrings, "MonitorForPackages"), CommandOptionType.SingleValue).Accepts(v => v.RegularExpression("[0-9]*", LanguageProvider.GetString(LanguageSection.UiStrings, "ParameterNotANumber"))));
+
+            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionInstall, command.Option("--actioninstall", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionRun, command.Option("--actionrun", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var profilePath = GetOption(DeployWithProfileDirectoryOptionNames.Directory).Value();
-            System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "UsingProfileDirAtPath") + profilePath);
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UsingProfileDirAtPath") + profilePath);
 
-            TryGetIntValueFromOption(DeployWithProfileDirectoryOptionNames.Monitor, out int waitTime);
+            TryGetIntValueFromOption(DeployWithProfileDirectoryOptionNames.Monitor, out var waitTime);
             var foreRedeploy = GetOption(DeployWithProfileDirectoryOptionNames.ForceRedeploy).HasValue();
 
-            var config = DeployWithProfileDirectoryConfig.Create(languageProvider, profilePath, waitTime, foreRedeploy);
+            var config = DeployWithProfileDirectoryConfig.Create(LanguageProvider, profilePath, waitTime, foreRedeploy);
 
             if (config.IsFailure)
             {
                 System.Console.WriteLine(config.Error);
                 return -1;
-            } 
-            else
+            }
+            try
             {
-                try
-                {
-                    await _runner.Run(config.Value);
-                }
-                catch (Exception e)
-                {
-                    System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "UnexpectedError"), e.Message));
-                }
+                await _runner.Run(config.Value);
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UnexpectedError"), e.Message);
             }
 
             return 0;
         }
 
-        struct DeployWithProfileDirectoryOptionNames
+        private struct DeployWithProfileDirectoryOptionNames
         {
             public const string Directory = "directory";
             public const string ForceRedeploy = "forceredeploy";

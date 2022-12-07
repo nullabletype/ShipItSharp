@@ -27,11 +27,10 @@ using System.Xml.Serialization;
 namespace ShipItSharp.Core.ChangeLogs.TeamCity
 {
     [XmlRoot("builds")]
-    public class ChangeBuilds 
+    public class ChangeBuilds
     {
 
         [XmlElement("build")]
         public List<ChangeBuild> Builds { get; set; }
-
     }
 }

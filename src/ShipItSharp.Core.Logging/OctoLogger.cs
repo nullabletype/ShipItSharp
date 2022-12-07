@@ -24,25 +24,26 @@
 using System;
 using Microsoft.Extensions.Logging;
 
-namespace ShipItSharp.Core.Logging {
-    public class OctoLogger<T> : Interfaces.ILogger<T> where T : class 
+namespace ShipItSharp.Core.Logging
+{
+    public class OctoLogger<T> : Interfaces.ILogger where T : class
     {
 
-        private ILogger _log;
+        private readonly ILogger _log;
 
         public OctoLogger()
         {
-            _log = LoggingProvider.loggerFactory.CreateLogger<T>();
+            _log = LoggingProvider.LoggerFactory.CreateLogger<T>();
         }
 
         public void Info(string message)
         {
-            this._log.LogInformation(message);
+            _log.LogInformation(message);
         }
 
         public void Error(string message, Exception e = null)
         {
-            this._log.LogError(message, e);
+            _log.LogError(message, e);
         }
     }
 }

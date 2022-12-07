@@ -23,12 +23,12 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models.Variables 
+namespace ShipItSharp.Core.Deployment.Models.Variables
 {
 
-    public class Variable 
+    public class Variable
     {
-        public Variable() 
+        public Variable()
         {
             EnvironmentIds = new List<string>();
             TargetIds = new List<string>();

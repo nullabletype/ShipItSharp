@@ -21,13 +21,11 @@
 #endregion
 
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace ShipItSharp.Core.Models 
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class TaskDetails 
+    public class TaskDetails
     {
         public int PercentageComplete { get; set; }
         public TaskStatus State { get; set; }

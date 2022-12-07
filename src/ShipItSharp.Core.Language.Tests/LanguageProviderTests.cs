@@ -22,16 +22,14 @@
 
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using System.Threading;
 using NUnit.Framework;
 
 namespace ShipItSharp.Core.Language.Tests
 {
     [TestFixture]
-    public class LanguageProviderTests 
+    public class LanguageProviderTests
     {
         [Test]
         public void ExceptionIsThrownOnNullKey()

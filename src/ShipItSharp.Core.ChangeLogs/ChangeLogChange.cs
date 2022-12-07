@@ -41,6 +41,5 @@ namespace ShipItSharp.Core.ChangeLogs
         public string WebUrl { get; set; }
         public string Comment { get; set; }
         public List<Issue> Issues { get; set; }
-
     }
 }

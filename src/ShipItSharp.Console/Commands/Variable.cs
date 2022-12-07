@@ -21,32 +21,31 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Octopus.Interfaces;
 using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands 
+namespace ShipItSharp.Console.Commands
 {
-    internal class Variable : BaseCommand 
+    internal class Variable : BaseCommand
     {
-
-
+        
         private readonly VariablesWithProfile _variablesWithProfile;
+
+        public Variable(IOctopusHelper octoHelper, VariablesWithProfile varsWithProfile, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
+        {
+            _variablesWithProfile = varsWithProfile;
+        }
 
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "var";
 
-        public Variable(IOctopusHelper octoHelper, VariablesWithProfile varsWithProfile, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
-        {
-            this._variablesWithProfile = varsWithProfile;
-        }
-
-        public override void Configure(CommandLineApplication command) 
+        public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
-            command.Description = languageProvider.GetString(LanguageSection.OptionsStrings, "Variables");
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "Variables");
 
             ConfigureSubCommand(_variablesWithProfile, command);
         }
@@ -58,6 +57,5 @@ namespace ShipItSharp.Console.Commands
             ts.SetResult(0);
             return ts.Task;
         }
-
     }
 }

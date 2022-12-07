@@ -25,64 +25,63 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
+using ShipItSharp.Core.Deployment.Models.Variables;
+using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
-using ShipItSharp.Core.Models.Variables;
-using ShipItSharp.Core.Language;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    partial class VariablesWithProfile : BaseCommand
+    internal class VariablesWithProfile : BaseCommand
     {
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "profile";
 
         public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "profile";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(VariablesWithProfileOptionNames.File, command.Option("-f|--filepath", languageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
+            AddToRegister(VariablesWithProfileOptionNames.File, command.Option("-f|--filepath", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var file = GetStringFromUser(VariablesWithProfileOptionNames.File, string.Empty, false);
+            var file = GetStringFromUser(VariablesWithProfileOptionNames.File, string.Empty);
 
             var config = StandardSerialiser.DeserializeFromJsonNet<VariableSetCollection>(File.ReadAllText(file));
 
-            if (config != null) 
+            if (config != null)
             {
-                foreach(var varSet in config.VariableSets) 
+                foreach (var varSet in config.VariableSets)
                 {
-                    System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "UpdatingVariableSet"), varSet.Id, varSet.Variables.Count));
-                    try 
+                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UpdatingVariableSet"), varSet.Id, varSet.Variables.Count);
+                    try
                     {
-                        await octoHelper.Variables.UpdateVariableSet(varSet);
-                    } 
-                    catch (Exception e) 
+                        await OctoHelper.Variables.UpdateVariableSet(varSet);
+                    }
+                    catch (Exception e)
                     {
-                        System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "FailedUpdatingVariableSet"), e.Message));
+                        System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FailedUpdatingVariableSet"), e.Message);
                         return -1;
                     }
                 }
-            } 
-            else 
+            }
+            else
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "FailedParsingVariableFile"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FailedParsingVariableFile"));
             }
 
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty));
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
 
             return 0;
         }
 
-        struct VariablesWithProfileOptionNames 
+        private struct VariablesWithProfileOptionNames
         {
             public const string File = "file";
-            public const string Description = "description";
         }
     }
 }

@@ -21,13 +21,10 @@
 #endregion
 
 
-using ShipItSharp.Core.Configuration;
-
 namespace ShipItSharp.Core.Configuration
 {
     public class InitResultCore
     {
         public ConfigurationLoadResult ConfigResult { get; set; }
-
     }
 }

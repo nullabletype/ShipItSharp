@@ -34,11 +34,11 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
 {
     public class GitHubVersionChecker : IVersionCheckingProvider
     {
-        private readonly ILogger<GitHubVersionChecker> _log;
+        private readonly ILogger _log;
 
         public GitHubVersionChecker()
         {
-            this._log = LoggingProvider.GetLogger<GitHubVersionChecker>();
+            _log = LoggingProvider.GetLogger<GitHubVersionChecker>();
         }
 
         public async Task<IRelease> GetLatestRelease()
@@ -53,10 +53,9 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
             }
             catch (Exception e)
             {
-                this._log.Error("Couldn't load the latest version information from github", e);
+                _log.Error("Couldn't load the latest version information from github", e);
             }
             return null;
         }
-
     }
 }

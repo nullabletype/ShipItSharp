@@ -21,16 +21,16 @@
 #endregion
 
 
-using ShipItSharp.Core.Models.Interfaces;
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.ChangeLogs.Interfaces {
+namespace ShipItSharp.Core.ChangeLogs.Interfaces
+{
     public interface IChangeLogProvider
     {
         bool CanProvideChangeTracking(IVersionedPackage fromPackage);
         ChangeLogCollection GetChanges(IVersionedPackage fromPackage, IVersionedPackage toPackage, IVersionedProject project);
         bool CanProvideChangeTracking(IVersionedPackage fromPackage, IVersionedPackage toPackage);
         ChangeLogCollection GetChanges(IVersionedPackage toPackage, IVersionedProject project);
-        IEnumerable<ChangeLogs.Project> GetProjectStatusList(BuildStatus status, int lookupLimit, int count, bool includeFilteredConfigurations = false);
+        IEnumerable<Project> GetProjectStatusList(BuildStatus status, int lookupLimit, int count, bool includeFilteredConfigurations = false);
     }
 }

@@ -27,39 +27,39 @@ using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class UpdateReleaseVariables : BaseCommand
     {
-
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "updatevariables";
-        private IProgressBar progressBar;
+        private readonly IProgressBar _progressBar;
 
         public UpdateReleaseVariables(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider)
         {
-            this.progressBar = progressBar;
+            this._progressBar = progressBar;
         }
+
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "updatevariables";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(UpdateReleaseVariablesOptionNames.Environment, command.Option("-e|--environment", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(UpdateReleaseVariablesOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
-            AddToRegister(UpdateReleaseVariablesOptionNames.SkipConfirmation, command.Option("-s|--skipconfirmation", languageProvider.GetString(LanguageSection.OptionsStrings, "SkipConfirmation"), CommandOptionType.NoValue));
+            AddToRegister(UpdateReleaseVariablesOptionNames.Environment, command.Option("-e|--environment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(UpdateReleaseVariablesOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(UpdateReleaseVariablesOptionNames.SkipConfirmation, command.Option("-s|--skipconfirmation", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SkipConfirmation"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var environmentName = GetStringFromUser(UpdateReleaseVariablesOptionNames.Environment, languageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(UpdateReleaseVariablesOptionNames.GroupFilter, languageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), allowEmpty: true);
+            var environmentName = GetStringFromUser(UpdateReleaseVariablesOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
+            var groupRestriction = GetStringFromUser(UpdateReleaseVariablesOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
 
             var environment = await FetchEnvironmentFromUserInput(environmentName);
 
@@ -71,22 +71,22 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var groupIds = new List<string>();
             if (!string.IsNullOrEmpty(groupRestriction))
             {
-                progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
+                _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await octoHelper.Projects.GetFilteredProjectGroups(groupRestriction))
+                    (await OctoHelper.Projects.GetFilteredProjectGroups(groupRestriction))
                     .Select(g => g.Id).ToList();
             }
 
-            var projectStubs = await octoHelper.Projects.GetProjectStubs();
+            var projectStubs = await OctoHelper.Projects.GetProjectStubs();
 
             var toUpdate = new List<ProjectRelease>();
 
-            progressBar.CleanCurrentLine();
+            _progressBar.CleanCurrentLine();
 
             foreach (var projectStub in projectStubs)
             {
-                progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
-                    String.Format(languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+                _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
+                    string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
                 if (!string.IsNullOrEmpty(groupRestriction))
                 {
                     if (!groupIds.Contains(projectStub.ProjectGroupId))
@@ -95,19 +95,19 @@ namespace ShipItSharp.Console.Commands.SubCommands
                     }
                 }
 
-                var release = (await this.octoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, environment.Id)).Release;
-                if (release != null && !release.Version.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                var release = (await OctoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, environment.Id)).Release;
+                if ((release != null) && !release.Version.Equals("none", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    toUpdate.Add(new ProjectRelease { Release = release, ProjectStub = projectStub});
+                    toUpdate.Add(new ProjectRelease { Release = release, ProjectStub = projectStub });
                 }
             }
 
-            progressBar.StopAnimation();
-            progressBar.CleanCurrentLine();
+            _progressBar.StopAnimation();
+            _progressBar.CleanCurrentLine();
 
             System.Console.WriteLine();
 
-            var table = new ConsoleTable(languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), languageProvider.GetString(LanguageSection.UiStrings, "CurrentRelease"));
+            var table = new ConsoleTable(LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "CurrentRelease"));
             foreach (var release in toUpdate)
             {
                 table.AddRow(release.ProjectStub.ProjectName, release.Release.Version);
@@ -115,27 +115,20 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             table.Write(Format.Minimal);
 
-            if (Prompt.GetYesNo(languageProvider.GetString(LanguageSection.UiStrings, "AreYouSureUpdateVariables"), true))
+            if (Prompt.GetYesNo(LanguageProvider.GetString(LanguageSection.UiStrings, "AreYouSureUpdateVariables"), true))
             {
                 foreach (var release in toUpdate)
                 {
-                    System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Processing"), release.ProjectStub.ProjectName);
-                    var result = await this.octoHelper.Releases.UpdateReleaseVariables(release.Release.Id);
-                    if (result)
-                    {
-                        System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Done"), release.ProjectStub.ProjectName);
-                    }
-                    else
-                    {
-                        System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Failed"), release.ProjectStub.ProjectName);
-                    }
+                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Processing"), release.ProjectStub.ProjectName);
+                    var result = await OctoHelper.Releases.UpdateReleaseVariables(release.Release.Id);
+                    System.Console.WriteLine(result ? LanguageProvider.GetString(LanguageSection.UiStrings, "Done") : LanguageProvider.GetString(LanguageSection.UiStrings, "Failed"), release.ProjectStub.ProjectName);
                 }
             }
-            
+
             return 0;
         }
 
-        struct UpdateReleaseVariablesOptionNames
+        private struct UpdateReleaseVariablesOptionNames
         {
             public const string Environment = "environment";
             public const string GroupFilter = "groupfilter";
@@ -145,7 +138,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         private class ProjectRelease
         {
             public ProjectStub ProjectStub { get; set; }
-            public ShipItSharp.Core.Models.Release Release { get; set; }
+            public Core.Deployment.Models.Release Release { get; set; }
         }
     }
 }

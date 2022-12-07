@@ -28,21 +28,22 @@ using ShipItSharp.Core.Configuration.Interfaces;
 
 namespace ShipItSharp.Core.Configuration
 {
-    class Configuration : IConfiguration
+    internal class Configuration : IConfiguration
     {
-        public string ApiKey { get; set; }
-        public string OctopusUrl { get; set; }
         public string ChannelSeedProjectName { get; set; }
         public string ProjectGroupFilterString { get; set; }
+        public string ApiKey { get; set; }
+        public string OctopusUrl { get; set; }
         public ChangeLogProviderConfiguration ChangeProviderConfiguration { get; set; }
         public bool EnableTrace { get; set; }
         public int CacheTimeoutInSeconds { get; set; }
         public string DefaultChannel { get; set; }
 
         [JsonIgnore]
-        public List<string> ChannelSeedProjectNames {
+        public List<string> ChannelSeedProjectNames
+        {
             get { return ChannelSeedProjectName == null ? new List<string>() : ChannelSeedProjectName.Split(',').Select(c => c.Trim()).ToList(); }
-            set {}
+            set { }
         }
     }
 }

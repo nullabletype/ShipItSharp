@@ -21,7 +21,7 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Language 
+namespace ShipItSharp.Core.Language
 {
     public enum LanguageSection
     {

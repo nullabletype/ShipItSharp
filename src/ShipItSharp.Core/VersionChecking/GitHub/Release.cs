@@ -21,13 +21,17 @@
 #endregion
 
 
-using Newtonsoft.Json;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace ShipItSharp.Core.VersionChecking.GitHub
 {
     internal class Release : IRelease
     {
+
+        [JsonProperty("assets")]
+        public Asset[] Assets { get; set; }
+
         [JsonProperty("url")]
         public string Url { get; set; }
 
@@ -45,9 +49,6 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
         [JsonProperty("body")]
         public string ChangeLog { get; set; }
 
-        [JsonProperty("assets")]
-        public Asset[] Assets { get; set; }
-
-        IAsset[] IRelease.Assets { get => this.Assets.Cast<IAsset>().ToArray(); set => this.Assets = value.Select(a => new Asset { DownloadUrl = a.DownloadUrl, Name = a.Name }).ToArray(); }
+        IAsset[] IRelease.Assets { get => Assets.Cast<IAsset>().ToArray(); set => Assets = value.Select(a => new Asset { DownloadUrl = a.DownloadUrl, Name = a.Name }).ToArray(); }
     }
 }

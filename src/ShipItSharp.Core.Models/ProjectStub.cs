@@ -21,19 +21,15 @@
 #endregion
 
 
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class ProjectStub {
+    public class ProjectStub
+    {
 
         public bool Checked { get; set; }
         public string ProjectName { get; set; }
         public string ProjectId { get; set; }
         public string ProjectGroupId { get; set; }
         public string LifeCycleId { get; set; }
-
     }
 }

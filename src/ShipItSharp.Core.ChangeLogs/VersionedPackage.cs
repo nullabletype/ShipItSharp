@@ -21,10 +21,11 @@
 #endregion
 
 
-using ShipItSharp.Core.Models.Interfaces;
+using ShipItSharp.Core.ChangeLogs.Interfaces;
 
-namespace ShipItSharp.Core.ChangeLogs {
-    public class VersionedPackage : IVersionedPackage 
+namespace ShipItSharp.Core.ChangeLogs
+{
+    public class VersionedPackage : IVersionedPackage
     {
         public string Id { get; set; }
         public string Message { get; set; }

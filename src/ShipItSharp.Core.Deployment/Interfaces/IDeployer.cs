@@ -21,12 +21,12 @@
 #endregion
 
 
-using System.Threading.Tasks;
-using ShipItSharp.Core.Models.Interfaces;
-using ShipItSharp.Core.Logging.Interfaces;
-using ShipItSharp.Core.Models;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Deployment.Models.Interfaces;
+using ShipItSharp.Core.Logging.Interfaces;
 
 namespace ShipItSharp.Core.Deployment.Interfaces
 {

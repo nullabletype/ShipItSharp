@@ -21,10 +21,9 @@
 #endregion
 
 
-using ShipItSharp.Core.Models;
 using System;
 
-namespace ShipItSharp.Core
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class PackageStub
     {
@@ -35,7 +34,7 @@ namespace ShipItSharp.Core
         public DateTime? PublishedOn { get; set; }
     }
 
-    public class PackageFull 
+    public class PackageFull
     {
         public string Id { get; set; }
         public string Version { get; set; }

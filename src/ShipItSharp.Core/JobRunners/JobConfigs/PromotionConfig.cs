@@ -1,20 +1,18 @@
 ﻿using CSharpFunctionalExtensions;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using ShipItSharp.Core.Deployment.Models;
 
 namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class PromotionConfig
     {
-        public Models.Environment DestinationEnvironment { get; set; }
-        public Models.Environment SourceEnvironment { get; set; }
+
+        private PromotionConfig() { }
+        public Environment DestinationEnvironment { get; set; }
+        public Environment SourceEnvironment { get; set; }
         public string GroupFilter { get; set; }
         public bool RunningInteractively { get; set; }
 
-        private PromotionConfig() { }
-
-        public static Result<PromotionConfig> Create (Models.Environment destEnv, Models.Environment srcEnv, string filter, bool runningInteractively)
+        public static Result<PromotionConfig> Create(Environment destEnv, Environment srcEnv, string filter, bool runningInteractively)
         {
             if (destEnv == null || string.IsNullOrEmpty(destEnv.Id))
             {

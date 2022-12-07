@@ -29,11 +29,11 @@ namespace ShipItSharp.Core.Configuration
 {
     public abstract class ConfigurationImplementation
     {
-        protected ILanguageProvider languageProvider;
+        protected readonly ILanguageProvider LanguageProvider;
 
         public ConfigurationImplementation(ILanguageProvider languageProvider)
         {
-            this.languageProvider = languageProvider;
+            this.LanguageProvider = languageProvider;
         }
         public abstract Task<ConfigurationLoadResult> LoadConfiguration();
 
@@ -41,10 +41,10 @@ namespace ShipItSharp.Core.Configuration
         {
             return new Configuration
             {
-                ApiKey = languageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleApiKey"),
-                ChannelSeedProjectName = languageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleChannelSeedAppName"),
-                OctopusUrl = languageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleOctopusUrl"),
-                ProjectGroupFilterString = languageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleProjectGroupFilterString"),
+                ApiKey = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleApiKey"),
+                ChannelSeedProjectName = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleChannelSeedAppName"),
+                OctopusUrl = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleOctopusUrl"),
+                ProjectGroupFilterString = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleProjectGroupFilterString"),
                 DefaultChannel = "master"
             };
         }

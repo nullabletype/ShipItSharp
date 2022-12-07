@@ -1,16 +1,18 @@
-﻿using CSharpFunctionalExtensions;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
+using CSharpFunctionalExtensions;
+using ShipItSharp.Core.Deployment.Models;
+using Environment = ShipItSharp.Core.Deployment.Models.Environment;
 
 namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class DeployConfig
     {
-        public Models.Channel Channel { get; private set; }
-        public Models.Channel DefaultFallbackChannel { get; private set; }
-        public Models.Environment Environment { get; private set; }
+
+        private DeployConfig() { }
+        public Channel Channel { get; private set; }
+        public Channel DefaultFallbackChannel { get; private set; }
+        public Environment Environment { get; private set; }
         public string GroupFilter { get; private set; }
         public bool RunningInteractively { get; private set; }
         public bool ForceRedeploy { get; private set; }
@@ -18,9 +20,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public string ReleaseName { get; private set; }
         public bool FallbackToDefaultChannel => DefaultFallbackChannel != null;
 
-        private DeployConfig() { }
-
-        public static Result<DeployConfig> Create (Models.Environment env, Models.Channel channel, Models.Channel defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false)
+        public static Result<DeployConfig> Create(Environment env, Channel channel, Channel defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false)
         {
             if (env == null || string.IsNullOrEmpty(env.Id))
             {
@@ -32,7 +32,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 return Result.Failure<DeployConfig>("channel is not set correctly");
             }
 
-            if (defaultFallbackChannel != null && string.IsNullOrEmpty(defaultFallbackChannel.Id))
+            if ((defaultFallbackChannel != null) && string.IsNullOrEmpty(defaultFallbackChannel.Id))
             {
                 return Result.Failure<DeployConfig>("default channel is not set correctly");
             }
@@ -43,7 +43,7 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 {
                     if (!File.Exists(saveProfile))
                     {
-                        using (File.Create(saveProfile, 1, FileOptions.DeleteOnClose)) { };
+                        using (File.Create(saveProfile, 1, FileOptions.DeleteOnClose)) { }
                     }
                 }
                 catch (Exception e)

@@ -3,48 +3,49 @@ using System.Threading;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Core.Octopus.Repositories;
-
-public class TeamsRepository : ITeamsRepository
+namespace ShipItSharp.Core.Octopus.Repositories
 {
-    private OctopusHelper octopusHelper;
-
-    public TeamsRepository(OctopusHelper octopusHelper)
+    public class TeamsRepository : ITeamsRepository
     {
-        this.octopusHelper = octopusHelper;
-    }
+        private readonly OctopusHelper _octopusHelper;
 
-    public async Task RemoveEnvironmentsFromTeams(string envId) 
-    {
-        var teams = await octopusHelper.client.Repository.Teams.FindAll(CancellationToken.None);
-        foreach (var team in teams) 
+        public TeamsRepository(OctopusHelper octopusHelper)
         {
-            var scopes = await octopusHelper.client.Repository.Teams.GetScopedUserRoles(team);
-                
-            foreach (var scope in scopes.Where(s => s.EnvironmentIds.Contains(envId))) 
+            this._octopusHelper = octopusHelper;
+        }
+
+        public async Task RemoveEnvironmentsFromTeams(string envId)
+        {
+            var teams = await _octopusHelper.Client.Repository.Teams.FindAll(CancellationToken.None);
+            foreach (var team in teams)
             {
-                scope.EnvironmentIds.Remove(envId);
-                await octopusHelper.client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
+                var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team);
+
+                foreach (var scope in scopes.Where(s => s.EnvironmentIds.Contains(envId)))
+                {
+                    scope.EnvironmentIds.Remove(envId);
+                    await _octopusHelper.Client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
+                }
+
             }
-                
         }
-    }
 
-    public async Task AddEnvironmentToTeam(string envId, string teamId) 
-    {
-        var team = await octopusHelper.client.Repository.Teams.Get(teamId, CancellationToken.None);
-        var environment = await octopusHelper.client.Repository.Environments.Get(envId, CancellationToken.None);
-        if (team == null || environment == null) 
+        public async Task AddEnvironmentToTeam(string envId, string teamId)
         {
-            return;
-        }
-        var scopes = await octopusHelper.client.Repository.Teams.GetScopedUserRoles(team);
-        foreach (var scope in scopes) 
-        {
-            if (!scope.EnvironmentIds.Contains(envId))
+            var team = await _octopusHelper.Client.Repository.Teams.Get(teamId, CancellationToken.None);
+            var environment = await _octopusHelper.Client.Repository.Environments.Get(envId, CancellationToken.None);
+            if (team == null || environment == null)
             {
-                scope.EnvironmentIds.Add(envId);
-                await octopusHelper.client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
+                return;
+            }
+            var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team);
+            foreach (var scope in scopes)
+            {
+                if (!scope.EnvironmentIds.Contains(envId))
+                {
+                    scope.EnvironmentIds.Add(envId);
+                    await _octopusHelper.Client.Repository.ScopedUserRoles.Modify(scope, CancellationToken.None);
+                }
             }
         }
     }

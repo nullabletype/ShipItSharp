@@ -21,12 +21,10 @@
 #endregion
 
 
-using System;
-
-namespace ShipItSharp.Core.Language 
+namespace ShipItSharp.Core.Language
 {
     public interface ILanguageProvider
     {
         string GetString(LanguageSection section, string key);
-    } 
+    }
 }

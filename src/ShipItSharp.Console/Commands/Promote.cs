@@ -21,55 +21,53 @@
 #endregion
 
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ShipItSharp.Console.Commands
 {
     internal class Promote : BaseCommand
     {
-        private IProgressBar progressBar;
-        private PromotionRunner runner;
+        private readonly IProgressBar _progressBar;
+        private readonly PromotionRunner _runner;
+
+        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner) : base(octoHelper, languageProvider)
+        {
+            this._progressBar = progressBar;
+            this._runner = runner;
+        }
 
         protected override bool SupportsInteractiveMode => true;
         public override string CommandName => "promote";
 
-        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner) : base(octoHelper, languageProvider)
-        {
-            this.progressBar = progressBar;
-            this.runner = runner;
-        }
-        
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
-            command.Description = languageProvider.GetString(LanguageSection.OptionsStrings, "PromoteProjects");
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "PromoteProjects");
 
-            AddToRegister(PromoteOptionNames.Environment, command.Option("-e|--environment", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
-            AddToRegister(PromoteOptionNames.SourceEnvironment, command.Option("-s|--sourcenvironment", languageProvider.GetString(LanguageSection.OptionsStrings, "SourceEnvironment"), CommandOptionType.SingleValue));
-            AddToRegister(PromoteOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(PromoteOptionNames.Environment, command.Option("-e|--environment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
+            AddToRegister(PromoteOptionNames.SourceEnvironment, command.Option("-s|--sourcenvironment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SourceEnvironment"), CommandOptionType.SingleValue));
+            AddToRegister(PromoteOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-            var projectStubs = await octoHelper.Projects.GetProjectStubs();
+            _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
 
-            var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, languageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
-            var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, languageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, languageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
+            var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, LanguageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
+            var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
+            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
 
-            progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
+            _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
             var environment = await FetchEnvironmentFromUserInput(environmentName);
             var targetEnvironment = await FetchEnvironmentFromUserInput(targetEnvironmentName);
 
@@ -78,44 +76,37 @@ namespace ShipItSharp.Console.Commands
                 return -2;
             }
 
-            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, this.InInteractiveMode);
+            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, InInteractiveMode);
 
             if (configResult.IsFailure)
             {
                 System.Console.WriteLine(configResult.Error);
                 return -1;
-            } 
-            else 
-            {
-                return await runner.Run(configResult.Value, this.progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
             }
+            return await _runner.Run(configResult.Value, _progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
         }
 
 
         private IEnumerable<int> InteractivePrompt(PromotionConfig config, (List<Project> currentProjects, List<Project> targetProjects) projects)
         {
-            InteractiveRunner runner = PopulateRunner(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "PromotingTo"), config.SourceEnvironment.Name, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetProjects);
+            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "PromotingTo"), config.SourceEnvironment.Name, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetProjects);
             return runner.GetSelectedIndexes();
         }
 
         private InteractiveRunner PopulateRunner(string prompt, IList<Project> projects, IList<Project> targetProjects)
         {
-            var runner = new InteractiveRunner(prompt, languageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), languageProvider, languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), languageProvider.GetString(LanguageSection.UiStrings, "OnSource"), languageProvider.GetString(LanguageSection.UiStrings, "OnTarget"));
+            var runner = new InteractiveRunner(prompt, LanguageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), LanguageProvider, LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnSource"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnTarget"));
             foreach (var project in projects)
             {
                 var packagesAvailable = project.CurrentRelease != null;
 
-                runner.AddRow(project.Checked, packagesAvailable, new[] {
-                        project.ProjectName,
-                        project.CurrentRelease.Version,
-                        targetProjects.FirstOrDefault(p => p.ProjectId == project.ProjectId)?.CurrentRelease?.Version
-                    });
+                runner.AddRow(project.Checked, packagesAvailable, project.ProjectName, project.CurrentRelease.Version, targetProjects.FirstOrDefault(p => p.ProjectId == project.ProjectId)?.CurrentRelease?.Version);
             }
             runner.Run();
             return runner;
         }
 
-        struct PromoteOptionNames
+        private struct PromoteOptionNames
         {
             public const string SourceEnvironment = "sourceenvironment";
             public const string Environment = "environment";

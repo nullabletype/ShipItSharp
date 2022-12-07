@@ -22,19 +22,19 @@
 
 
 using System.Collections.Generic;
-using ShipItSharp.Core.Models.Interfaces;
+using ShipItSharp.Core.ChangeLogs.Interfaces;
 
-namespace ShipItSharp.Core.ChangeLogs {
-    public class ChangeLogCollection 
+namespace ShipItSharp.Core.ChangeLogs
+{
+    public class ChangeLogCollection
     {
 
         public ChangeLogCollection()
         {
-            this.Changes = new List<ChangeLogChange>();
+            Changes = new List<ChangeLogChange>();
         }
 
         public IVersionedProject Project { get; set; }
         public List<ChangeLogChange> Changes { get; set; }
-
     }
 }

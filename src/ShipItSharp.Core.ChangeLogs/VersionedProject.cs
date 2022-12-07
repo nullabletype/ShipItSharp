@@ -21,14 +21,11 @@
 #endregion
 
 
-using ShipItSharp.Core.Models.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using ShipItSharp.Core.ChangeLogs.Interfaces;
 
 namespace ShipItSharp.Core.ChangeLogs
 {
-    class VersionedProject : IVersionedProject 
+    internal class VersionedProject : IVersionedProject
     {
         public bool Checked { get; set; }
         public string LifeCycleId { get; set; }

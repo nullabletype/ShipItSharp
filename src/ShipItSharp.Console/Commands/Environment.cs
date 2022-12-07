@@ -21,51 +21,49 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Console.ConsoleTools;
-using ShipItSharp.Core.Octopus;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using ShipItSharp.Core.Octopus.Interfaces;
+using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
+using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus;
+using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands {
+namespace ShipItSharp.Console.Commands
+{
     internal class Environment : BaseCommand
     {
-        private EnsureEnvironment ensureEnv;
-        private DeleteEnvironment delEnv;
-        private EnvironmentToTeam envToTeam;
-        private EnvironmentToLifecycle envToLifecycle;
+        private readonly DeleteEnvironment _delEnv;
+        private readonly EnsureEnvironment _ensureEnv;
+        private readonly EnvironmentToLifecycle _envToLifecycle;
+        private readonly EnvironmentToTeam _envToTeam;
 
         public Environment(IOctopusHelper octoHelper, EnsureEnvironment ensureEnv, DeleteEnvironment delEnv, EnvironmentToTeam envToTeam, EnvironmentToLifecycle envToLifecycle, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
         {
-            this.ensureEnv = ensureEnv;
-            this.delEnv = delEnv;
-            this.envToTeam = envToTeam;
-            this.envToLifecycle = envToLifecycle;
+            this._ensureEnv = ensureEnv;
+            this._delEnv = delEnv;
+            this._envToTeam = envToTeam;
+            this._envToLifecycle = envToLifecycle;
         }
 
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "env";
 
-        public override void Configure(CommandLineApplication command) 
+        public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
-            ConfigureSubCommand(ensureEnv, command);
-            ConfigureSubCommand(delEnv, command);
-            ConfigureSubCommand(envToTeam, command);
-            ConfigureSubCommand(envToLifecycle, command);
+            ConfigureSubCommand(_ensureEnv, command);
+            ConfigureSubCommand(_delEnv, command);
+            ConfigureSubCommand(_envToTeam, command);
+            ConfigureSubCommand(_envToLifecycle, command);
 
-            command.Description = languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentCommands");
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentCommands");
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var envs = await  OctopusHelper.Default.Environments.GetEnvironments();
-            var table = new ConsoleTable(languageProvider.GetString(LanguageSection.UiStrings, "Name"), languageProvider.GetString(LanguageSection.UiStrings, "Id"));
+            var envs = await OctopusHelper.Default.Environments.GetEnvironments();
+            var table = new ConsoleTable(LanguageProvider.GetString(LanguageSection.UiStrings, "Name"), LanguageProvider.GetString(LanguageSection.UiStrings, "Id"));
             foreach (var env in envs)
             {
                 table.AddRow(env.Name, env.Id);
@@ -74,6 +72,5 @@ namespace ShipItSharp.Console.Commands {
             table.Write(Format.Minimal);
             return 0;
         }
-
     }
 }

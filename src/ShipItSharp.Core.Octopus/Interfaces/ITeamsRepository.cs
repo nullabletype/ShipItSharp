@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
 
-namespace ShipItSharp.Core.Octopus.Interfaces;
-
-public interface ITeamsRepository
+namespace ShipItSharp.Core.Octopus.Interfaces
 {
-    Task RemoveEnvironmentsFromTeams(string envId);
-    Task AddEnvironmentToTeam(string envId, string teamId);
+    public interface ITeamsRepository
+    {
+        Task RemoveEnvironmentsFromTeams(string envId);
+        Task AddEnvironmentToTeam(string envId, string teamId);
+    }
 }

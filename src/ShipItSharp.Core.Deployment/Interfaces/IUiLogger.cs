@@ -21,7 +21,7 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Logging.Interfaces
+namespace ShipItSharp.Core.Deployment.Interfaces
 {
     public interface IUiLogger
     {

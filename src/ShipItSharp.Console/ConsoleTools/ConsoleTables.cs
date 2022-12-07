@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -32,10 +31,6 @@ namespace ShipItSharp.Console.ConsoleTools
 {
     public class ConsoleTable
     {
-        public IList<object> Columns { get; set; }
-        public IList<object[]> Rows { get; protected set; }
-
-        public ConsoleTableOptions Options { get; protected set; }
 
         public ConsoleTable(params string[] columns)
             : this(new ConsoleTableOptions { Columns = new List<string>(columns) }) { }
@@ -46,25 +41,37 @@ namespace ShipItSharp.Console.ConsoleTools
             Rows = new List<object[]>();
             Columns = new List<object>(options.Columns);
         }
+        public IList<object> Columns { get; set; }
+        public IList<object[]> Rows { get; protected set; }
+
+        public ConsoleTableOptions Options { get; protected set; }
 
         public ConsoleTable AddColumn(IEnumerable<string> names)
         {
             foreach (var name in names)
+            {
                 Columns.Add(name);
+            }
             return this;
         }
 
         public ConsoleTable AddRow(params object[] values)
         {
             if (values == null)
+            {
                 throw new ArgumentNullException(nameof(values));
+            }
 
             if (!Columns.Any())
+            {
                 throw new Exception("Please set the columns first");
+            }
 
             if (Columns.Count != values.Length)
+            {
                 throw new Exception(
                     $"The number columns in the row ({Columns.Count}) does not match the values ({values.Length}");
+            }
 
             Rows.Add(values);
             return this;
@@ -79,7 +86,9 @@ namespace ShipItSharp.Console.ConsoleTools
             table.AddColumn(columns);
 
             foreach (var propertyValues in values.Select(value => columns.Select(column => GetColumnValue<T>(value, column))))
+            {
                 table.AddRow(propertyValues.ToArray());
+            }
 
             return table;
         }
@@ -210,7 +219,7 @@ namespace ShipItSharp.Console.ConsoleTools
         private List<int> ColumnLengths()
         {
             var columnLengths = Columns
-                .Select((t, i) => Rows.Select(x => x[i])
+                .Select((_, i) => Rows.Select(x => x[i])
                     .Union(new[] { Columns[i] })
                     .Where(x => x != null)
                     .Select(x => x.ToString().Length).Max())

@@ -24,12 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Logging;
 using ShipItSharp.Core.Logging.Interfaces;
 
@@ -37,11 +34,11 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
 {
     public class GitLabVersionChecker : IVersionCheckingProvider
     {
-        private readonly ILogger<GitLabVersionChecker> _log;
+        private readonly ILogger _log;
 
         public GitLabVersionChecker()
         {
-            this._log = LoggingProvider.GetLogger<GitLabVersionChecker>();
+            _log = LoggingProvider.GetLogger<GitLabVersionChecker>();
         }
 
         public async Task<IRelease> GetLatestRelease()
@@ -56,10 +53,9 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
             }
             catch (Exception e)
             {
-                this._log.Error("Couldn't load the latest version information from github", e);
+                _log.Error("Couldn't load the latest version information from github", e);
             }
             return null;
         }
-
     }
 }

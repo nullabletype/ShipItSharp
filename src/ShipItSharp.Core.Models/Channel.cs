@@ -22,8 +22,9 @@
 
 
 using System.Text.RegularExpressions;
+using NuGet.Versioning;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class Channel
     {
@@ -39,7 +40,7 @@ namespace ShipItSharp.Core.Models
             if (!string.IsNullOrEmpty(VersionRange))
             {
                 var range = NuGet.Versioning.VersionRange.Parse(VersionRange);
-                var semVersion = NuGet.Versioning.NuGetVersion.Parse(version);
+                var semVersion = NuGetVersion.Parse(version);
                 success = range.Satisfies(semVersion);
             }
 

@@ -4,10 +4,10 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class ChannelCleanupConfig
     {
-        public string GroupFilter { get; private set; }
-        public bool TestMode { get; private set; }
 
         private ChannelCleanupConfig() { }
+        public string GroupFilter { get; private set; }
+        public bool TestMode { get; private set; }
 
         public static Result<ChannelCleanupConfig> Create(string filter, bool testMode)
         {

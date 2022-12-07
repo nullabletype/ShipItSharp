@@ -29,56 +29,56 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class DeleteEnvironment : BaseCommand
+    internal class DeleteEnvironment : BaseCommand
     {
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "delete";
 
         public DeleteEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "delete";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(EnsureEnvironmentOptionNames.Id, command.Option("-e|--e", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnsureEnvironmentOptionNames.SkipConfirmation, command.Option("-s|--skipconfirmation", languageProvider.GetString(LanguageSection.OptionsStrings, "SkipConfirmation"), CommandOptionType.NoValue));
+            AddToRegister(EnsureEnvironmentOptionNames.Id, command.Option("-e|--e", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnsureEnvironmentOptionNames.SkipConfirmation, command.Option("-s|--skipconfirmation", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SkipConfirmation"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var id = GetStringFromUser(EnsureEnvironmentOptionNames.Id, string.Empty, false);
+            var id = GetStringFromUser(EnsureEnvironmentOptionNames.Id, string.Empty);
             var skipConfirm = GetOption(EnsureEnvironmentOptionNames.SkipConfirmation);
-            var found = await this.octoHelper.Environments.GetEnvironment(id);
-            if (found != null) 
+            var found = await OctoHelper.Environments.GetEnvironment(id);
+            if (found != null)
             {
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), id));
-                if (skipConfirm == null || !skipConfirm.HasValue()) 
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), id);
+                if (skipConfirm == null || !skipConfirm.HasValue())
                 {
-                    if (!Prompt.GetYesNo(string.Format(languageProvider.GetString(LanguageSection.UiStrings, "ConfirmationCheck"), found.Name), false))
+                    if (!Prompt.GetYesNo(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "ConfirmationCheck"), found.Name), false))
                     {
                         return 0;
                     }
                 }
-                try 
+                try
                 {
-                    await octoHelper.Teams.RemoveEnvironmentsFromTeams(found.Id);
-                    await octoHelper.LifeCycles.RemoveEnvironmentsFromLifecycles(found.Id);
-                    await octoHelper.Environments.DeleteEnvironment(found.Id);
-                } 
-                catch (Exception e) 
+                    await OctoHelper.Teams.RemoveEnvironmentsFromTeams(found.Id);
+                    await OctoHelper.LifeCycles.RemoveEnvironmentsFromLifecycles(found.Id);
+                    await OctoHelper.Environments.DeleteEnvironment(found.Id);
+                }
+                catch (Exception e)
                 {
-                    System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Error") + e.Message);
+                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Error") + e.Message);
                     return -1;
                 }
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
                 return 0;
             }
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id));
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id);
             return -1;
         }
 
-        struct EnsureEnvironmentOptionNames 
+        private struct EnsureEnvironmentOptionNames
         {
             public const string Id = "id";
             public const string SkipConfirmation = "skipconfirmation";

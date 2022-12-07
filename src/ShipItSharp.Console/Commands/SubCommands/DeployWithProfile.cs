@@ -29,36 +29,36 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class DeployWithProfile : BaseCommand
+    internal class DeployWithProfile : BaseCommand
     {
         private readonly IJobRunner _consoleDoJob;
 
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "profile";
-
         public DeployWithProfile(IJobRunner consoleDoJob, IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider)
         {
-            this._consoleDoJob = consoleDoJob;
+            _consoleDoJob = consoleDoJob;
         }
+
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "profile";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(DeployWithProfileOptionNames.File, command.Option("-f|--file", languageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
-            AddToRegister(DeployWithProfileOptionNames.ForceRedeploy, command.Option("-r|--forceredeploy", languageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileOptionNames.File, command.Option("-f|--file", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
+            AddToRegister(DeployWithProfileOptionNames.ForceRedeploy, command.Option("-r|--forceredeploy", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var profilePath = GetOption(DeployWithProfileOptionNames.File).Value();
-            System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "UsingProfileAtPath") + profilePath);
-            await this._consoleDoJob.StartJob(profilePath, null, null, GetOption(DeployWithProfileOptionNames.ForceRedeploy).HasValue());
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UsingProfileAtPath") + profilePath);
+            await _consoleDoJob.StartJob(profilePath, null, null, GetOption(DeployWithProfileOptionNames.ForceRedeploy).HasValue());
             return 0;
         }
 
-        struct DeployWithProfileOptionNames
+        private struct DeployWithProfileOptionNames
         {
             public const string File = "file";
             public const string ForceRedeploy = "forceredeploy";

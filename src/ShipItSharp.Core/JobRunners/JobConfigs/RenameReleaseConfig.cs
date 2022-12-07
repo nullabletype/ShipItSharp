@@ -1,18 +1,19 @@
 ﻿using CSharpFunctionalExtensions;
 using NuGet.Versioning;
+using ShipItSharp.Core.Deployment.Models;
 
 namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class RenameReleaseConfig
     {
-        public string ReleaseName { get; private set; }
-        public bool RunningInteractively { get; private set; }
-        public Models.Environment Environment { get; private set; }
-        public string GroupFilter { get; private set; }
 
         private RenameReleaseConfig() { }
+        public string ReleaseName { get; private set; }
+        public bool RunningInteractively { get; private set; }
+        public Environment Environment { get; private set; }
+        public string GroupFilter { get; private set; }
 
-        public static Result<RenameReleaseConfig> Create(string filter, Models.Environment environment, bool interactive, string releaseName)
+        public static Result<RenameReleaseConfig> Create(string filter, Environment environment, bool interactive, string releaseName)
         {
 
             if (environment == null || string.IsNullOrEmpty(environment.Id))

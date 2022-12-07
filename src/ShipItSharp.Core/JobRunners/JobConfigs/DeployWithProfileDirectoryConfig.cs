@@ -21,14 +21,19 @@
 #endregion
 
 
-using ShipItSharp.Core.Language;
 using CSharpFunctionalExtensions;
+using ShipItSharp.Core.Language;
 
 namespace ShipItSharp.Core.JobRunners.JobConfigs
 {
     public class DeployWithProfileDirectoryConfig
     {
-        private DeployWithProfileDirectoryConfig () { }
+        private DeployWithProfileDirectoryConfig() { }
+
+        public string Directory { get; private set; }
+        public bool MonitorDirectory { get; private set; }
+        public bool ForceRedeploy { get; private set; }
+        public int MonitorDelay { get; private set; }
 
         public static Result<DeployWithProfileDirectoryConfig> Create(ILanguageProvider languageProvider, string directory, int? delay, bool forceRedploy)
         {
@@ -48,11 +53,5 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
             };
             return Result.Success(config);
         }
-
-        public string Directory { get; private set; }
-        public bool MonitorDirectory { get; private set; }
-        public bool ForceRedeploy { get; private set; }
-        public int MonitorDelay { get; private set; }
-
     }
 }

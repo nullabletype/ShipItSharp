@@ -23,11 +23,11 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models.Variables 
+namespace ShipItSharp.Core.Deployment.Models.Variables
 {
-    public class VariableSetCollection 
+    public class VariableSetCollection
     {
-        public VariableSetCollection() 
+        public VariableSetCollection()
         {
             VariableSets = new List<VariableSet>();
         }

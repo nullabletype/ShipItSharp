@@ -21,7 +21,6 @@
 #endregion
 
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
@@ -30,43 +29,43 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class EnsureEnvironment : BaseCommand
+    internal class EnsureEnvironment : BaseCommand
     {
-        protected override bool SupportsInteractiveMode => false;
-        public override string CommandName => "ensure";
 
         public EnsureEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        protected override bool SupportsInteractiveMode => false;
+        public override string CommandName => "ensure";
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(EnsureEnvironmentOptionNames.Name, command.Option("-n|--name", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnsureEnvironmentOptionNames.Description, command.Option("-d|--description", languageProvider.GetString(LanguageSection.OptionsStrings, "Description"), CommandOptionType.SingleValue));
+            AddToRegister(EnsureEnvironmentOptionNames.Name, command.Option("-n|--name", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnsureEnvironmentOptionNames.Description, command.Option("-d|--description", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Description"), CommandOptionType.SingleValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var name = GetStringFromUser(EnsureEnvironmentOptionNames.Name, string.Empty, false);
+            var name = GetStringFromUser(EnsureEnvironmentOptionNames.Name, string.Empty);
             var description = GetStringFromUser(EnsureEnvironmentOptionNames.Description, string.Empty, true);
-            var found = await this.octoHelper.Environments.GetMatchingEnvironments(name);
-            ShipItSharp.Core.Models.Environment env = null;
-            if (found.Any()) 
+            var found = await OctoHelper.Environments.GetMatchingEnvironments(name);
+            Core.Deployment.Models.Environment env;
+            if (found.Any())
             {
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), name));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), name);
                 env = found.First();
-            } 
-            else 
-            {
-                System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), name));
-                env = await octoHelper.Environments.CreateEnvironment(name, description);
             }
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvionmentId"), env.Id));
+            else
+            {
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), name);
+                env = await OctoHelper.Environments.CreateEnvironment(name, description);
+            }
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvionmentId"), env.Id);
             return 0;
         }
 
-        struct EnsureEnvironmentOptionNames 
+        private struct EnsureEnvironmentOptionNames
         {
             public const string Name = "name";
             public const string Description = "description";

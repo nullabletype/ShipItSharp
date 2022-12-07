@@ -34,6 +34,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlAttribute("buildTypeId")]
         public string BuildTypeId { get; set; }
-
     }
 }

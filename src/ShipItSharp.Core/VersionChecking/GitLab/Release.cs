@@ -21,6 +21,8 @@
 #endregion
 
 
+using System;
+using MarkdownDeep;
 using Newtonsoft.Json;
 
 namespace ShipItSharp.Core.VersionChecking.GitLab
@@ -28,7 +30,14 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
     internal class Release : IRelease
     {
 
-        public string Url { get { return "https://gitlab.com/nullabletype/ShipItSharp/releases"; } set { } }
+        [JsonProperty("description")]
+        public string ChangeLogMarkDown { get; set; }
+
+        public string Url
+        {
+            get => "https://gitlab.com/nullabletype/ShipItSharp/releases";
+            set { }
+        }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -38,16 +47,17 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
         [JsonProperty("tag_name")]
         public string TagName { get; set; }
 
-        public bool PreRelease { get { return true; } set { } }
-
-        [JsonProperty("description")]
-        public string ChangeLogMarkDown { get; set; }
-
-        public string ChangeLog 
+        public bool PreRelease
         {
-            get 
+            get => true;
+            set { }
+        }
+
+        public string ChangeLog
+        {
+            get
             {
-                var md = new MarkdownDeep.Markdown 
+                var md = new Markdown
                 {
                     SummaryLength = -1
                 };
@@ -56,6 +66,6 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
             set { }
         }
 
-        public IAsset[] Assets { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+        public IAsset[] Assets { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     }
 }

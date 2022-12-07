@@ -21,58 +21,57 @@
 #endregion
 
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Configuration.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class DeploySpecific : BaseCommand
+    internal class DeploySpecific : BaseCommand
     {
-        private IProgressBar progressBar;
-        private DeploySpecificRunner runner;
-        private IConfiguration configuration;
+        private readonly IConfiguration _configuration;
+        private readonly IProgressBar _progressBar;
+        private readonly DeploySpecificRunner _runner;
+
+        public DeploySpecific(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, DeploySpecificRunner runner, IConfiguration configuration) : base(octopusHelper, languageProvider)
+        {
+            this._progressBar = progressBar;
+            this._runner = runner;
+            this._configuration = configuration;
+        }
         protected override bool SupportsInteractiveMode => true;
         public override string CommandName => "specific";
-
-        public DeploySpecific(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, DeploySpecificRunner runner, IConfiguration configuration) : base(octopusHelper, languageProvider) 
-        {
-            this.progressBar = progressBar;
-            this.runner = runner;
-            this.configuration = configuration;
-        }
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(DeployOptionNames.Environment, command.Option("-e|--environment", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
-            AddToRegister(DeployOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
-            AddToRegister(DeployOptionNames.DefaultFallback, command.Option("-d|--fallbacktodefault", languageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToDefault"), CommandOptionType.NoValue));
-            AddToRegister(DeployOptionNames.ReleaseName, command.Option("-r|--releasename", languageProvider.GetString(LanguageSection.OptionsStrings, "ReleaseVersion"), CommandOptionType.SingleValue));
-            AddToRegister(DeployOptionNames.FallbackToChannel, command.Option("-f|--fallbacktochannel", languageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToChannel"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.Environment, command.Option("-e|--environment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.DefaultFallback, command.Option("-d|--fallbacktodefault", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToDefault"), CommandOptionType.NoValue));
+            AddToRegister(DeployOptionNames.ReleaseName, command.Option("-r|--releasename", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ReleaseVersion"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.FallbackToChannel, command.Option("-f|--fallbacktochannel", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToChannel"), CommandOptionType.SingleValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var targetEnvironmentName = GetStringFromUser(DeployOptionNames.Environment, languageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, languageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
-            var releaseName = GetStringFromUser(DeployOptionNames.ReleaseName, languageProvider.GetString(LanguageSection.UiStrings, "ReleaseName"));
+            var targetEnvironmentName = GetStringFromUser(DeployOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
+            var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
+            var releaseName = GetStringFromUser(DeployOptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseName"));
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
-            var fallbackToChannel = GetStringFromUser(DeployOptionNames.FallbackToChannel, languageProvider.GetString(LanguageSection.UiStrings, "FallbackToChannel"));
+            var fallbackToChannel = GetStringFromUser(DeployOptionNames.FallbackToChannel, LanguageProvider.GetString(LanguageSection.UiStrings, "FallbackToChannel"));
 
-            progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
+            _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
             var targetEnvironment = await FetchEnvironmentFromUserInput(targetEnvironmentName);
 
             if (targetEnvironment == null)
@@ -82,9 +81,9 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             string fallbackChannel = null;
 
-            if (forceDefault && !string.IsNullOrEmpty(configuration.DefaultChannel))
+            if (forceDefault && !string.IsNullOrEmpty(_configuration.DefaultChannel))
             {
-                fallbackChannel = configuration.DefaultChannel;
+                fallbackChannel = _configuration.DefaultChannel;
             }
 
             if (!string.IsNullOrEmpty(fallbackToChannel))
@@ -92,45 +91,38 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 fallbackChannel = fallbackToChannel;
             }
 
-            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, this.InInteractiveMode, fallbackChannel);
+            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, InInteractiveMode, fallbackChannel);
 
             if (configResult.IsFailure)
             {
                 System.Console.WriteLine(configResult.Error);
                 return -1;
             }
-            else
-            {
-                return await runner.Run(configResult.Value, this.progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
-            }
+            return await _runner.Run(configResult.Value, _progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
         }
 
-        private IEnumerable<int> InteractivePrompt(DeploySpecificConfig config, (List<Project> currentProjects, List<Core.Models.Release> targetReleases) projects)
+        private IEnumerable<int> InteractivePrompt(DeploySpecificConfig config, (List<Project> currentProjects, List<Core.Deployment.Models.Release> targetReleases) projects)
         {
-            InteractiveRunner runner = PopulateRunner(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "DeployingSpecificRelease"), config.ReleaseName, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetReleases);
+            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "DeployingSpecificRelease"), config.ReleaseName, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetReleases);
             return runner.GetSelectedIndexes();
         }
 
-        private InteractiveRunner PopulateRunner(string prompt, IList<Project> projects, IList<Core.Models.Release> targetReleases)
+        private InteractiveRunner PopulateRunner(string prompt, IList<Project> projects, IList<Core.Deployment.Models.Release> targetReleases)
         {
-            var runner = new InteractiveRunner(prompt, languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNotSelectable"), languageProvider, languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), languageProvider.GetString(LanguageSection.UiStrings, "OnTarget"), languageProvider.GetString(LanguageSection.UiStrings, "ReleaseToDeploy"));
+            var runner = new InteractiveRunner(prompt, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseNotSelectable"), LanguageProvider, LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnTarget"), LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseToDeploy"));
             foreach (var project in projects)
             {
                 var release = targetReleases.FirstOrDefault(r => r.ProjectId == project.ProjectId);
 
                 var packagesAvailable = release != null;
 
-                runner.AddRow(project.Checked, packagesAvailable, new[] {
-                        project.ProjectName,
-                        project.CurrentRelease.Version,
-                        release?.Version
-                    });
+                runner.AddRow(project.Checked, packagesAvailable, project.ProjectName, project.CurrentRelease.Version, release?.Version);
             }
             runner.Run();
             return runner;
         }
 
-        struct DeployOptionNames
+        private struct DeployOptionNames
         {
             public const string Environment = "environment";
             public const string GroupFilter = "groupfilter";

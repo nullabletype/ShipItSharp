@@ -38,7 +38,6 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlElement("builds")]
         public List<BuildConfigs> Builds { get; set; }
-
     }
 
     [XmlRoot("builds")]
@@ -47,6 +46,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         [XmlElement("build")]
         public List<Build> Builds { get; set; }
-
     }
 }

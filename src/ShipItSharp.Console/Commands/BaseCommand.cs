@@ -21,58 +21,56 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
 using NuGet.Versioning;
 using ShipItSharp.Core.Deployment.Interfaces;
-using ShipItSharp.Core.Models;
-using ShipItSharp.Core.Octopus.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Commands {
-    abstract class BaseCommand 
+namespace ShipItSharp.Console.Commands
+{
+    internal abstract class BaseCommand
     {
-        protected abstract bool SupportsInteractiveMode { get; }
-        public abstract string CommandName { get; }
-        protected abstract Task<int> Run(CommandLineApplication command);
 
-        protected const string HelpOption = "-?|-h|--help";
+        private const string HelpOption = "-?|-h|--help";
         private readonly Dictionary<string, CommandOption> _optionRegister;
-        protected bool InInteractiveMode { get; private set; }
-        protected IOctopusHelper octoHelper;
-        protected ILanguageProvider languageProvider;
+        protected ILanguageProvider LanguageProvider;
+        protected IOctopusHelper OctoHelper;
 
 
         protected BaseCommand(IOctopusHelper octoHelper, ILanguageProvider languageProvider)
         {
             _optionRegister = new Dictionary<string, CommandOption>();
-            this.octoHelper = octoHelper;
-            this.languageProvider = languageProvider;
+            this.OctoHelper = octoHelper;
+            this.LanguageProvider = languageProvider;
         }
+        protected abstract bool SupportsInteractiveMode { get; }
+        public abstract string CommandName { get; }
+        protected bool InInteractiveMode { get; private set; }
+        protected abstract Task<int> Run(CommandLineApplication command);
 
-        public virtual void Configure(CommandLineApplication command) 
+        public virtual void Configure(CommandLineApplication command)
         {
             command.HelpOption(HelpOption);
             command.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
-            AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", languageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
-            AddToRegister(OptionNames.Url, command.Option("-u|--url", languageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
-            if (this.SupportsInteractiveMode)
+            AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
+            AddToRegister(OptionNames.Url, command.Option("-u|--url", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
+            if (SupportsInteractiveMode)
             {
-                AddToRegister(OptionNames.NoPrompt, command.Option("-n|--noprompt", languageProvider.GetString(LanguageSection.OptionsStrings, "InteractiveDeploy"), CommandOptionType.NoValue));
+                AddToRegister(OptionNames.NoPrompt, command.Option("-n|--noprompt", LanguageProvider.GetString(LanguageSection.OptionsStrings, "InteractiveDeploy"), CommandOptionType.NoValue));
             }
-            command.OnExecuteAsync(async cancellationToken =>
+            command.OnExecuteAsync(async _ =>
             {
-                if (this.SupportsInteractiveMode && !GetOption(OptionNames.NoPrompt).HasValue())
+                if (SupportsInteractiveMode && !GetOption(OptionNames.NoPrompt).HasValue())
                 {
-                    SetInteractiveMode((true));
+                    SetInteractiveMode(true);
                 }
 
-                var code = await this.Run(command);
+                var code = await Run(command);
                 if (code != 0)
                 {
                     if (code == -1)
@@ -90,7 +88,7 @@ namespace ShipItSharp.Console.Commands {
 
         protected void SetInteractiveMode(bool mode)
         {
-            this.InInteractiveMode = mode;
+            InInteractiveMode = mode;
         }
 
         protected void AddToRegister(string key, CommandOption option)
@@ -129,7 +127,7 @@ namespace ShipItSharp.Console.Commands {
             value = 0;
             if (option.HasValue())
             {
-                return Int32.TryParse(option.Value(), out value);
+                return int.TryParse(option.Value(), out value);
             }
             return false;
         }
@@ -149,7 +147,7 @@ namespace ShipItSharp.Console.Commands {
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(option) && !allowEmpty)
+                    if (string.IsNullOrEmpty(option))
                     {
                         option = PromptForStringWithoutQuitting(prompt);
                     }
@@ -176,7 +174,7 @@ namespace ShipItSharp.Console.Commands {
 
             do
             {
-                releaseName = GetStringFromUser(OptionNames.ReleaseName, languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"), allowEmpty: true);
+                releaseName = GetStringFromUser(OptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"), true);
             } while (InInteractiveMode && !string.IsNullOrEmpty(releaseName) && !SemanticVersion.TryParse(releaseName, out _));
 
             return releaseName;
@@ -194,26 +192,23 @@ namespace ShipItSharp.Console.Commands {
             {
                 return true;
             }
-            else
-            {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "Error") + result.ErrorMessage);
-            }
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Error") + result.ErrorMessage);
 
             return false;
         }
 
-        protected async Task<ShipItSharp.Core.Models.Environment> FetchEnvironmentFromUserInput(string environmentName)
+        protected async Task<Core.Deployment.Models.Environment> FetchEnvironmentFromUserInput(string environmentName)
         {
-            var matchingEnvironments = await octoHelper.Environments.GetMatchingEnvironments(environmentName);
+            var matchingEnvironments = await OctoHelper.Environments.GetMatchingEnvironments(environmentName);
 
             if (matchingEnvironments.Count > 1)
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "TooManyMatchingEnvironments") + string.Join(", ", matchingEnvironments.Select(e => e.Name)));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "TooManyMatchingEnvironments") + string.Join(", ", matchingEnvironments.Select(e => e.Name)));
                 return null;
             }
-            else if (!matchingEnvironments.Any())
+            if (!matchingEnvironments.Any())
             {
-                System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
                 return null;
             }
 
@@ -230,10 +225,10 @@ namespace ShipItSharp.Console.Commands {
                     {
                         do
                         {
-                            var prompt = String.Format(languageProvider.GetString(LanguageSection.UiStrings, "VariablePrompt"), requirement.Name, project.ProjectName);
+                            var prompt = string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "VariablePrompt"), requirement.Name, project.ProjectName);
                             if (!string.IsNullOrEmpty(requirement.ExtraOptions))
                             {
-                                prompt += String.Format(languageProvider.GetString(LanguageSection.UiStrings, "VariablePromptAllowedValues"), requirement.ExtraOptions);
+                                prompt += string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "VariablePromptAllowedValues"), requirement.ExtraOptions);
                             }
                             requirement.Value = PromptForStringWithoutQuitting(prompt);
                         } while (InInteractiveMode && string.IsNullOrEmpty(requirement.Value));
@@ -250,6 +245,5 @@ namespace ShipItSharp.Console.Commands {
             public const string Url = "url";
             public const string ReleaseName = "ReleaseName";
         }
-
     }
 }

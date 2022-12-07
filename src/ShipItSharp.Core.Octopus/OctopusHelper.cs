@@ -28,85 +28,87 @@ using ShipItSharp.Core.Octopus.Repositories;
 
 namespace ShipItSharp.Core.Octopus
 {
-    public class OctopusHelper : IOctopusHelper 
+    public class OctopusHelper : IOctopusHelper
     {
-        internal IOctopusAsyncClient client;
         public static IOctopusHelper Default;
-        internal ICacheObjects cacheProvider;
-        internal readonly ProjectRepository ProjectsInternal;
-        internal readonly PackageRepository PackagesInternal;
-        internal readonly VariableRepository VariablesInternal;
-        internal readonly ReleaseRepository ReleasesInternal;
+        private readonly ChannelRepository _channelsInternal;
         internal readonly DeploymentRepository DeploymentsInternal;
-        private readonly LifeCycleRepository LifeCyclesInternal;
-        private readonly TeamsRepository TeamsInternal;
-        private readonly ChannelRepository ChannelsInternal;
-        private readonly EnvironmentRepository EnvironmentsInternal;
+        private readonly EnvironmentRepository _environmentsInternal;
+        private readonly LifeCycleRepository _lifeCyclesInternal;
+        internal readonly PackageRepository PackagesInternal;
+        internal readonly ProjectRepository ProjectsInternal;
+        internal readonly ReleaseRepository ReleasesInternal;
+        private readonly TeamsRepository _teamsInternal;
+        internal readonly VariableRepository VariablesInternal;
+        internal ICacheObjects CacheProvider;
+        internal readonly IOctopusAsyncClient Client;
 
-        public IPackageRepository Packages => PackagesInternal;
-        public IProjectRepository Projects => ProjectsInternal;
-        public IVariableRepository Variables => VariablesInternal;
-        public IChannelRepository Channels => ChannelsInternal;
-        public IEnvironmentRepository Environments => EnvironmentsInternal;
-        public IReleaseRepository Releases => ReleasesInternal;
-        public IDeploymentRepository Deployments => DeploymentsInternal;
-        public ILifeCycleRepository LifeCycles => LifeCyclesInternal;
-        public ITeamsRepository Teams => TeamsInternal;
-        
-        public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider) 
+        public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider)
         {
-            TeamsInternal = new TeamsRepository(this);
-            LifeCyclesInternal = new LifeCycleRepository(this);
+            _teamsInternal = new TeamsRepository(this);
+            _lifeCyclesInternal = new LifeCycleRepository(this);
             DeploymentsInternal = new DeploymentRepository(this);
             ReleasesInternal = new ReleaseRepository(this);
-            EnvironmentsInternal = new EnvironmentRepository(this);
-            ChannelsInternal = new ChannelRepository(this);
+            _environmentsInternal = new EnvironmentRepository(this);
+            _channelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
-            
-            this.cacheProvider = cacheProvider;
-            this.client = InitClient(url, apiKey);
+
+            this.CacheProvider = cacheProvider;
+            Client = InitClient(url, apiKey);
         }
 
         public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
         {
-            TeamsInternal = new TeamsRepository(this);
-            LifeCyclesInternal = new LifeCycleRepository(this);
+            _teamsInternal = new TeamsRepository(this);
+            _lifeCyclesInternal = new LifeCycleRepository(this);
             DeploymentsInternal = new DeploymentRepository(this);
             ReleasesInternal = new ReleaseRepository(this);
-            EnvironmentsInternal = new EnvironmentRepository(this);
-            ChannelsInternal = new ChannelRepository(this);
+            _environmentsInternal = new EnvironmentRepository(this);
+            _channelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
             ProjectsInternal = new ProjectRepository(this);
             SetCacheImplementationInternal(memoryCache);
-            this.client = client;
+            this.Client = client;
         }
 
-        public static IOctopusHelper Init(string url, string apikey, ICacheObjects memoryCache = null) {
+        public IPackageRepository Packages => PackagesInternal;
+        public IProjectRepository Projects => ProjectsInternal;
+        public IVariableRepository Variables => VariablesInternal;
+        public IChannelRepository Channels => _channelsInternal;
+        public IEnvironmentRepository Environments => _environmentsInternal;
+        public IReleaseRepository Releases => ReleasesInternal;
+        public IDeploymentRepository Deployments => DeploymentsInternal;
+        public ILifeCycleRepository LifeCycles => _lifeCyclesInternal;
+        public ITeamsRepository Teams => _teamsInternal;
+
+        public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
+        {
+            SetCacheImplementationInternal(CacheProvider);
+            CacheProvider.SetCacheTimeout(cacheTimeoutToSet);
+        }
+
+        public static IOctopusHelper Init(string url, string apikey, ICacheObjects memoryCache = null)
+        {
             var client = InitClient(url, apikey);
             Default = new OctopusHelper(client, memoryCache);
             Default.SetCacheImplementation(memoryCache, 1);
             return Default;
         }
 
-        private static IOctopusAsyncClient InitClient(string url, string apikey) {
+        private static IOctopusAsyncClient InitClient(string url, string apikey)
+        {
             var endpoint = new OctopusServerEndpoint(url, apikey);
             IOctopusAsyncClient client = null;
             Task.Run(async () => { client = await OctopusAsyncClient.Create(endpoint); }).Wait();
             return client;
         }
 
-        public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
-        {
-            SetCacheImplementationInternal(cacheProvider);
-            cacheProvider.SetCacheTimeout(cacheTimeoutToSet);
-        }
-        
         private void SetCacheImplementationInternal(ICacheObjects memoryCache)
         {
-            this.cacheProvider = memoryCache ?? new NoCache();
+            CacheProvider = memoryCache ?? new NoCache();
         }
     }
 }

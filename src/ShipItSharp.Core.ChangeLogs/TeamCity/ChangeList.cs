@@ -31,6 +31,5 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
     {
         [XmlElement("change")]
         public List<Change> Changes { get; set; }
-
     }
 }

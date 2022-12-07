@@ -21,9 +21,9 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Models 
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public enum TaskStatus 
+    public enum TaskStatus
     {
         Done,
         InProgress,

@@ -23,19 +23,19 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class LifeCycle {
+    public class LifeCycle
+    {
 
         public LifeCycle()
         {
-            this.Phases = new List<Phase>();
+            Phases = new List<Phase>();
         }
 
         public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public List<Phase> Phases { get; set; }
-
     }
 }

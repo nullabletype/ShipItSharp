@@ -21,19 +21,16 @@
 #endregion
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Language;
 
-namespace ShipItSharp.Core.Configuration 
+namespace ShipItSharp.Core.Configuration
 {
-    public static class ConfigurationProvider 
+    public static class ConfigurationProvider
     {
-        public async static Task<ConfigurationLoadResult> LoadConfiguration(ConfigurationProviderTypes type, ILanguageProvider languageProvider) 
+        public static async Task<ConfigurationLoadResult> LoadConfiguration(ConfigurationProviderTypes type, ILanguageProvider languageProvider)
         {
-            if (type == ConfigurationProviderTypes.Json) 
+            if (type == ConfigurationProviderTypes.Json)
             {
                 return await new JsonConfigurationProvider(languageProvider).LoadConfiguration();
             }
@@ -42,7 +39,7 @@ namespace ShipItSharp.Core.Configuration
         }
     }
 
-    public enum ConfigurationProviderTypes 
+    public enum ConfigurationProviderTypes
     {
         Json
     }

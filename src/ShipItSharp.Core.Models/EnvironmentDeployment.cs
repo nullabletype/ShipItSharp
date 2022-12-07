@@ -22,9 +22,9 @@
 
 
 using System.Collections.Generic;
-using ShipItSharp.Core.Models.Interfaces;
+using ShipItSharp.Core.Deployment.Models.Interfaces;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class EnvironmentDeployment : IOctoJob
     {

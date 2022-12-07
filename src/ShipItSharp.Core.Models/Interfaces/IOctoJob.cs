@@ -21,9 +21,7 @@
 #endregion
 
 
-namespace ShipItSharp.Core.Models.Interfaces
+namespace ShipItSharp.Core.Deployment.Models.Interfaces
 {
-    public interface IOctoJob
-    {
-    }
+    public interface IOctoJob { }
 }

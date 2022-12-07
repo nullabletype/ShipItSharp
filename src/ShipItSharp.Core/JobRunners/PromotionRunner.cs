@@ -1,51 +1,51 @@
-﻿using ShipItSharp.Core.Deployment.Interfaces;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ShipItSharp.Core.Deployment.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Logging.Interfaces;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ShipItSharp.Core.JobRunners
 {
     public class PromotionRunner
     {
         private readonly ILanguageProvider _languageProvider;
-        private readonly IOctopusHelper helper;
-        private readonly IDeployer deployer;
-        private readonly IUiLogger uiLogger;
+        private readonly IDeployer _deployer;
+        private readonly IOctopusHelper _helper;
+        private readonly IUiLogger _uiLogger;
 
         private PromotionConfig _currentConfig;
-        private IProgressBar progressBar;
+        private IProgressBar _progressBar;
 
         public PromotionRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger)
         {
-            this._languageProvider = languageProvider;
-            this.helper = helper;
-            this.deployer = deployer;
-            this.uiLogger = uiLogger;
+            _languageProvider = languageProvider;
+            this._helper = helper;
+            this._deployer = deployer;
+            this._uiLogger = uiLogger;
         }
 
         public async Task<int> Run(PromotionConfig config, IProgressBar progressBar, Func<PromotionConfig, (List<Project> currentProjects, List<Project> targetProjects), IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt)
         {
-            this._currentConfig = config;
-            this.progressBar = progressBar;
+            _currentConfig = config;
+            this._progressBar = progressBar;
 
             var (projects, targetProjects) = await GenerateProjectList();
 
-            List<int> indexes = new List<int>();
+            var indexes = new List<int>();
 
             if (config.RunningInteractively)
             {
                 indexes.AddRange(setDeploymentProjects(_currentConfig, (projects, targetProjects)));
             }
-            else 
+            else
             {
-                for (int i = 0; i < projects.Count(); i++)
+                for (var i = 0; i < projects.Count(); i++)
                 {
                     if (projects[i].Checked)
                     {
@@ -61,16 +61,16 @@ namespace ShipItSharp.Core.JobRunners
                 return -1;
             }
 
-            var result = await this.deployer.CheckDeployment(deployment);
+            var result = await _deployer.CheckDeployment(deployment);
             if (!result.Success)
             {
-                System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "Error") + result.ErrorMessage);
+                Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "Error") + result.ErrorMessage);
                 return -1;
             }
 
-            deployer.FillRequiredVariables(deployment.ProjectDeployments, userPrompt, _currentConfig.RunningInteractively);
+            _deployer.FillRequiredVariables(deployment.ProjectDeployments, userPrompt, _currentConfig.RunningInteractively);
 
-            await this.deployer.StartJob(deployment, this.uiLogger);
+            await _deployer.StartJob(deployment, _uiLogger);
 
             return 0;
         }
@@ -79,7 +79,7 @@ namespace ShipItSharp.Core.JobRunners
         {
             if (!indexes.Any())
             {
-                System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NothingSelected"));
+                Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NothingSelected"));
                 return null;
             }
 
@@ -116,24 +116,24 @@ namespace ShipItSharp.Core.JobRunners
             var projects = new List<Project>();
             var targetProjects = new List<Project>();
 
-            progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-            var projectStubs = await helper.Projects.GetProjectStubs();
+            _progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
+            var projectStubs = await _helper.Projects.GetProjectStubs();
 
             var groupIds = new List<string>();
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
             {
-                progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
+                _progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await helper.Projects.GetFilteredProjectGroups(_currentConfig.GroupFilter))
+                    (await _helper.Projects.GetFilteredProjectGroups(_currentConfig.GroupFilter))
                     .Select(g => g.Id).ToList();
             }
 
-            progressBar.CleanCurrentLine();
+            _progressBar.CleanCurrentLine();
 
             foreach (var projectStub in projectStubs)
             {
-                progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
-                    String.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+                _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
+                    string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
                 if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
                 {
                     if (!groupIds.Contains(projectStub.ProjectGroupId))
@@ -142,8 +142,8 @@ namespace ShipItSharp.Core.JobRunners
                     }
                 }
 
-                var project = await helper.Projects.ConvertProject(projectStub, _currentConfig.SourceEnvironment.Id, null, null);
-                var targetProject = await helper.Projects.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
+                var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.SourceEnvironment.Id, null, null);
+                var targetProject = await _helper.Projects.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
 
                 var currentRelease = project.CurrentRelease;
                 var currentTargetRelease = targetProject.CurrentRelease;
@@ -152,7 +152,7 @@ namespace ShipItSharp.Core.JobRunners
                     continue;
                 }
 
-                if (currentTargetRelease != null && currentTargetRelease.Id == currentRelease.Id)
+                if ((currentTargetRelease != null) && (currentTargetRelease.Id == currentRelease.Id))
                 {
                     project.Checked = false;
                 }
@@ -165,7 +165,7 @@ namespace ShipItSharp.Core.JobRunners
                 targetProjects.Add(targetProject);
             }
 
-            progressBar.CleanCurrentLine();
+            _progressBar.CleanCurrentLine();
 
             return (projects, targetProjects);
         }

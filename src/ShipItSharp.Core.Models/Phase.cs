@@ -23,14 +23,14 @@
 
 using System.Collections.Generic;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
     public class Phase
     {
         public Phase()
         {
-            this.AutomaticDeploymentTargetEnvironmentIds = new List<string>();
-            this.OptionalDeploymentTargetEnvironmentIds = new List<string>();
+            AutomaticDeploymentTargetEnvironmentIds = new List<string>();
+            OptionalDeploymentTargetEnvironmentIds = new List<string>();
         }
 
         public string Id { get; set; }
@@ -39,6 +39,5 @@ namespace ShipItSharp.Core.Models
         public List<string> OptionalDeploymentTargetEnvironmentIds { get; set; }
         public int MinimumEnvironmentsBeforePromotion { get; set; }
         public bool Optional { get; set; }
-
     }
 }

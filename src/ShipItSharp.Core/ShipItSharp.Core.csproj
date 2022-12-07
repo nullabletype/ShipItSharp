@@ -1,27 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CSharpFunctionalExtensions" Version="2.37.0" />
-    <PackageReference Include="MarkdownDeep.NET.Core" Version="1.5.0.4" />
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="CSharpFunctionalExtensions" Version="2.37.0"/>
+        <PackageReference Include="MarkdownDeep.NET.Core" Version="1.5.0.4"/>
+        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ShipItSharp.Core.Deployment\ShipItSharp.Core.Deployment.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.ChangeLogs\ShipItSharp.Core.ChangeLogs.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Configuration\ShipItSharp.Core.Configuration.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\ShipItSharp.Core.Deployment\ShipItSharp.Core.Deployment.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.ChangeLogs\ShipItSharp.Core.ChangeLogs.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Configuration\ShipItSharp.Core.Configuration.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj"/>
+    </ItemGroup>
 
 </Project>

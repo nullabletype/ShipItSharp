@@ -22,26 +22,23 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ShipItSharp.Core.VersionChecking
 {
     public class VersionChecker : IVersionChecker
     {
-        private IVersionCheckingProvider _provider;
+        private readonly IVersionCheckingProvider _provider;
 
         public VersionChecker(IVersionCheckingProvider provider)
         {
-            this._provider = provider;
+            _provider = provider;
         }
 
         public async Task<VersionCheckResult> GetLatestVersion()
         {
-            var latestVersion = await this._provider.GetLatestRelease();
+            var latestVersion = await _provider.GetLatestRelease();
             if (latestVersion == null)
             {
                 return new VersionCheckResult();
@@ -59,7 +56,6 @@ namespace ShipItSharp.Core.VersionChecking
             }
             return new VersionCheckResult();
         }
-
     }
 
     public class VersionCheckResult

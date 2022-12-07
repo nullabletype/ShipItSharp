@@ -22,51 +22,51 @@
 
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using ShipItSharp.Core.Configuration.Interfaces;
-using ShipItSharp.Core.Octopus;
-using ShipItSharp.Core.Logging;
 using ShipItSharp.Core.Language;
-using System.Diagnostics;
+using ShipItSharp.Core.Logging;
+using ShipItSharp.Core.Octopus;
 
 namespace ShipItSharp.Core.Configuration
 {
     public class JsonConfigurationProvider : ConfigurationImplementation
     {
-        public JsonConfigurationProvider(ILanguageProvider languageProvider) : base(languageProvider) { }
 
-        private string ConfigurationFileName = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "config.json");
+        private string _configurationFileName = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "config.json");
+        public JsonConfigurationProvider(ILanguageProvider languageProvider) : base(languageProvider) { }
 
         public override async Task<ConfigurationLoadResult> LoadConfiguration()
         {
             var loadResult = new ConfigurationLoadResult();
-            if(!File.Exists(ConfigurationFileName))
+            if (!File.Exists(_configurationFileName))
             {
-                ConfigurationFileName = "config.json";
+                _configurationFileName = "config.json";
             }
 
-            if (!File.Exists(ConfigurationFileName))
+            if (!File.Exists(_configurationFileName))
             {
-                var sampleConfig = this.GetSampleConfig();
+                var sampleConfig = GetSampleConfig();
                 try
                 {
-                    File.WriteAllText(ConfigurationFileName,
+                    await File.WriteAllTextAsync(_configurationFileName,
                         JsonConvert.SerializeObject(sampleConfig, Formatting.Indented));
-                    loadResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadNoFileFound"));
+                    loadResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadNoFileFound"));
                     return loadResult;
                 }
                 catch (Exception e)
                 {
                     LoggingProvider.GetLogger<JsonConfigurationProvider>().Error("Failed to save sample config", e);
                 }
-                loadResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadNoFileFoundCantCreate"));
+                loadResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadNoFileFoundCantCreate"));
                 return loadResult;
             }
 
-            var stringContent = File.ReadAllText(ConfigurationFileName);
+            var stringContent = await File.ReadAllTextAsync(_configurationFileName);
             try
             {
                 var config = JsonConvert.DeserializeObject<Configuration>(stringContent);
@@ -81,7 +81,7 @@ namespace ShipItSharp.Core.Configuration
             catch (Exception e)
             {
                 LoggingProvider.GetLogger<JsonConfigurationProvider>().Error("Failed to parse config", e);
-                loadResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadCouldntParseFile"));
+                loadResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadCouldntParseFile"));
                 return loadResult;
             }
         }
@@ -90,15 +90,17 @@ namespace ShipItSharp.Core.Configuration
         {
             if (string.IsNullOrEmpty(config.OctopusUrl))
             {
-                validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusUrl"));
+                validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusUrl"));
             }
 
-            if (string.IsNullOrEmpty(config.OctopusUrl)) {
-                validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiKey"));
+            if (string.IsNullOrEmpty(config.OctopusUrl))
+            {
+                validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiKey"));
             }
 
-            if (config.ChannelSeedProjectNames == null || !config.ChannelSeedProjectNames.Any()) {
-                validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProject"));
+            if (config.ChannelSeedProjectNames == null || !config.ChannelSeedProjectNames.Any())
+            {
+                validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProject"));
             }
 
             if (!validationResult.Errors.Any())
@@ -107,25 +109,24 @@ namespace ShipItSharp.Core.Configuration
                 {
                     var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null);
                     await octoHelper.Environments.GetEnvironments();
-                    try 
+                    try
                     {
-                        if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.Projects.ValidateProjectName(c)).Select(c => c.Result).All(c => c)) 
+                        if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.Projects.ValidateProjectName(c)).Select(c => c.Result).All(c => c))
                         {
-                            validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid"));
+                            validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid"));
                         }
-                    } 
-                    catch (Exception e) 
-                    {
-                        validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid") + ": " + e.Message);
                     }
-                    
+                    catch (Exception e)
+                    {
+                        validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid") + ": " + e.Message);
+                    }
+
                 }
                 catch (Exception e)
                 {
-                    validationResult.Errors.Add(languageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiFailure") + ": " + e.Message);
+                    validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiFailure") + ": " + e.Message);
                 }
             }
         }
-
     }
 }

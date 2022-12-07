@@ -21,63 +21,60 @@
 #endregion
 
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Configuration.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class ShowEnvironment : BaseCommand
+    internal class ShowEnvironment : BaseCommand
     {
+        private readonly IProgressBar _progressBar;
+
+        public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration) : base(octopusHelper, languageProvider)
+        {
+            this._progressBar = progressBar;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "show";
-        private IProgressBar progressBar;
-        IConfiguration configuration;
-
-        public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration) : base(octopusHelper, languageProvider) 
-        {
-            this.progressBar = progressBar;
-            this.configuration = configuration;
-        }
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(ShowEnvironmentOptionNames.Id, command.Option("-e|--e", languageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(ShowEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(ShowEnvironmentOptionNames.Id, command.Option("-e|--e", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(ShowEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty, false);
+            var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty);
             var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true);
 
-            var found = await this.octoHelper.Environments.GetEnvironment(id);
-            if (found != null) 
+            var found = await OctoHelper.Environments.GetEnvironment(id);
+            if (found != null)
             {
-                progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-                var projectStubs = await octoHelper.Projects.GetProjectStubs();
+                _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
+                var projectStubs = await OctoHelper.Projects.GetProjectStubs();
 
                 var groupIds = new List<string>();
                 if (!string.IsNullOrEmpty(groupFilter))
                 {
-                    progressBar.WriteStatusLine(languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
+                    _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                     groupIds =
-                        (await octoHelper.Projects.GetFilteredProjectGroups(groupFilter))
+                        (await OctoHelper.Projects.GetFilteredProjectGroups(groupFilter))
                         .Select(g => g.Id).ToList();
                 }
 
-                var releases = new List<(ShipItSharp.Core.Models.Release Release, Deployment Deployment)>();
+                var releases = new List<(Core.Deployment.Models.Release Release, Deployment Deployment)>();
 
                 var table = new ConsoleTable("Project", "Release Name", "Packages", "Deployed On", "Deployed By");
 
@@ -91,7 +88,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                         }
                     }
 
-                    var release = await octoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, found.Id);
+                    var release = await OctoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, found.Id);
 
                     table.AddRow(projectStub.ProjectName, release.Release.Version);
                 }
@@ -99,11 +96,11 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
 
             }
-            System.Console.WriteLine(String.Format(languageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id));
+            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id);
             return -1;
         }
 
-        struct ShowEnvironmentOptionNames 
+        private struct ShowEnvironmentOptionNames
         {
             public const string Id = "id";
             public const string GroupFilter = "groupfilter";

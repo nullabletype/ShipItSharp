@@ -21,20 +21,19 @@
 #endregion
 
 
-using System;
 using System.Collections.Generic;
 using System.Resources;
 using System.Threading;
 
-namespace ShipItSharp.Core.Language 
+namespace ShipItSharp.Core.Language
 {
-    public class LanguageProvider : ILanguageProvider 
+    public class LanguageProvider : ILanguageProvider
     {
-        private static Dictionary<LanguageSection, ResourceManager> resManLookUp;
+        private static readonly Dictionary<LanguageSection, ResourceManager> ResManLookUp;
 
         static LanguageProvider()
         {
-            resManLookUp = new Dictionary<LanguageSection, ResourceManager>();
+            ResManLookUp = new Dictionary<LanguageSection, ResourceManager>();
         }
 
         public string GetString(LanguageSection section, string key)
@@ -42,14 +41,13 @@ namespace ShipItSharp.Core.Language
             return GetResourceManager(section).GetString(key, Thread.CurrentThread.CurrentCulture);
         }
 
-        private ResourceManager GetResourceManager(LanguageSection managerName) 
+        private ResourceManager GetResourceManager(LanguageSection managerName)
         {
-            if (!resManLookUp.ContainsKey(managerName))
+            if (!ResManLookUp.ContainsKey(managerName))
             {
-                resManLookUp.Add(managerName, new ResourceManager(this.GetType().Namespace + ".Resources." + managerName, this.GetType().Assembly));
+                ResManLookUp.Add(managerName, new ResourceManager(GetType().Namespace + ".Resources." + managerName, GetType().Assembly));
             }
-            return resManLookUp[managerName];
+            return ResManLookUp[managerName];
         }
-
     }
 }

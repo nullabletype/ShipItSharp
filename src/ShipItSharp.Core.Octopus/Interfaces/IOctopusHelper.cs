@@ -21,8 +21,6 @@
 #endregion
 
 
-using System.Threading.Tasks;
-
 namespace ShipItSharp.Core.Octopus.Interfaces
 {
     public interface IOctopusHelper

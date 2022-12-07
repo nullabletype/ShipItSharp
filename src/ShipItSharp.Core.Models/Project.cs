@@ -26,19 +26,26 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class Project : INotifyPropertyChanged {
+    public class Project : INotifyPropertyChanged
+    {
+
+        public Project()
+        {
+            AvailablePackages = new List<PackageStep>();
+            RequiredVariables = new List<RequiredVariable>();
+        }
 
         private bool _checked { get; set; }
 
         public bool Checked
         {
-            get { return this._checked; }
+            get => _checked;
             set
             {
-                this._checked = value;
-                this.OnPropertyChanged();
+                _checked = value;
+                OnPropertyChanged();
             }
         }
 
@@ -58,20 +65,13 @@ namespace ShipItSharp.Core.Models
         public string LifeCycleId { get; set; }
         public IList<RequiredVariable> RequiredVariables { get; set; }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual bool IsDeployable { get { return (AvailablePackages != null) && AvailablePackages.Any(x => x.SelectedPackage != null); } }
 
-        public Project()
-        {
-            AvailablePackages = new List<PackageStep>();
-            RequiredVariables = new List<RequiredVariable>();
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        protected virtual bool IsDeployable { get { return AvailablePackages != null && AvailablePackages.Any(x => x.SelectedPackage != null); } }
-
     }
 }

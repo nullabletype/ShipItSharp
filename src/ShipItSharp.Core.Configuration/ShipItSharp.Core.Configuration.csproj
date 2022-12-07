@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="CommandLineParser" Version="2.9.1"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj" />
-    <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj"/>
+    </ItemGroup>
 
 </Project>

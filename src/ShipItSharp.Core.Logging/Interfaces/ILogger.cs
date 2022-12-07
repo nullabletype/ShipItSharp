@@ -22,17 +22,13 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ShipItSharp.Core.Logging.Interfaces {
-    public interface ILogger<T> where T : class
+namespace ShipItSharp.Core.Logging.Interfaces
+{
+    public interface ILogger
     {
 
         void Info(string message);
         void Error(string message, Exception e = null);
-
     }
 }

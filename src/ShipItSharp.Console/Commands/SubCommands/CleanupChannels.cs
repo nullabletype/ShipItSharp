@@ -21,12 +21,8 @@
 #endregion
 
 
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Configuration.Interfaces;
-using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
@@ -34,46 +30,42 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    class CleanupChannels : BaseCommand
+    internal class CleanupChannels : BaseCommand
     {
-        private IProgressBar progressBar;
-        private IConfiguration configuration;
-        private ChannelsRunner runner;
+        private readonly ChannelsRunner _runner;
+
+        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, ChannelsRunner runner) : base(octopusHelper, languageProvider)
+        {
+            this._runner = runner;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "cleanup";
-
-        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration, ChannelsRunner runner) : base(octopusHelper, languageProvider) 
-        {
-            this.progressBar = progressBar;
-            this.configuration = configuration;
-            this.runner = runner;
-        }
 
 
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
 
-            AddToRegister(EnsureEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", languageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
-            AddToRegister(EnsureEnvironmentOptionNames.TestMode, command.Option("-t|--testmode", languageProvider.GetString(LanguageSection.OptionsStrings, "TestMode"), CommandOptionType.NoValue));
+            AddToRegister(EnsureEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(EnsureEnvironmentOptionNames.TestMode, command.Option("-t|--testmode", LanguageProvider.GetString(LanguageSection.OptionsStrings, "TestMode"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty, false);
+            var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty);
             var testMode = GetBoolValueFromOption(EnsureEnvironmentOptionNames.TestMode);
 
             var config = ChannelCleanupConfig.Create(groupFilter, testMode);
 
             if (config.IsSuccess)
             {
-                await runner.Cleanup(config.Value);
+                await _runner.Cleanup(config.Value);
             }
 
             return 0;
         }
 
-        struct EnsureEnvironmentOptionNames 
+        private struct EnsureEnvironmentOptionNames
         {
             public const string GroupFilter = "groupfilter";
             public const string TestMode = "testmode";

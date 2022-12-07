@@ -35,7 +35,8 @@ namespace ShipItSharp.Core.Utilities
     public class WebRequestHelper : IWebRequestHelper
     {
 
-        public T GetXmlWebRequestWithBasicAuth<T>(string url, string username, string password) {
+        public T GetXmlWebRequestWithBasicAuth<T>(string url, string username, string password)
+        {
             var credentials = new NetworkCredential(username, password);
             var handler = new HttpClientHandler { Credentials = credentials, PreAuthenticate = true };
             var client = new HttpClient(handler);
@@ -45,11 +46,10 @@ namespace ShipItSharp.Core.Utilities
                 var serializer = new XmlSerializer(typeof(T));
                 if (stream.CanRead)
                 {
-                    return (T)serializer.Deserialize(stream);
+                    return (T) serializer.Deserialize(stream);
                 }
             }
             return default(T);
         }
-
     }
 }

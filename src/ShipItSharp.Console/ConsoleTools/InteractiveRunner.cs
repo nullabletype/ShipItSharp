@@ -21,25 +21,25 @@
 #endregion
 
 
-using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Language;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using McMaster.Extensions.CommandLineUtils;
+using ShipItSharp.Core.Language;
 
 namespace ShipItSharp.Console.ConsoleTools
 {
-    class InteractiveRunner
+    internal class InteractiveRunner
     {
         private readonly List<string> _columns;
+        private readonly ILanguageProvider _languageProvider;
+        private readonly string _promptText;
         private readonly List<string[]> _rows;
         private readonly List<int> _selected;
         private readonly List<int> _unselectable;
-        private readonly string _promptText;
         private readonly string _unselectableText;
-        private readonly ILanguageProvider _languageProvider;
 
         internal InteractiveRunner(string promptText, string unselectableText, ILanguageProvider languageProvider, params string[] columns)
         {
@@ -56,7 +56,7 @@ namespace ShipItSharp.Console.ConsoleTools
         {
             if (values.Count() != _columns.Count())
             {
-                throw new Exception(String.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ErrorColumnHeadingMismatch"), values.Count(), _columns.Count()));
+                throw new Exception(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ErrorColumnHeadingMismatch"), values.Count(), _columns.Count()));
             }
             _rows.Add(values);
             if (selected && selectable)
@@ -71,7 +71,7 @@ namespace ShipItSharp.Console.ConsoleTools
 
         public void Run()
         {
-            bool run = true;
+            var run = true;
             while (run)
             {
                 var newColumns = _columns.ToList();
@@ -90,7 +90,7 @@ namespace ShipItSharp.Console.ConsoleTools
                     rowPosition++;
                 }
 
-                System.Console.WriteLine(Environment.NewLine + this._promptText + Environment.NewLine);
+                System.Console.WriteLine(Environment.NewLine + _promptText + Environment.NewLine);
                 table.Write(Format.Minimal);
 
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "InteractiveRunnerInstructions"));
@@ -125,40 +125,40 @@ namespace ShipItSharp.Console.ConsoleTools
 
         private void SelectProjectsForDeployment(bool select)
         {
-            IEnumerable<int> range = GetRangeFromPrompt(_rows.Count());
-            List<int> unselectable = new List<int>();
+            var range = GetRangeFromPrompt(_rows.Count());
+            var unselectable = new List<int>();
 
             foreach (var index in range)
             {
                 if (select)
                 {
-                    if(_unselectable.Contains(index-1))
+                    if (_unselectable.Contains(index - 1))
                     {
                         unselectable.Add(index);
                         continue;
                     }
-                    if (!_selected.Contains(index-1))
+                    if (!_selected.Contains(index - 1))
                     {
-                        _selected.Add(index-1);
+                        _selected.Add(index - 1);
                     }
                 }
                 else
                 {
-                    if (_selected.Contains(index-1))
+                    if (_selected.Contains(index - 1))
                     {
-                        _selected.Remove(index-1);
+                        _selected.Remove(index - 1);
                     }
                 }
             }
 
             if (unselectable.Any())
             {
-                string projectList = string.Join(", ", unselectable.Select(index => _rows[index][0]));
+                var projectList = string.Join(", ", unselectable.Select(index => _rows[index][0]));
                 WriteError(_unselectableText + $" {projectList}");
             }
         }
 
-        protected void WriteError(string text)
+        private void WriteError(string text)
         {
             System.Console.WriteLine(_unselectable);
             System.Console.ForegroundColor = ConsoleColor.Red;
@@ -167,9 +167,9 @@ namespace ShipItSharp.Console.ConsoleTools
             Thread.Sleep(3000);
         }
 
-        protected IEnumerable<int> GetRangeFromPrompt(int max)
+        private IEnumerable<int> GetRangeFromPrompt(int max)
         {
-            bool rangeValid = false;
+            var rangeValid = false;
             var intRange = new List<int>();
             while (!rangeValid)
             {
@@ -199,19 +199,15 @@ namespace ShipItSharp.Console.ConsoleTools
                     }
                     else
                     {
-                        var number = 0;
-                        if (!Int32.TryParse(segment, out number))
+                        if (!int.TryParse(segment, out var number))
                         {
                             continue;
                         }
-                        else
+                        if (number > max || number < 1)
                         {
-                            if (number > max || number < 1)
-                            {
-                                continue;
-                            }
-                            intRange.Add(number);
+                            continue;
                         }
+                        intRange.Add(number);
                     }
                 }
                 rangeValid = true;

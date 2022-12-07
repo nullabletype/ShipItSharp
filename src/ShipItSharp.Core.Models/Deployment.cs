@@ -22,12 +22,11 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace ShipItSharp.Core.Models
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public class Deployment {
+    public class Deployment
+    {
         public string TaskId { get; set; }
         public string EnvironmentId { get; set; }
         public string ReleaseId { get; set; }

@@ -94,7 +94,7 @@ namespace ShipItSharp.Console.ConsoleTools
                 table.Write(Format.Minimal);
 
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "InteractiveRunnerInstructions"));
-                var prompt = Prompt.GetString("");
+                var prompt = Prompt.GetString(">");
 
                 switch (prompt)
                 {

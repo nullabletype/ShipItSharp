@@ -52,15 +52,25 @@ namespace ShipItSharp.Core.Octopus
             {
                 return;
             }
-            var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(_cacheTimeout));
-            _cache.Set(key + typeof(T).Name, value, cacheEntryOptions);
+            lock (string.Intern(key))
+            {
+                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(_cacheTimeout));
+                _cache.Set(key + typeof(T).Name, value, cacheEntryOptions);
+            }
         }
 
         public T GetCachedObject<T>(string key)
         {
-            if ((_cache != null) && _cache.TryGetValue(key + typeof(T).Name, out T cachedValue))
+            if ((_cache == null))
             {
-                return cachedValue;
+                return default(T);
+            }
+            lock (string.Intern(key))
+            {
+                if (_cache.TryGetValue(key + typeof(T).Name, out T cachedValue))
+                {
+                    return cachedValue;
+                }
             }
             return default(T);
         }

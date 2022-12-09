@@ -36,6 +36,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class ShowEnvironment : BaseCommand
     {
+        //todo convert to runner
         private readonly IProgressBar _progressBar;
 
         public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration) : base(octopusHelper, languageProvider)

@@ -31,7 +31,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class EnvironmentToLifecycle : BaseCommand
     {
-
+        //todo convert to runner
         public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "addtolifecycle";

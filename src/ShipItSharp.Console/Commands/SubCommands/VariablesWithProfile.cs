@@ -34,7 +34,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class VariablesWithProfile : BaseCommand
     {
-
+        //todo convert to runner
         public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "profile";

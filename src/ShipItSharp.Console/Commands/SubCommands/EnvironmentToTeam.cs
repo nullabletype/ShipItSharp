@@ -31,7 +31,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class EnvironmentToTeam : BaseCommand
     {
-
+        //todo convert to runner
         public EnvironmentToTeam(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "addtoteam";

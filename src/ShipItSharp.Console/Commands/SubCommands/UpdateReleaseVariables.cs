@@ -36,6 +36,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class UpdateReleaseVariables : BaseCommand
     {
+        //todo convert to runner
         private readonly IProgressBar _progressBar;
 
         public UpdateReleaseVariables(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider)

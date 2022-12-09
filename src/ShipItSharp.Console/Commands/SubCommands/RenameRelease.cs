@@ -37,6 +37,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class RenameRelease : BaseCommand
     {
+        //todo convert to runner
         private readonly IProgressBar _progressBar;
 
         public RenameRelease(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider)

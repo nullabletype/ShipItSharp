@@ -42,7 +42,6 @@ namespace ShipItSharp.Core.Configuration
             return new Configuration
             {
                 ApiKey = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleApiKey"),
-                ChannelSeedProjectName = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleChannelSeedAppName"),
                 OctopusUrl = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleOctopusUrl"),
                 ProjectGroupFilterString = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleProjectGroupFilterString"),
                 DefaultChannel = "master"

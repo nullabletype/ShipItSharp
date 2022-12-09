@@ -66,7 +66,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
         public async Task<Project> ConvertProject(ProjectStub project, string env, string channelRange, string tag)
         {
             var projectRes = await _octoClient.ProjectsInternal.GetProject(project.ProjectId);
-            var packages = channelRange == null ? null : await _octoClient.PackagesInternal.GetPackages(projectRes, channelRange, tag);
+            var packages = await _octoClient.PackagesInternal.GetPackages(projectRes, channelRange, tag);
             var requiredVariables = await _octoClient.VariablesInternal.GetVariables(projectRes.VariableSetId);
             return new Project
             {
@@ -75,7 +75,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 ProjectId = project.ProjectId,
                 Checked = true,
                 ProjectGroupId = project.ProjectGroupId,
-                AvailablePackages = packages,
+                AvailablePackages = packages ?? new List<PackageStep>(),
                 LifeCycleId = project.LifeCycleId,
                 RequiredVariables = requiredVariables
             };

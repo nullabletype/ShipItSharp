@@ -149,36 +149,37 @@ namespace ShipItSharp.Core.JobRunners
         private async Task<List<Project>> ConvertProjectStubsToProjects(List<ProjectStub> projectStubs, List<string> groupIds)
         {
             var projects = new List<Project>();
+            var filteredStubs = projectStubs.ToList();
 
-            foreach (var projectStub in projectStubs)
+            if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
             {
-                _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
-                    string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
-                if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
-                {
-                    if (!groupIds.Contains(projectStub.ProjectGroupId))
-                    {
-                        continue;
-                    }
-                }
+                filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
+            }
 
-                var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.Channel.VersionRange, _currentConfig.Channel.VersionTag);
+            foreach (var projectStub in filteredStubs)
+            {
+                _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
+                    string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+
+                var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
+                var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
                 var currentPackages = project.CurrentRelease.SelectedPackages;
                 project.Checked = false;
                 if (project.SelectedPackageStubs != null)
                 {
-                    foreach (var package in project.AvailablePackages)
+                    foreach (var packageStep in project.AvailablePackages)
                     {
-                        var stub = package.SelectedPackage;
+                        var stub = packageStep.SelectedPackage;
                         if (stub == null)
                         {
                             if (_currentConfig.DefaultFallbackChannel != null)
                             {
-                                project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, _currentConfig.DefaultFallbackChannel.VersionRange, _currentConfig.DefaultFallbackChannel.VersionTag);
-                                stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == package.StepId).SelectedPackage;
+                                var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
+                                project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
+                                stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId).SelectedPackage;
                             }
                         }
-                        var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == package.StepId);
+                        var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
                         if ((matchingCurrent != null) && (stub != null))
                         {
                             project.Checked = matchingCurrent.Version != stub.Version;
@@ -218,7 +219,7 @@ namespace ShipItSharp.Core.JobRunners
         {
             var deployment = new EnvironmentDeployment
             {
-                ChannelName = _currentConfig.Channel.Name,
+                ChannelName = _currentConfig.Channel,
                 DeployAsync = true,
                 EnvironmentId = _currentConfig.Environment.Id,
                 EnvironmentName = _currentConfig.Environment.Name
@@ -262,10 +263,10 @@ namespace ShipItSharp.Core.JobRunners
                 Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NoPackagesFound"), current.ProjectName);
             }
 
-            var projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.Channel.Name);
+            var projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.Channel);
             if ((_currentConfig.DefaultFallbackChannel != null) && (projectChannel == null))
             {
-                projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.DefaultFallbackChannel.Name);
+                projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.DefaultFallbackChannel);
             }
 
             return new ProjectDeployment

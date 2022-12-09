@@ -30,7 +30,6 @@ namespace ShipItSharp.Core.Configuration
 {
     internal class Configuration : IConfiguration
     {
-        public string ChannelSeedProjectName { get; set; }
         public string ProjectGroupFilterString { get; set; }
         public string ApiKey { get; set; }
         public string OctopusUrl { get; set; }
@@ -38,12 +37,5 @@ namespace ShipItSharp.Core.Configuration
         public bool EnableTrace { get; set; }
         public int CacheTimeoutInSeconds { get; set; }
         public string DefaultChannel { get; set; }
-
-        [JsonIgnore]
-        public List<string> ChannelSeedProjectNames
-        {
-            get { return ChannelSeedProjectName == null ? new List<string>() : ChannelSeedProjectName.Split(',').Select(c => c.Trim()).ToList(); }
-            set { }
-        }
     }
 }

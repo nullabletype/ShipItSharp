@@ -98,29 +98,12 @@ namespace ShipItSharp.Core.Configuration
                 validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiKey"));
             }
 
-            if (config.ChannelSeedProjectNames == null || !config.ChannelSeedProjectNames.Any())
-            {
-                validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProject"));
-            }
-
             if (!validationResult.Errors.Any())
             {
                 try
                 {
                     var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null);
                     await octoHelper.Environments.GetEnvironments();
-                    try
-                    {
-                        if (!config.ChannelSeedProjectNames.Select(async c => await octoHelper.Projects.ValidateProjectName(c)).Select(c => c.Result).All(c => c))
-                        {
-                            validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid"));
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationSeedProjectNotValid") + ": " + e.Message);
-                    }
-
                 }
                 catch (Exception e)
                 {

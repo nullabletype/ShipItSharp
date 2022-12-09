@@ -33,8 +33,8 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
     {
 
         private DeployConfig() { }
-        public Channel Channel { get; private set; }
-        public Channel DefaultFallbackChannel { get; private set; }
+        public string Channel { get; private set; }
+        public string DefaultFallbackChannel { get; private set; }
         public Environment Environment { get; private set; }
         public string GroupFilter { get; private set; }
         public bool RunningInteractively { get; private set; }
@@ -43,19 +43,19 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public string ReleaseName { get; private set; }
         public bool FallbackToDefaultChannel => DefaultFallbackChannel != null;
 
-        public static Result<DeployConfig> Create(Environment env, Channel channel, Channel defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false)
+        public static Result<DeployConfig> Create(Environment env, string channel, string defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false)
         {
             if (env == null || string.IsNullOrEmpty(env.Id))
             {
                 return Result.Failure<DeployConfig>("destiniation environment is not set correctly");
             }
 
-            if (channel == null || string.IsNullOrEmpty(channel.Id))
+            if (string.IsNullOrEmpty(channel))
             {
                 return Result.Failure<DeployConfig>("channel is not set correctly");
             }
 
-            if ((defaultFallbackChannel != null) && string.IsNullOrEmpty(defaultFallbackChannel.Id))
+            if ((defaultFallbackChannel != null) && string.IsNullOrEmpty(defaultFallbackChannel))
             {
                 return Result.Failure<DeployConfig>("default channel is not set correctly");
             }

@@ -138,10 +138,16 @@ namespace ShipItSharp.Core.Octopus.Repositories
         {
             var packageIdResult = await GetPackages(project);
             var allPackages = new List<PackageStep>();
-            foreach (var package in packageIdResult)
+            foreach (var packageStepId in packageIdResult)
             {
-                if ((package != null) && !string.IsNullOrEmpty(package.PackageId))
+                if ((packageStepId != null) && !string.IsNullOrEmpty(packageStepId.PackageId))
                 {
+                    if (versionRange == null)
+                    {
+                        allPackages.Add(new PackageStep { AvailablePackages = new List<PackageStub>(), StepName = packageStepId.StepName, StepId = packageStepId.StepId });
+                        continue; // If no versionRange specified, we likely have no channel so no packages
+                    }
+                    
                     var template = _octopusHelper.CacheProvider.GetCachedObject<Href>("feeds-builtin");
 
                     if (template == null)
@@ -153,7 +159,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
                     var param = (dynamic) new
                     {
-                        packageId = package.PackageId,
+                        packageId = packageStepId.PackageId,
                         partialMatch = false,
                         includeMultipleVersions = true,
                         take,
@@ -167,9 +173,9 @@ namespace ShipItSharp.Core.Octopus.Repositories
                     var finalPackages = new List<PackageStub>();
                     foreach (var currentPackage in packages)
                     {
-                        finalPackages.Add(ConvertPackage(currentPackage, package.StepName));
+                        finalPackages.Add(ConvertPackage(currentPackage, packageStepId.StepName));
                     }
-                    allPackages.Add(new PackageStep { AvailablePackages = finalPackages, StepName = package.StepName, StepId = package.StepId });
+                    allPackages.Add(new PackageStep { AvailablePackages = finalPackages, StepName = packageStepId.StepName, StepId = packageStepId.StepId });
                 }
             }
 

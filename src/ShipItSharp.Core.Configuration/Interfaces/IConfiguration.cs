@@ -29,7 +29,6 @@ namespace ShipItSharp.Core.Configuration.Interfaces
     {
         string ApiKey { get; set; }
         string OctopusUrl { get; set; }
-        List<string> ChannelSeedProjectNames { get; set; }
         ChangeLogProviderConfiguration ChangeProviderConfiguration { get; set; }
         bool EnableTrace { get; set; }
         int CacheTimeoutInSeconds { get; set; }

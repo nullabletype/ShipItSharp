@@ -87,13 +87,6 @@ namespace ShipItSharp.Console.Commands
             }
             _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
             var projectStubs = await OctoHelper.Projects.GetProjectStubs();
-            var found = projectStubs.Where(proj => _configuration.ChannelSeedProjectNames.Select(c => c.ToLower()).Contains(proj.ProjectName.ToLower()));
-
-            if (!found.Any())
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectNotFound"));
-                return -1;
-            }
 
             var channelName = GetStringFromUser(DeployOptionNames.ChannelName, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichChannelPrompt"));
             var environmentName = GetStringFromUser(DeployOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
@@ -109,31 +102,7 @@ namespace ShipItSharp.Console.Commands
                 return -2;
             }
 
-            Core.Deployment.Models.Channel channel = null;
-            foreach (var project in found)
-            {
-                channel = await OctoHelper.Channels.GetChannelByProjectNameAndChannelName(project.ProjectName, channelName);
-                if (channel != null)
-                {
-                    break;
-                }
-            }
-
-            if (channel == null)
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingChannel"));
-                return -1;
-            }
-
-            Core.Deployment.Models.Channel defaultChannel = null;
-
-            if (forceDefault && !string.IsNullOrEmpty(_configuration.DefaultChannel))
-            {
-                defaultChannel = await OctoHelper.Channels.GetChannelByProjectNameAndChannelName(found.First().ProjectName, _configuration.DefaultChannel);
-            }
-
-            var configResult = DeployConfig.Create(environment, channel, defaultChannel, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), InInteractiveMode);
-
+            var configResult = DeployConfig.Create(environment, channelName, forceDefault ? _configuration.DefaultChannel : null, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), InInteractiveMode);
 
             if (configResult.IsFailure)
             {
@@ -145,7 +114,7 @@ namespace ShipItSharp.Console.Commands
 
         private IEnumerable<int> InteractivePrompt(DeployConfig config, IList<Project> projects)
         {
-            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "DeployingTo"), config.Channel.Name, config.Environment.Name), LanguageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), projects);
+            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "DeployingTo"), config.Channel, config.Environment.Name), LanguageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), projects);
             return runner.GetSelectedIndexes();
         }
 

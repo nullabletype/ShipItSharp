@@ -156,46 +156,48 @@ namespace ShipItSharp.Core.JobRunners
                 filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
             }
 
-            foreach (var projectStub in filteredStubs)
+            await Parallel.ForEachAsync(filteredStubs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (projectStub, _) =>
             {
-                _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
-                    string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
-
-                var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
-                var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
-                var currentPackages = project.CurrentRelease.SelectedPackages;
-                project.Checked = false;
-                if (project.SelectedPackageStubs != null)
                 {
-                    foreach (var packageStep in project.AvailablePackages)
+                    _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
+                        string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+
+                    var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
+                    var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
+                    var currentPackages = project.CurrentRelease.SelectedPackages;
+                    project.Checked = false;
+                    if (project.SelectedPackageStubs != null)
                     {
-                        var stub = packageStep.SelectedPackage;
-                        if (stub == null)
+                        foreach (var packageStep in project.AvailablePackages)
                         {
-                            if (_currentConfig.DefaultFallbackChannel != null)
+                            var stub = packageStep.SelectedPackage;
+                            if (stub == null)
                             {
-                                var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
-                                project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
-                                stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId).SelectedPackage;
+                                if (_currentConfig.DefaultFallbackChannel != null)
+                                {
+                                    var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
+                                    project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
+                                    stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId)?.SelectedPackage;
+                                }
                             }
-                        }
-                        var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
-                        if ((matchingCurrent != null) && (stub != null))
-                        {
-                            project.Checked = matchingCurrent.Version != stub.Version;
+                            var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
+                            if ((matchingCurrent != null) && (stub != null))
+                            {
+                                project.Checked = matchingCurrent.Version != stub.Version;
+                                break;
+                            }
+                            if (stub == null)
+                            {
+                                project.Checked = false;
+                            }
+                            project.Checked = true;
                             break;
                         }
-                        if (stub == null)
-                        {
-                            project.Checked = false;
-                        }
-                        project.Checked = true;
-                        break;
                     }
-                }
 
-                projects.Add(project);
-            }
+                    projects.Add(project);
+                }
+            });
 
             return projects;
         }

@@ -67,7 +67,7 @@ namespace ShipItSharp.Console
 
             var app = new CommandLineApplication
             {
-                Name = "ShipItSharp"
+                Name = "ShipIt"
             };
             app.HelpOption("-?|-h|--help");
             app.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
@@ -88,6 +88,7 @@ namespace ShipItSharp.Console
 
             app.OnExecute(() =>
             {
+                System.Console.WriteLine(LogoProvider.LogoText);
                 app.ShowHelp();
             });
 

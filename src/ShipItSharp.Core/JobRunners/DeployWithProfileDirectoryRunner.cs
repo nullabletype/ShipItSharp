@@ -101,7 +101,7 @@ namespace ShipItSharp.Core.JobRunners
 
                 if (_currentConfig.MonitorDirectory)
                 {
-                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), _currentConfig.MonitorDelay);
+                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), _currentConfig.MonitorDelay.ToString());
                     await Task.Delay(_currentConfig.MonitorDelay * 1000);
                 }
 

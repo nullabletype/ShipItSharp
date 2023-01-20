@@ -1,4 +1,4 @@
-# ShipItSharp
+# ![logo](assets/logo.png)  ShipItSharp
 ShipItSharp is a command line tool designed to make managing multiple project setups in [Octopus Deploy](https://octopus.com/) easier.
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/nullabletype/ShipItSharp/ShipItSharp%20Console%20Build?logo=github)

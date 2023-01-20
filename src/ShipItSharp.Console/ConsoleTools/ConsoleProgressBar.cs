@@ -34,7 +34,6 @@ namespace ShipItSharp.Console.ConsoleTools
         private CancellationTokenSource _cancelToken;
         private int _currentItem;
         private string _currentMessage = string.Empty;
-        private bool _spinning;
 
         private int _status;
         private int _totalItems;
@@ -53,7 +52,7 @@ namespace ShipItSharp.Console.ConsoleTools
 
         public void CleanCurrentLine()
         {
-            if ((_cancelToken != null) && _spinning)
+            if (_cancelToken != null && !_cancelToken.IsCancellationRequested)
             {
                 _cancelToken.Cancel();
             }
@@ -82,12 +81,11 @@ namespace ShipItSharp.Console.ConsoleTools
             _totalItems = total;
             _currentItem = current;
 
-            if (_spinning)
+            if (_cancelToken is { IsCancellationRequested: false })
             {
                 return;
             }
-
-            _spinning = true;
+            
             _cancelToken = new CancellationTokenSource();
             _ = Task.Run(() => StartStatusThread(_cancelToken.Token)).ConfigureAwait(false);
         }

@@ -33,52 +33,42 @@ jobs:
       run: dotnet publish -c Release src/ShipItSharp.Console/ShipItSharp.Console.csproj -o   /home/runner/work/shipitsharp-release/debug-symbols-tmp -r win-x64 /p:PublishSingleFile=true --self-contained true /p:PublishTrimmed=true
     - name: cp-debug-symbols-to-output
       run: mkdir   /home/runner/work/shipitsharp-release/debug-symbols && cp   /home/runner/work/shipitsharp-release/debug-symbols-tmp/*.pdb   /home/runner/work/shipitsharp-release/debug-symbols
-    - name: install-zip
-      run: sudo apt update && sudo apt install zip unzip
-    - name: make-zip-dir
-      run: mkdir /home/runner/work/shipitsharp-release/zips
-    - name: compress-portable
-      run: pushd /home/runner/work/shipitsharp-release/portable && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-portable.zip * && popd
-    - name: compress-win-x64
-      run: pushd /home/runner/work/shipitsharp-release/win-x64 && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-win-x64.zip * && popd
-    - name: compress-win-x86
-      run: pushd /home/runner/work/shipitsharp-release/win-x86 && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-win-x86.zip * && popd
-    - name: compress-linux-x64
-      run: pushd /home/runner/work/shipitsharp-release/linux-x64 && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-linux-x64.zip * && popd
-    - name: compress-linux-arm
-      run: pushd /home/runner/work/shipitsharp-release/linux-arm && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-linux-arm.zip * && popd
-    - name: compress-mac-x64
-      run: pushd /home/runner/work/shipitsharp-release/osx-x64 && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-osx-x64.zip * && popd
-    - name: compress-debug
-      run: pushd /home/runner/work/shipitsharp-release/debug-symbols && zip -r /home/runner/work/shipitsharp-release/zips/shipitsharp-debug-symbols.zip * && popd
+      
     - uses: actions/upload-artifact@v1
       with:
         name: shipitsharp-portable
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-portable.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/portable/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp--win-x64
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-win-x64.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/win-x64/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp-win-x86
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-win-x86.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/win-x86/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp-linux-x64
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-linux-x64.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/linux-x64/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp-linux-arm
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-linux-arm.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/linux-arm/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp-osx-x64
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-osx-x64.zip
-    - uses: actions/upload-artifact@v1
+        path: /home/runner/work/shipitsharp-release/osx-x64/
+        if-no-files-found: error
+    - uses: actions/upload-artifact@v3
       with:
         name: shipitsharp-debug-symbol
-        path: /home/runner/work/shipitsharp-release/zips/shipitsharp-debug-symbols.zip
+        path: /home/runner/work/shipitsharp-release/debug-symbols/
+        if-no-files-found: error
     - name: send-nuget-packages
       if: github.ref == 'refs/heads/main'
       env:

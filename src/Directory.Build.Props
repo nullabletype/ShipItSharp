@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <AssemblyVersion>0.0.19</AssemblyVersion>
+    <AssemblyFileVersion>0.0.19</AssemblyFileVersion>
+    <Version>0.0.19</Version>
+    <FileVersion>0.0.19</FileVersion>
+    <Authors>Steven Davies</Authors>
+    <Copyright>Steven Davies</Copyright>
+    <Company>ShipItSharp</Company>
+    <RepositoryUrl>https://github.com/nullabletype/ShipItSharp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>

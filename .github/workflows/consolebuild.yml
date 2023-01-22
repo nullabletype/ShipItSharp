@@ -89,6 +89,11 @@ jobs:
         name: shipitsharp-debug-symbol
         path: /home/runner/work/shipitsharp-release/debug-symbols/
         if-no-files-found: error
+    - uses: actions/upload-artifact@v3
+      with:
+        name: shipitsharp-all
+        path: /home/runner/work/shipitsharp-release/zips/
+        if-no-files-found: error
         
     - name: send-nuget-packages
       if: github.ref == 'refs/heads/main'

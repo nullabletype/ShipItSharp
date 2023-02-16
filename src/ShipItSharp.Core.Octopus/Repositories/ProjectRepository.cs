@@ -49,7 +49,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 _octoClient.CacheProvider.CacheObject(project.Id, project);
                 converted.Add(ConvertProject(project));
             }
-            return converted;
+            return converted.OrderBy(p => p.ProjectName).ToList();
         }
 
         public async Task<Project> GetProject(string idOrHref, string environment, string channelRange, string tag)

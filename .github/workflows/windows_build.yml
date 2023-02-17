@@ -37,19 +37,19 @@ jobs:
     - name: make-zip-dir
       run: mkdir shipitsharp-release\zips
     - name: compress-portable
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-portable.zip shipitsharp-release\portable\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-portable.zip .\shipitsharp-release\portable\*
     - name: compress-win-x64
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-win-x64.zip shipitsharp-release\win-x64\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-win-x64.zip .\shipitsharp-release\win-x64\*
     - name: compress-win-x86
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-win-x86.zip shipitsharp-release\win-x86\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-win-x86.zip .\shipitsharp-release\win-x86\*
     - name: compress-linux-x64
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-linux-x64.zip shipitsharp-release\linux-x64\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-linux-x64.zip .\shipitsharp-release\linux-x64\*
     - name: compress-linux-arm
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-linux-arm.zip shipitsharp-release\linux-arm\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-linux-arm.zip .\shipitsharp-release\linux-arm\*
     - name: compress-osx-x64
-      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-osx-x64.zip shipitsharp-release\osx-x64\*
+      run: 7z a -tzip shipitsharp-release\zips\shipitsharp-osx-x64.zip .\shipitsharp-release\osx-x64\*
     - name: compress-debug-symbols
-      run: 7z a -tzip shipitsharp-release\zips\debug-symbols.zip shipitsharp-release\debug-symbols\*
+      run: 7z a -tzip shipitsharp-release\zips\debug-symbols.zip .\shipitsharp-release\debug-symbols\*
       
       
     - uses: actions/upload-artifact@v3

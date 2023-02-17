@@ -103,8 +103,8 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: shipitsharp-release\\zips\\*
-        name: $GITHUB_REF_NAME
+        files: shipitsharp-release/zips/*
+        name: ${{ github.ref_name }}
         generate_release_notes: true
         prerelease: true
         draft: true

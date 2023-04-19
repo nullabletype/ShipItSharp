@@ -10,7 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
-        <PackageReference Include="CSharpFunctionalExtensions" Version="2.37.0" />
+        <PackageReference Include="CSharpFunctionalExtensions" Version="2.38.1" />
         <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.2" />
         <PackageReference Include="McMaster.Extensions.Hosting.CommandLine" Version="4.0.2" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
@@ -18,7 +18,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
-        <PackageReference Include="NuGet.Versioning" Version="6.4.0" />
+        <PackageReference Include="NuGet.Versioning" Version="6.5.0" />
         <PackageReference Include="System.Runtime.Caching" Version="7.0.0" />
     </ItemGroup>
 

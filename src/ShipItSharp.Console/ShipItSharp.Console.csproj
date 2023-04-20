@@ -7,6 +7,7 @@
         <ApplicationIcon>ShipItSharp.ico</ApplicationIcon>
         <StartupObject>ShipItSharp.Console.Program</StartupObject>
         <LangVersion>default</LangVersion>
+        <TrimMode>partial</TrimMode>
     </PropertyGroup>
 
     <ItemGroup>

@@ -59,7 +59,7 @@ jobs:
         if-no-files-found: error
     - uses: actions/upload-artifact@v3
       with:
-        name: shipitsharp--win-x64
+        name: shipitsharp-win-x64
         path: shipitsharp-release\win-x64\
         if-no-files-found: error
     - uses: actions/upload-artifact@v3

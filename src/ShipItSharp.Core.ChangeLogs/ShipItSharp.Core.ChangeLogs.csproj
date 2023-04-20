@@ -1,15 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj"/>
-        <ProjectReference Include="..\ShipItSharp.Core.Configuration\ShipItSharp.Core.Configuration.csproj"/>
-        <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj"/>
-        <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj"/>
-        <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj"/>
+        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj" />
+        <ProjectReference Include="..\ShipItSharp.Core.Configuration\ShipItSharp.Core.Configuration.csproj" />
+        <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj" />
+        <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
+        <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj" />
     </ItemGroup>
 
 </Project>

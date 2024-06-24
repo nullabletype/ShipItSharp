@@ -41,14 +41,14 @@ namespace ShipItSharp.Core.Language.Tests
         public void CanFetchStringInEnglish()
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-GB");
-            Assert.IsTrue(new LanguageProvider().GetString(LanguageSection.UiStrings, "OnSource").Equals("On source", StringComparison.CurrentCultureIgnoreCase));
+            Assert.That(new LanguageProvider().GetString(LanguageSection.UiStrings, "OnSource").Equals("On source", StringComparison.CurrentCultureIgnoreCase));
         }
 
         [Test]
         public void CanFetchStringInWelsh()
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("cy-GB");
-            Assert.IsTrue(new LanguageProvider().GetString(LanguageSection.UiStrings, "OnSource").Equals("Ar Ffynhonnell", StringComparison.CurrentCultureIgnoreCase));
+            Assert.That(new LanguageProvider().GetString(LanguageSection.UiStrings, "OnSource").Equals("Ar Ffynhonnell", StringComparison.CurrentCultureIgnoreCase));
         }
     }
 }

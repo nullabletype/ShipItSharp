@@ -134,7 +134,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
         public async Task<TaskDetails> GetTaskDetails(string taskId)
         {
             var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);
-            var taskDeets = await _octopusHelper.Client.Repository.Tasks.GetDetails(task);
+            var taskDeets = await _octopusHelper.Client.Repository.Tasks.GetDetails(task, CancellationToken.None);
 
             return new TaskDetails
             {
@@ -151,7 +151,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
         public async Task<string> GetTaskRawLog(string taskId)
         {
             var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);
-            return await _octopusHelper.Client.Repository.Tasks.GetRawOutputLog(task);
+            return await _octopusHelper.Client.Repository.Tasks.GetRawOutputLog(task, CancellationToken.None);
         }
 
         internal Deployment.Models.Deployment ConvertDeployment(DeploymentResource dep)

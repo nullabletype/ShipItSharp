@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-        <PackageReference Include="Octopus.Client" Version="14.3.1474" />
+        <PackageReference Include="Octopus.Client" Version="14.3.1579" />
     </ItemGroup>
 
     <ItemGroup>

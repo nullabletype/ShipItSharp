@@ -31,6 +31,8 @@ using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Deployment.Models.Interfaces;
 using ShipItSharp.Core.Deployment.Resources;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Logging;
+using ShipItSharp.Core.Logging.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using Environment = System.Environment;
 using TaskStatus = ShipItSharp.Core.Deployment.Models.TaskStatus;
@@ -42,18 +44,21 @@ namespace ShipItSharp.Core.Deployment
         private readonly IConfiguration _configuration;
         private readonly IOctopusHelper _helper;
         private readonly ILanguageProvider _languageProvider;
+        private readonly ILogger _log;
 
         public Deployer(IOctopusHelper helper, IConfiguration configuration, ILanguageProvider languageProvider)
         {
             _helper = helper;
             _configuration = configuration;
             _languageProvider = languageProvider;
+            _log = LoggingProvider.GetLogger<Deployer>();
         }
 
         public async Task<DeploymentCheckResult> CheckDeployment(EnvironmentDeployment deployment)
         {
             foreach (var project in deployment.ProjectDeployments)
             {
+                _log.Info($"Checking lifecycle for project {project.ProjectName}");
                 var lifeCyle = await _helper.LifeCycles.GetLifeCycle(project.LifeCycleId);
                 if (lifeCyle.Phases.Any())
                 {
@@ -103,7 +108,7 @@ namespace ShipItSharp.Core.Deployment
                     }
                     if (!safe)
                     {
-
+                        _log.Info($"Lifecycle safety check for {project.ProjectName} failed!");
                         return new DeploymentCheckResult
                         {
                             Success = false,

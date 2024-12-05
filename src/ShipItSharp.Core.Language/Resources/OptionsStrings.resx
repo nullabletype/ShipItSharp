@@ -231,4 +231,7 @@
     <data name="Variables" xml:space="preserve">
     <value>Add or update variables</value>
   </data>
+    <data name="Verbose" xml:space="preserve">
+      <value>Display extra debug information where available</value>
+    </data>
 </root>

@@ -29,9 +29,8 @@ namespace ShipItSharp.Core.Logging
 {
     public class OctoLogger<T> : ILogger where T : class
     {
-
         private readonly Microsoft.Extensions.Logging.ILogger _log;
-
+        
         public OctoLogger()
         {
             _log = LoggingProvider.LoggerFactory.CreateLogger<T>();
@@ -40,11 +39,24 @@ namespace ShipItSharp.Core.Logging
         public void Info(string message)
         {
             _log.LogInformation(message);
+            VerboseLog(LevelInfo, message);
+        }
+        
+        private static void VerboseLog(string level, string message)
+        {
+            if (LoggingProvider.VerboseMode)
+            {
+                //Console.WriteLine($"{level} {DateTime.Now.ToShortTimeString()}: {message}");
+            }
         }
 
         public void Error(string message, Exception e = null)
         {
             _log.LogError(message, e);
+            VerboseLog(LevelError, $"{message} | {e.Message} | {e.StackTrace}");
         }
+
+        private static string LevelInfo = "INFO";
+        private static string LevelError = "ERROR";
     }
 }

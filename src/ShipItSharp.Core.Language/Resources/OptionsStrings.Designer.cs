@@ -382,5 +382,14 @@ namespace ShipItSharp.Core.Language.Resources {
                 return ResourceManager.GetString("Variables", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display extra debug information where available.
+        /// </summary>
+        internal static string Verbose {
+            get {
+                return ResourceManager.GetString("Verbose", resourceCulture);
+            }
+        }
     }
 }

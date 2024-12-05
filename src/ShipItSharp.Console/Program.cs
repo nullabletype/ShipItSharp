@@ -56,6 +56,12 @@ namespace ShipItSharp.Console
             var cwd = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             Directory.SetCurrentDirectory(cwd ?? ".");
             args = args.Select(a => a.Replace("action:", "--action")).ToArray();
+
+            if (args.Any(arg => arg.Equals("--verbose", StringComparison.CurrentCultureIgnoreCase)))
+            {
+                LoggingProvider.EnableVerboseLogging();
+            }
+            
             AppDomain.CurrentDomain.UnhandledException += HandleException;
             var initResult = CheckConfigurationAndInit().GetAwaiter().GetResult();
             if (!initResult.Item1.Success)

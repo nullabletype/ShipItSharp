@@ -28,11 +28,29 @@ namespace ShipItSharp.Core.Logging
 {
     public static class LoggingProvider
     {
-        internal static readonly ILoggerFactory LoggerFactory;
+        internal static ILoggerFactory LoggerFactory;
+        internal static bool VerboseMode;
 
         static LoggingProvider()
         {
-            LoggerFactory = new LoggerFactory();
+            CreateFactoryInstance();
+        }
+        private static void CreateFactoryInstance()
+        {
+            LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+            {
+                if (VerboseMode)
+                {
+                    builder.SetMinimumLevel(LogLevel.Information);
+                    builder.AddConsole();
+                }
+            });
+        }
+
+        public static void EnableVerboseLogging()
+        {
+            VerboseMode = true;
+            CreateFactoryInstance();
         }
 
         public static ILogger GetLogger<T>() where T : class

@@ -25,10 +25,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Versioning;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Logging;
+using ShipItSharp.Core.Logging.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands
@@ -40,7 +43,7 @@ namespace ShipItSharp.Console.Commands
         private readonly Dictionary<string, CommandOption> _optionRegister;
         protected ILanguageProvider LanguageProvider;
         protected IOctopusHelper OctoHelper;
-
+        protected ILogger Log;
 
         protected BaseCommand(IOctopusHelper octoHelper, ILanguageProvider languageProvider)
         {
@@ -59,6 +62,7 @@ namespace ShipItSharp.Console.Commands
             command.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
             AddToRegister(OptionNames.Url, command.Option("-u|--url", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
+            AddToRegister(OptionNames.Verbose, command.Option("-v|--verbose", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Verbose"), CommandOptionType.NoValue));
             if (SupportsInteractiveMode)
             {
                 AddToRegister(OptionNames.NoPrompt, command.Option("-n|--noprompt", LanguageProvider.GetString(LanguageSection.OptionsStrings, "InteractiveDeploy"), CommandOptionType.NoValue));
@@ -69,6 +73,11 @@ namespace ShipItSharp.Console.Commands
                 {
                     SetInteractiveMode(true);
                 }
+                
+                var method = typeof(LoggingProvider)
+                    .GetMethod("GetLogger")
+                    .MakeGenericMethod(GetType());
+                Log = method.Invoke(null, null) as ILogger;
 
                 var code = await Run(command);
                 if (code != 0)
@@ -244,6 +253,7 @@ namespace ShipItSharp.Console.Commands
             public const string ApiKey = "apikey";
             public const string Url = "url";
             public const string ReleaseName = "ReleaseName";
+            public const string Verbose = "Verbose";
         }
     }
 }

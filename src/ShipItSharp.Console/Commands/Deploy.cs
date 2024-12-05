@@ -101,6 +101,8 @@ namespace ShipItSharp.Console.Commands
             {
                 return -2;
             }
+            
+            Log.Info($"Found environment for {environmentName} with id {environment.Id}");
 
             var configResult = DeployConfig.Create(environment, channelName, forceDefault ? _configuration.DefaultChannel : null, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), InInteractiveMode);
 

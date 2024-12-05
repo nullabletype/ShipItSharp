@@ -26,11 +26,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Octopus.Client.Logging;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.Logging;
+using ShipItSharp.Core.Logging.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
 
@@ -42,6 +45,7 @@ namespace ShipItSharp.Core.JobRunners
         private readonly IOctopusHelper _helper;
         private readonly ILanguageProvider _languageProvider;
         private readonly IUiLogger _uiLogger;
+        private readonly ILogger _log;
 
         private DeployConfig _currentConfig;
         private IProgressBar _progressBar;
@@ -52,6 +56,7 @@ namespace ShipItSharp.Core.JobRunners
             _helper = helper;
             _deployer = deployer;
             _uiLogger = uiLogger;
+            _log = LoggingProvider.GetLogger<DeployRunner>();
         }
 
         public async Task<int> Run(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, Func<DeployConfig, List<Project>, IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt, Func<string, string> promptForReleaseName)
@@ -154,6 +159,7 @@ namespace ShipItSharp.Core.JobRunners
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
             {
                 filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
+                _log.Info($"filtered project stubs: {string.Join(',', filteredStubs.Select(s => s.ProjectName))}");
             }
 
             await Parallel.ForEachAsync(filteredStubs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (projectStub, _) =>
@@ -162,12 +168,15 @@ namespace ShipItSharp.Core.JobRunners
                     _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
                         string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
 
+                    _log.Info($"Loading packages for project {projectStub.ProjectName}");
+                    
                     var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
                     var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
                     var currentPackages = project.CurrentRelease.SelectedPackages;
                     project.Checked = false;
                     if (project.SelectedPackageStubs != null)
                     {
+                        _log.Info($"{project.AvailablePackages.Count} packages found for project {projectStub.ProjectName}");
                         foreach (var packageStep in project.AvailablePackages)
                         {
                             var stub = packageStep.SelectedPackage;
@@ -184,15 +193,23 @@ namespace ShipItSharp.Core.JobRunners
                             if ((matchingCurrent != null) && (stub != null))
                             {
                                 project.Checked = matchingCurrent.Version != stub.Version;
+                                _log.Info($"Project {projectStub.ProjectName} checked status is {project.Checked} for package {stub.Version} when comparing against existing package {matchingCurrent.Version}");
                                 break;
                             }
                             if (stub == null)
                             {
                                 project.Checked = false;
+                                _log.Info($"Project {projectStub.ProjectName} has no suitable package found for channel {channel?.Name}");
+                                break;
                             }
                             project.Checked = true;
+                            _log.Info($"Project {projectStub.ProjectName} has package {stub.Version} for channel {channel?.Name} and checked set to true");
                             break;
                         }
+                    }
+                    else
+                    {
+                        _log.Info($"No packages found for for project {projectStub.ProjectName}");
                     }
 
                     projects.Add(project);
@@ -246,6 +263,7 @@ namespace ShipItSharp.Core.JobRunners
 
                     if (current.AvailablePackages.Any())
                     {
+                        _log.Info($"Generating deployment for project {current.ProjectName}");
                         _progressBar.WriteProgress(count++, indexes.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), projects[index].ProjectName));
                         deployment.ProjectDeployments.Add(await GenerateProjectDeployment(current));
                     }

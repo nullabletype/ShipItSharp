@@ -25,12 +25,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Deployment.Models;
-using ShipItSharp.Core.Logging;
-using ShipItSharp.Core.Logging.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
-
 namespace ShipItSharp.Core.Octopus.Repositories
 {
     public class ProjectRepository : IProjectRepository
@@ -38,17 +36,17 @@ namespace ShipItSharp.Core.Octopus.Repositories
         private readonly OctopusHelper _octoClient;
         ILogger log;
 
-        public ProjectRepository(OctopusHelper client)
+        public ProjectRepository(OctopusHelper client, ILogger<ProjectRepository> logger)
         {
             _octoClient = client;
-            log = LoggingProvider.GetLogger<ProjectRepository>();
+            log = logger;
         }
 
         public async Task<List<ProjectStub>> GetProjectStubs()
         {
             var projects = await _octoClient.Client.Repository.Projects.GetAll(CancellationToken.None);
             var converted = new List<ProjectStub>();
-            log.Info($"Project stubs include: {string.Join(',', projects.Select(p => p.Name))}");
+            log.LogInformation($"Project stubs include: {string.Join(',', projects.Select(p => p.Name))}");
             foreach (var project in projects)
             {
                 _octoClient.CacheProvider.CacheObject(project.Id, project);
@@ -102,7 +100,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
         {
             var groups = await _octoClient.Client.Repository.ProjectGroups.GetAll(CancellationToken.None);
             var filteredGroups = groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
-            log.Info($"Project groups after filter: {string.Join(',', filteredGroups.Select(g => g.Name))}");
+            log.LogInformation($"Project groups after filter: {string.Join(',', filteredGroups.Select(g => g.Name))}");
             return filteredGroups;
         }
 

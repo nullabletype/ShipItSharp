@@ -27,6 +27,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ShipItSharp.Console.Commands;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Console.ConsoleTools;
@@ -56,14 +59,10 @@ namespace ShipItSharp.Console
             var cwd = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             Directory.SetCurrentDirectory(cwd ?? ".");
             args = args.Select(a => a.Replace("action:", "--action")).ToArray();
-
-            if (args.Any(arg => arg.Equals("--verbose", StringComparison.CurrentCultureIgnoreCase)))
-            {
-                LoggingProvider.EnableVerboseLogging();
-            }
+            bool verboseMode = args.Any(arg => arg.Equals("--verbose", StringComparison.CurrentCultureIgnoreCase));
             
             AppDomain.CurrentDomain.UnhandledException += HandleException;
-            var initResult = CheckConfigurationAndInit().GetAwaiter().GetResult();
+            var initResult = CheckConfigurationAndInit(verboseMode).GetAwaiter().GetResult();
             if (!initResult.Item1.Success)
             {
                 System.Console.Write(string.Join(Environment.NewLine, initResult.Item1.Errors));
@@ -116,11 +115,15 @@ namespace ShipItSharp.Console
             }
         }
 
-        private static async Task<Tuple<ConfigurationLoadResult, IServiceProvider>> CheckConfigurationAndInit()
+        private static async Task<Tuple<ConfigurationLoadResult, IServiceProvider>> CheckConfigurationAndInit(bool verboseMode)
         {
+            if (verboseMode)
+            {
+                LoggingProvider.EnableVerboseLogging();
+            }
             var log = LoggingProvider.GetLogger<Program>();
             log.Info("Attempting IoC configuration...");
-            var container = IoC();
+            var container = IoC(verboseMode);
             log.Info("Attempting configuration load...");
             var configurationLoadResult = await ConfigurationProvider.LoadConfiguration(ConfigurationProviderTypes.Json, new LanguageProvider()); //todo: fix this!
             if (!configurationLoadResult.Success)
@@ -129,7 +132,7 @@ namespace ShipItSharp.Console
                 return new Tuple<ConfigurationLoadResult, IServiceProvider>(configurationLoadResult, container.BuildServiceProvider());
             }
             log.Info("ShipItSharp started...");
-            OctopusHelper.Init(configurationLoadResult.Configuration.OctopusUrl, configurationLoadResult.Configuration.ApiKey);
+            OctopusHelper.Init(configurationLoadResult.Configuration.OctopusUrl, configurationLoadResult.Configuration.ApiKey, LoggingProvider.Factory);
             container.AddSingleton(OctopusHelper.Default);
             container.AddSingleton(configurationLoadResult.Configuration);
             log.Info("Set configuration in IoC");
@@ -174,10 +177,11 @@ namespace ShipItSharp.Console
             System.Console.WriteLine("-------------------------------------");
         }
 
-        private static IServiceCollection IoC()
+        private static IServiceCollection IoC(bool verboseMode)
         {
             return new ServiceCollection()
-                .AddLogging()
+                .AddSingleton(LoggingProvider.Factory)
+                .AddSingleton(typeof(ILogger<>), typeof(Logger<>))
                 .AddSingleton<ConfigurationImplementation, JsonConfigurationProvider>()
                 .AddSingleton<IOctopusHelper, OctopusHelper>()
                 .AddSingleton<IDeployer, Deployer>()

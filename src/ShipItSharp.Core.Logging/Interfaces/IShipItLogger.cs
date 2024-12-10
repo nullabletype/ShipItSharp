@@ -25,7 +25,7 @@ using System;
 
 namespace ShipItSharp.Core.Logging.Interfaces
 {
-    public interface ILogger
+    public interface IShipItLogger
     {
 
         void Info(string message);

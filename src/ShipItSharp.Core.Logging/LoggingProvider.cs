@@ -22,7 +22,7 @@
 
 
 using Microsoft.Extensions.Logging;
-using ILogger = ShipItSharp.Core.Logging.Interfaces.ILogger;
+using ShipItSharp.Core.Logging.Interfaces;
 
 namespace ShipItSharp.Core.Logging
 {
@@ -30,6 +30,8 @@ namespace ShipItSharp.Core.Logging
     {
         internal static ILoggerFactory LoggerFactory;
         internal static bool VerboseMode;
+
+        public static ILoggerFactory Factory => LoggerFactory;
 
         static LoggingProvider()
         {
@@ -44,6 +46,10 @@ namespace ShipItSharp.Core.Logging
                     builder.SetMinimumLevel(LogLevel.Information);
                     builder.AddConsole();
                 }
+                else
+                {
+                    builder.SetMinimumLevel(LogLevel.Error);
+                }
             });
         }
 
@@ -53,9 +59,9 @@ namespace ShipItSharp.Core.Logging
             CreateFactoryInstance();
         }
 
-        public static ILogger GetLogger<T>() where T : class
+        public static IShipItLogger GetLogger<T>() where T : class
         {
-            return new OctoLogger<T>();
+            return new OctoIShipItLogger<T>();
         }
     }
 }

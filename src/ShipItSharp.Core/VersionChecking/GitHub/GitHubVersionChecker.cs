@@ -34,7 +34,7 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
 {
     public class GitHubVersionChecker : IVersionCheckingProvider
     {
-        private readonly ILogger _log;
+        private readonly IShipItLogger _log;
 
         public GitHubVersionChecker()
         {

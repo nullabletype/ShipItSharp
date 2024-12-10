@@ -12,6 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
+      <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
     </ItemGroup>
 </Project>

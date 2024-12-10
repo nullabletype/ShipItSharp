@@ -22,6 +22,7 @@
 
 
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Octopus.Client;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Octopus.Repositories;
@@ -43,7 +44,7 @@ namespace ShipItSharp.Core.Octopus
         internal readonly VariableRepository VariablesInternal;
         internal ICacheObjects CacheProvider;
 
-        public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider)
+        public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider, ILoggerFactory factory)
         {
             _teamsInternal = new TeamsRepository(this);
             _lifeCyclesInternal = new LifeCycleRepository(this);
@@ -53,13 +54,13 @@ namespace ShipItSharp.Core.Octopus
             _channelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
-            ProjectsInternal = new ProjectRepository(this);
+            ProjectsInternal = new ProjectRepository(this, factory.CreateLogger<ProjectRepository>());
 
             CacheProvider = cacheProvider;
             Client = InitClient(url, apiKey);
         }
 
-        public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
+        public OctopusHelper(IOctopusAsyncClient client, ILoggerFactory factory, ICacheObjects memoryCache = null)
         {
             _teamsInternal = new TeamsRepository(this);
             _lifeCyclesInternal = new LifeCycleRepository(this);
@@ -69,7 +70,7 @@ namespace ShipItSharp.Core.Octopus
             _channelsInternal = new ChannelRepository(this);
             VariablesInternal = new VariableRepository(this);
             PackagesInternal = new PackageRepository(this);
-            ProjectsInternal = new ProjectRepository(this);
+            ProjectsInternal = new ProjectRepository(this, factory.CreateLogger<ProjectRepository>());
             SetCacheImplementationInternal(memoryCache);
             Client = client;
         }
@@ -90,10 +91,10 @@ namespace ShipItSharp.Core.Octopus
             CacheProvider.SetCacheTimeout(cacheTimeoutToSet);
         }
 
-        public static IOctopusHelper Init(string url, string apikey, ICacheObjects memoryCache = null)
+        public static IOctopusHelper Init(string url, string apikey, ILoggerFactory factory, ICacheObjects memoryCache = null)
         {
             var client = InitClient(url, apikey);
-            Default = new OctopusHelper(client, memoryCache);
+            Default = new OctopusHelper(client, factory, memoryCache);
             Default.SetCacheImplementation(memoryCache, 1);
             return Default;
         }

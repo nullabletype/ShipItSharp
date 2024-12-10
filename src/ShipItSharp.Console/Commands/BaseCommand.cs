@@ -43,7 +43,7 @@ namespace ShipItSharp.Console.Commands
         private readonly Dictionary<string, CommandOption> _optionRegister;
         protected ILanguageProvider LanguageProvider;
         protected IOctopusHelper OctoHelper;
-        protected ILogger Log;
+        protected IShipItLogger Log;
 
         protected BaseCommand(IOctopusHelper octoHelper, ILanguageProvider languageProvider)
         {
@@ -77,7 +77,7 @@ namespace ShipItSharp.Console.Commands
                 var method = typeof(LoggingProvider)
                     .GetMethod("GetLogger")
                     .MakeGenericMethod(GetType());
-                Log = method.Invoke(null, null) as ILogger;
+                Log = method.Invoke(null, null) as IShipItLogger;
 
                 var code = await Run(command);
                 if (code != 0)

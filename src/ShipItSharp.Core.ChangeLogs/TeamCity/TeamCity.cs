@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using ShipItSharp.Core.ChangeLogs.Interfaces;
 using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Logging;
@@ -42,16 +43,16 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
         private readonly ILogger _log;
         private readonly IWebRequestHelper _webRequestHelper;
 
-        public TeamCity(IConfiguration configuration, IWebRequestHelper webRequestHelper)
+        public TeamCity(IConfiguration configuration, IWebRequestHelper webRequestHelper, ILogger<TeamCity> logger)
         {
             _configuration = configuration;
             _webRequestHelper = webRequestHelper;
-            _log = LoggingProvider.GetLogger<TeamCity>();
+            _log = logger;
             _buildIdRegex = new Regex(configuration.ChangeProviderConfiguration.BuildIdFormat,
                 RegexOptions.Compiled);
             if (!string.IsNullOrEmpty(configuration.ChangeProviderConfiguration.IssueFormat))
             {
-                _log.Info("Compiling the following regex: " + configuration.ChangeProviderConfiguration.IssueFormat);
+                _log.LogInformation("Compiling the following regex: " + configuration.ChangeProviderConfiguration.IssueFormat);
                 _issueIdRegex = new Regex(configuration.ChangeProviderConfiguration.IssueFormat);
             }
         }
@@ -68,23 +69,23 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         public ChangeLogCollection GetChanges(IVersionedPackage toPackage, IVersionedProject project)
         {
-            _log.Info("Getting build id for " + toPackage.Id);
+            _log.LogInformation("Getting build id for " + toPackage.Id);
             var toBuildId = GetBuildId(toPackage);
             if (!string.IsNullOrEmpty(toBuildId))
             {
-                _log.Info("Build id found for package " + toPackage.Id + ". Fetching build");
+                _log.LogInformation("Build id found for package " + toPackage.Id + ". Fetching build");
                 var build = _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeBuilds>(
                     _configuration.ChangeProviderConfiguration.BaseUrl +
                     "/app/rest/builds/?locator=id:" + toBuildId,
                     _configuration.ChangeProviderConfiguration.Username,
                     _configuration.ChangeProviderConfiguration.Password).Builds.FirstOrDefault();
 
-                _log.Info("Getting latest change for build id" + toBuildId);
+                _log.LogInformation("Getting latest change for build id" + toBuildId);
                 var toBuildChange = GetChangeFromBuildId(toBuildId, build);
 
                 if ((toBuildChange != null) && (build != null))
                 {
-                    _log.Info("found the latest change: " + toBuildChange.Id + ", getting change list");
+                    _log.LogInformation("found the latest change: " + toBuildChange.Id + ", getting change list");
                     var document =
                         _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeList>(
                             _configuration.ChangeProviderConfiguration.BaseUrl +
@@ -92,7 +93,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
                             build.BuildTypeId + ")",
                             _configuration.ChangeProviderConfiguration.Username,
                             _configuration.ChangeProviderConfiguration.Password);
-                    _log.Info("build found for package " + toPackage.Id);
+                    _log.LogInformation("build found for package " + toPackage.Id);
                     var changes = GetChangeLogChanges(document, toBuildChange);
                     return new ChangeLogCollection
                     {
@@ -100,11 +101,11 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
                         Changes = changes
                     };
                 }
-                _log.Info("couldn't get the latest change for build " + toBuildId);
+                _log.LogInformation("couldn't get the latest change for build " + toBuildId);
             }
             else
             {
-                _log.Info("Couldn't find build for " + toPackage.Id);
+                _log.LogInformation("Couldn't find build for " + toPackage.Id);
             }
             return new ChangeLogCollection
             {
@@ -115,12 +116,12 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         public ChangeLogCollection GetChanges(IVersionedPackage fromPackage, IVersionedPackage toPackage, IVersionedProject project)
         {
-            _log.Info("Going to get changes between build " + fromPackage.Id + " and " + toPackage.Id + " in project " + project.ProjectId);
+            _log.LogInformation("Going to get changes between build " + fromPackage.Id + " and " + toPackage.Id + " in project " + project.ProjectId);
             var fromBuildId = GetBuildId(fromPackage);
             var toBuildId = GetBuildId(toPackage);
             if (!string.IsNullOrEmpty(fromBuildId) && !string.IsNullOrEmpty(toBuildId))
             {
-                _log.Info("Managed to get both build ids from packages. From: " + fromBuildId + " to: " + toBuildId);
+                _log.LogInformation("Managed to get both build ids from packages. From: " + fromBuildId + " to: " + toBuildId);
                 var build = GetChangeBuild(fromBuildId);
                 var toBuild = GetChangeBuild(fromBuildId);
 
@@ -130,7 +131,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
                 if ((toBuildChange != null) && (fromBuildChange != null) && (build != null))
                 {
-                    _log.Info("Managed to fetch both builds and their latest changes. Going to get the list of changes between builds.");
+                    _log.LogInformation("Managed to fetch both builds and their latest changes. Going to get the list of changes between builds.");
                     var document =
                         _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeList>(
                             _configuration.ChangeProviderConfiguration.BaseUrl +
@@ -150,7 +151,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
             }
             else
             {
-                _log.Info("Couldn't get the build id for the packages");
+                _log.LogInformation("Couldn't get the build id for the packages");
             }
             return new ChangeLogCollection
             {
@@ -161,7 +162,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         public IEnumerable<ChangeLogs.Project> GetProjectStatusList(BuildStatus status, int lookupLimit, int count, bool includeFiltered = false)
         {
-            _log.Info("Been asked to fetch a single change with id ");
+            _log.LogInformation("Been asked to fetch a single change with id ");
             var toBuildChange = _webRequestHelper.GetXmlWebRequestWithBasicAuth<ProjectList>(
                 _configuration.ChangeProviderConfiguration.BaseUrl +
                 "/app/rest/projects",
@@ -224,24 +225,24 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         private string GetBuildId(IVersionedPackage package)
         {
-            _log.Info("Been asked to find the build id in a package: " + package.Id);
+            _log.LogInformation("Been asked to find the build id in a package: " + package.Id);
             var found = _buildIdRegex.Match(package.Message);
             if (found.Success)
             {
                 var foundGroup = found.Groups["buildid"];
                 if (foundGroup.Success && !string.IsNullOrEmpty(foundGroup.Value))
                 {
-                    _log.Info("Found the build id: " + foundGroup.Value);
+                    _log.LogInformation("Found the build id: " + foundGroup.Value);
                     return foundGroup.Value;
                 }
             }
-            _log.Info("Couldn't find the build id in package: " + package.Id);
+            _log.LogInformation("Couldn't find the build id in package: " + package.Id);
             return string.Empty;
         }
 
         private ChangeBuild GetChangeBuild(string fromBuildId)
         {
-            _log.Info("Been asked to get the build with this id " + fromBuildId);
+            _log.LogInformation("Been asked to get the build with this id " + fromBuildId);
             var build = _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeBuilds>(
                 _configuration.ChangeProviderConfiguration.BaseUrl +
                 "/app/rest/builds/?locator=id:" + fromBuildId,
@@ -249,22 +250,22 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
                 _configuration.ChangeProviderConfiguration.Password).Builds.FirstOrDefault();
             if (build != null)
             {
-                _log.Info("Found build with this id " + fromBuildId);
+                _log.LogInformation("Found build with this id " + fromBuildId);
             }
             else
             {
-                _log.Info("couldn't find build with this id " + fromBuildId);
+                _log.LogInformation("couldn't find build with this id " + fromBuildId);
             }
             return build;
         }
 
         private List<ChangeLogChange> GetChangeLogChanges(ChangeList document, Change toBuildChange)
         {
-            _log.Info("Building list of changes up to build " + toBuildChange.Id);
+            _log.LogInformation("Building list of changes up to build " + toBuildChange.Id);
             var changes = new List<ChangeLogChange>();
             foreach (var current in document.Changes.Where(c => c.Id <= toBuildChange.Id))
             {
-                _log.Info("Processing " + current.Id);
+                _log.LogInformation("Processing " + current.Id);
                 var change = _webRequestHelper.GetXmlWebRequestWithBasicAuth<Change>(
                     _configuration.ChangeProviderConfiguration.BaseUrl + current.Href,
                     _configuration.ChangeProviderConfiguration.Username,
@@ -284,14 +285,14 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
                 changes.Add(changeLogChange);
                 if (_issueIdRegex != null)
                 {
-                    _log.Info("Scanning for issue ids in " + current.Id);
+                    _log.LogInformation("Scanning for issue ids in " + current.Id);
                     var matches = _issueIdRegex.Matches(changeLogChange.Comment);
                     foreach (Match match in matches)
                     {
                         var issueId = match.Groups["issueid"];
                         if (!string.IsNullOrEmpty(issueId.Value))
                         {
-                            _log.Info("Found an issue id in " + current.Id + " with value " + issueId.Value);
+                            _log.LogInformation("Found an issue id in " + current.Id + " with value " + issueId.Value);
                             changeLogChange.Issues.Add(new Issue
                             {
                                 Name = issueId.Value,
@@ -303,18 +304,18 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
                     }
                 }
             }
-            _log.Info("Done, found " + changes.Count + " changes");
+            _log.LogInformation("Done, found " + changes.Count + " changes");
             return changes;
         }
 
         private Change GetChangeFromBuildId(string toBuildId, ChangeBuild build)
         {
-            _log.Info("Been asked to find the latest change for build " + toBuildId);
+            _log.LogInformation("Been asked to find the latest change for build " + toBuildId);
             var toBuildChange = InnerToBuildChange(toBuildId);
 
             if (toBuildChange == null)
             {
-                _log.Info("Couldn't find a change in the latest build, so going to fetch the build history and search until I find the latest.");
+                _log.LogInformation("Couldn't find a change in the latest build, so going to fetch the build history and search until I find the latest.");
                 //Couldn't find any changes in this build, but we need a build id. Going to have to find the last change
                 var builds = _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeBuilds>(
                     _configuration.ChangeProviderConfiguration.BaseUrl +
@@ -324,11 +325,11 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
                 foreach (var foundBuild in builds.Builds.Where(b => long.Parse(b.Id) <= long.Parse(toBuildId)))
                 {
-                    _log.Info("Searching in build " + foundBuild.Id);
+                    _log.LogInformation("Searching in build " + foundBuild.Id);
                     toBuildChange = InnerToBuildChange(foundBuild.Id);
                     if (toBuildChange != null)
                     {
-                        _log.Info("Found a change in " + foundBuild.Id);
+                        _log.LogInformation("Found a change in " + foundBuild.Id);
                         break;
                     }
                 }
@@ -338,7 +339,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
 
         private Change InnerToBuildChange(string toBuildId)
         {
-            _log.Info("Been asked to fetch a single change with id " + toBuildId);
+            _log.LogInformation("Been asked to fetch a single change with id " + toBuildId);
             var toBuildChange = _webRequestHelper.GetXmlWebRequestWithBasicAuth<ChangeList>(
                 _configuration.ChangeProviderConfiguration.BaseUrl +
                 "/app/rest/changes?locator=build:(id:" + toBuildId + ")",

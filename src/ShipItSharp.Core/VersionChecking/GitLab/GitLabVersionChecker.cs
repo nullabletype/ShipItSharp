@@ -34,7 +34,7 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
 {
     public class GitLabVersionChecker : IVersionCheckingProvider
     {
-        private readonly ILogger _log;
+        private readonly IShipItLogger _log;
 
         public GitLabVersionChecker()
         {

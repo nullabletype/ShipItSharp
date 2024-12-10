@@ -23,15 +23,15 @@
 
 using System;
 using Microsoft.Extensions.Logging;
-using ILogger = ShipItSharp.Core.Logging.Interfaces.ILogger;
+using ShipItSharp.Core.Logging.Interfaces;
 
 namespace ShipItSharp.Core.Logging
 {
-    public class OctoLogger<T> : ILogger where T : class
+    public class OctoIShipItLogger<T> : IShipItLogger where T : class
     {
         private readonly Microsoft.Extensions.Logging.ILogger _log;
         
-        public OctoLogger()
+        public OctoIShipItLogger()
         {
             _log = LoggingProvider.LoggerFactory.CreateLogger<T>();
         }
@@ -41,6 +41,12 @@ namespace ShipItSharp.Core.Logging
             _log.LogInformation(message);
             VerboseLog(LevelInfo, message);
         }
+
+        public void Error(string message, Exception e = null)
+        {
+            _log.LogError(message, e);
+            VerboseLog(LevelError, $"{message} | {e.Message} | {e.StackTrace}");
+        }
         
         private static void VerboseLog(string level, string message)
         {
@@ -48,12 +54,6 @@ namespace ShipItSharp.Core.Logging
             {
                 //Console.WriteLine($"{level} {DateTime.Now.ToShortTimeString()}: {message}");
             }
-        }
-
-        public void Error(string message, Exception e = null)
-        {
-            _log.LogError(message, e);
-            VerboseLog(LevelError, $"{message} | {e.Message} | {e.StackTrace}");
         }
 
         private static string LevelInfo = "INFO";

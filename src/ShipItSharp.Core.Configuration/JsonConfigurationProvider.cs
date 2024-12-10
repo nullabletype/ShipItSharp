@@ -102,7 +102,7 @@ namespace ShipItSharp.Core.Configuration
             {
                 try
                 {
-                    var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null);
+                    var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null, LoggingProvider.Factory);
                     await octoHelper.Environments.GetEnvironments();
                 }
                 catch (Exception e)

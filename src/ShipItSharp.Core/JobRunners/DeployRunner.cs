@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Octopus.Client.Logging;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
@@ -50,13 +51,13 @@ namespace ShipItSharp.Core.JobRunners
         private DeployConfig _currentConfig;
         private IProgressBar _progressBar;
 
-        public DeployRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger)
+        public DeployRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger, ILogger<DeployRunner> logger)
         {
             _languageProvider = languageProvider;
             _helper = helper;
             _deployer = deployer;
             _uiLogger = uiLogger;
-            _log = LoggingProvider.GetLogger<DeployRunner>();
+            _log = logger;
         }
 
         public async Task<int> Run(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, Func<DeployConfig, List<Project>, IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt, Func<string, string> promptForReleaseName)
@@ -159,60 +160,66 @@ namespace ShipItSharp.Core.JobRunners
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
             {
                 filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
-                _log.Info($"filtered project stubs: {string.Join(',', filteredStubs.Select(s => s.ProjectName))}");
+                _log.LogInformation($"filtered project stubs: {string.Join(',', filteredStubs.Select(s => s.ProjectName))}");
             }
 
             await Parallel.ForEachAsync(filteredStubs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (projectStub, _) =>
             {
                 {
-                    _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
-                        string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
-
-                    _log.Info($"Loading packages for project {projectStub.ProjectName}");
-                    
-                    var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
-                    var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
-                    var currentPackages = project.CurrentRelease.SelectedPackages;
-                    project.Checked = false;
-                    if (project.SelectedPackageStubs != null)
+                    using (_log.BeginScope(new List<KeyValuePair<string, object>>
+                           {
+                               new KeyValuePair<string, object>("ProjectName", projectStub.ProjectName)
+                           }))
                     {
-                        _log.Info($"{project.AvailablePackages.Count} packages found for project {projectStub.ProjectName}");
-                        foreach (var packageStep in project.AvailablePackages)
+                        _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
+                            string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+
+                        _log.LogInformation($"Loading packages for project {projectStub.ProjectName}");
+
+                        var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
+                        var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
+                        var currentPackages = project.CurrentRelease.SelectedPackages;
+                        project.Checked = false;
+                        if (project.SelectedPackageStubs != null)
                         {
-                            var stub = packageStep.SelectedPackage;
-                            if (stub == null)
+                            _log.LogInformation($"{project.AvailablePackages.Count} packages found for project {projectStub.ProjectName}");
+                            foreach (var packageStep in project.AvailablePackages)
                             {
-                                if (_currentConfig.DefaultFallbackChannel != null)
+                                var stub = packageStep.SelectedPackage;
+                                if (stub == null)
                                 {
-                                    var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
-                                    project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
-                                    stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId)?.SelectedPackage;
+                                    if (_currentConfig.DefaultFallbackChannel != null)
+                                    {
+                                        var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
+                                        project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
+                                        stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId)?.SelectedPackage;
+                                    }
                                 }
-                            }
-                            var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
-                            if ((matchingCurrent != null) && (stub != null))
-                            {
-                                project.Checked = matchingCurrent.Version != stub.Version;
-                                _log.Info($"Project {projectStub.ProjectName} checked status is {project.Checked} for package {stub.Version} when comparing against existing package {matchingCurrent.Version}");
+                                var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
+                                if ((matchingCurrent != null) && (stub != null))
+                                {
+                                    project.Checked = matchingCurrent.Version != stub.Version;
+                                    _log.LogInformation($"Project {projectStub.ProjectName} checked status is {project.Checked} for package {stub.Version} when comparing against existing package {matchingCurrent.Version}");
+                                    break;
+                                }
+                                if (stub == null)
+                                {
+                                    project.Checked = false;
+                                    _log.LogInformation($"Project {projectStub.ProjectName} has no suitable package found for channel {channel?.Name}");
+                                    break;
+                                }
+                                project.Checked = true;
+                                _log.LogInformation($"Project {projectStub.ProjectName} has package {stub.Version} for channel {channel?.Name} and checked set to true");
                                 break;
                             }
-                            if (stub == null)
-                            {
-                                project.Checked = false;
-                                _log.Info($"Project {projectStub.ProjectName} has no suitable package found for channel {channel?.Name}");
-                                break;
-                            }
-                            project.Checked = true;
-                            _log.Info($"Project {projectStub.ProjectName} has package {stub.Version} for channel {channel?.Name} and checked set to true");
-                            break;
                         }
-                    }
-                    else
-                    {
-                        _log.Info($"No packages found for for project {projectStub.ProjectName}");
-                    }
+                        else
+                        {
+                            _log.LogInformation($"No packages found for for project {projectStub.ProjectName}");
+                        }
 
-                    projects.Add(project);
+                        projects.Add(project);
+                    }
                 }
             });
 
@@ -263,7 +270,7 @@ namespace ShipItSharp.Core.JobRunners
 
                     if (current.AvailablePackages.Any())
                     {
-                        _log.Info($"Generating deployment for project {current.ProjectName}");
+                        _log.LogInformation($"Generating deployment for project {current.ProjectName}");
                         _progressBar.WriteProgress(count++, indexes.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), projects[index].ProjectName));
                         deployment.ProjectDeployments.Add(await GenerateProjectDeployment(current));
                     }

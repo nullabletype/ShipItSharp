@@ -10,9 +10,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj" />
-        <ProjectReference Include="..\ShipItSharp.Core.Logging\ShipItSharp.Core.Logging.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
     </ItemGroup>
 

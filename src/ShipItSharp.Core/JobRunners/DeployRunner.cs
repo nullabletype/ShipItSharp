@@ -22,6 +22,7 @@
 
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -154,13 +155,13 @@ namespace ShipItSharp.Core.JobRunners
 
         private async Task<List<Project>> ConvertProjectStubsToProjects(List<ProjectStub> projectStubs, List<string> groupIds)
         {
-            var projects = new List<Project>();
+            var projects = new ConcurrentQueue<Project>();
             var filteredStubs = projectStubs.ToList();
 
             if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
             {
                 filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
-                _log.LogInformation($"filtered project stubs: {string.Join(',', filteredStubs.Select(s => s.ProjectName))}");
+                _log.LogInformation($"filtered project stubs ({filteredStubs.Count}): {string.Join(',', filteredStubs.Select(s => s.ProjectName))}");
             }
 
             await Parallel.ForEachAsync(filteredStubs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (projectStub, _) =>
@@ -218,12 +219,12 @@ namespace ShipItSharp.Core.JobRunners
                             _log.LogInformation($"No packages found for for project {projectStub.ProjectName}");
                         }
 
-                        projects.Add(project);
+                        projects.Enqueue(project);
                     }
                 }
             });
 
-            return projects;
+            return projects.ToList();
         }
 
         private void SaveProfile(EnvironmentDeployment deployment)

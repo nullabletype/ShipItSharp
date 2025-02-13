@@ -726,6 +726,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Total: {0} / {1}.
+        /// </summary>
+        internal static string TotalRows {
+            get {
+                return ResourceManager.GetString("TotalRows", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unexpected error: {0}.
         /// </summary>
         internal static string UnexpectedError {

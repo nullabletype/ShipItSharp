@@ -89,10 +89,12 @@ namespace ShipItSharp.Console.ConsoleTools
                     table.AddRow(newRow.ToArray());
                     rowPosition++;
                 }
-
+                
                 System.Console.WriteLine(Environment.NewLine + _promptText + Environment.NewLine);
                 table.Write(Format.Minimal);
 
+                System.Console.WriteLine(Environment.NewLine + String.Format(_languageProvider.GetString(LanguageSection.UiStrings, "TotalRows"), this.GetSelectedIndexes().Count(), table.Rows.Count()) + Environment.NewLine);
+                
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "InteractiveRunnerInstructions"));
                 var prompt = Prompt.GetString(">");
 

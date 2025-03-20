@@ -62,7 +62,7 @@ namespace ShipItSharp.Console.Commands
             command.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
             AddToRegister(OptionNames.Url, command.Option("-u|--url", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
-            AddToRegister(OptionNames.Verbose, command.Option("-v|--verbose", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Verbose"), CommandOptionType.NoValue));
+
             if (SupportsInteractiveMode)
             {
                 AddToRegister(OptionNames.NoPrompt, command.Option("-n|--noprompt", LanguageProvider.GetString(LanguageSection.OptionsStrings, "InteractiveDeploy"), CommandOptionType.NoValue));
@@ -253,7 +253,6 @@ namespace ShipItSharp.Console.Commands
             public const string ApiKey = "apikey";
             public const string Url = "url";
             public const string ReleaseName = "ReleaseName";
-            public const string Verbose = "Verbose";
         }
     }
 }

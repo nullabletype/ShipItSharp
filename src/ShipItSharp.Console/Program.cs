@@ -59,7 +59,8 @@ namespace ShipItSharp.Console
             var cwd = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             Directory.SetCurrentDirectory(cwd ?? ".");
             args = args.Select(a => a.Replace("action:", "--action")).ToArray();
-            bool verboseMode = args.Any(arg => arg.Equals("--verbose", StringComparison.CurrentCultureIgnoreCase));
+            
+            bool verboseMode = GetVerbosityLevelFromArgs(args);
             
             AppDomain.CurrentDomain.UnhandledException += HandleException;
             var initResult = CheckConfigurationAndInit(verboseMode).GetAwaiter().GetResult();
@@ -98,6 +99,14 @@ namespace ShipItSharp.Console
             });
 
             return app.Execute(args);
+        }
+        
+        private static bool GetVerbosityLevelFromArgs(string[] args)
+        {
+            return args.Any(arg => 
+                arg.Equals("--verbose", StringComparison.CurrentCultureIgnoreCase) || 
+                arg.Equals("-v", StringComparison.CurrentCultureIgnoreCase)
+            );
         }
 
         private static void HandleException(object sender, UnhandledExceptionEventArgs e)

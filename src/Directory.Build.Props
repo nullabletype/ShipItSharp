@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
-    <AssemblyVersion>0.0.21</AssemblyVersion>
-    <AssemblyFileVersion>0.0.21</AssemblyFileVersion>
-    <Version>0.0.21</Version>
-    <FileVersion>0.0.21</FileVersion>
+    <AssemblyVersion>0.0.22</AssemblyVersion>
+    <AssemblyFileVersion>0.0.22</AssemblyFileVersion>
+    <Version>0.0.22</Version>
+    <FileVersion>0.0.22</FileVersion>
     <Authors>Steven Davies</Authors>
     <Copyright>Steven Davies</Copyright>
     <Company>ShipItSharp</Company>

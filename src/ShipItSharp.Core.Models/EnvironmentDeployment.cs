@@ -28,6 +28,7 @@ namespace ShipItSharp.Core.Deployment.Models
 {
     public class EnvironmentDeployment : IOctoJob
     {
+        private bool _prioritise;
         public EnvironmentDeployment()
         {
             ProjectDeployments = new List<ProjectDeployment>();
@@ -39,5 +40,10 @@ namespace ShipItSharp.Core.Deployment.Models
         public string ChannelName { get; set; }
         public bool DeployAsync { get; set; }
         public bool FallbackToDefaultChannel { get; set; }
+        public bool Prioritise
+        {
+            get => _prioritise;
+        }
+        public void SetPriority(bool value) => _prioritise = value;
     }
 }

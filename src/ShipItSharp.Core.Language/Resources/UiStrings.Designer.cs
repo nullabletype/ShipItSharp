@@ -582,6 +582,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Move created tasks to the top of the list.
+        /// </summary>
+        internal static string Prioritise {
+            get {
+                return ResourceManager.GetString("Prioritise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Processing {0}.
         /// </summary>
         internal static string Processing {
@@ -722,6 +731,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string TooManyMatchingEnvironments {
             get {
                 return ResourceManager.GetString("TooManyMatchingEnvironments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Total: {0} / {1}.
+        /// </summary>
+        internal static string TotalRows {
+            get {
+                return ResourceManager.GetString("TotalRows", resourceCulture);
             }
         }
         

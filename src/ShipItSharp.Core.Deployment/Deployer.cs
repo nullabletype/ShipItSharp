@@ -174,7 +174,7 @@ namespace ShipItSharp.Core.Deployment
                 }
 
                 uiLogger.WriteLine("Creating deployment task for " + result.Version + " to " + deployment.EnvironmentName);
-                var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id);
+                var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id, deployment.Prioritise);
                 uiLogger.WriteLine("Created");
 
                 var taskDeets = await _helper.Deployments.GetTaskDetails(deployResult.TaskId);

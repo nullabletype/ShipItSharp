@@ -86,6 +86,7 @@ namespace ShipItSharp.Core.JobRunners
             _deployer.FillRequiredVariables(deployment.ProjectDeployments, userPrompt, _currentConfig.RunningInteractively);
 
             deployment.FallbackToDefaultChannel = _currentConfig.FallbackToDefaultChannel;
+            deployment.SetPriority(_currentConfig.Prioritise);
 
             if (!string.IsNullOrEmpty(_currentConfig.SaveProfile))
             {

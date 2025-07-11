@@ -30,7 +30,7 @@ namespace ShipItSharp.Core.Octopus.Interfaces
 {
     public interface IDeploymentRepository
     {
-        Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId);
+        Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false);
         Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take);
         Task<IEnumerable<Deployment.Models.Deployment>> GetDeployments(string[] deploymentIds);
         Task<IEnumerable<Deployment.Models.Deployment>> GetDeployments(string releaseId);

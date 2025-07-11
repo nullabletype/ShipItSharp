@@ -372,4 +372,10 @@
     <data name="NoPackagesFound" xml:space="preserve">
       <value>No packages found for {0}</value>
     </data>
+    <data name="TotalRows" xml:space="preserve">
+      <value>Total: {0} / {1}</value>
+    </data>
+    <data name="Prioritise" xml:space="preserve">
+      <value>Move created tasks to the top of the list</value>
+    </data>
 </root>

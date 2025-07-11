@@ -42,8 +42,9 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public string SaveProfile { get; private set; }
         public string ReleaseName { get; private set; }
         public bool FallbackToDefaultChannel => DefaultFallbackChannel != null;
+        public bool Prioritise { get; set; }
 
-        public static Result<DeployConfig> Create(Environment env, string channel, string defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false)
+        public static Result<DeployConfig> Create(Environment env, string channel, string defaultFallbackChannel, string filter, string saveProfile, bool runningInteractively, bool forceRedeploy = false, bool prioritise = false)
         {
             if (env == null || string.IsNullOrEmpty(env.Id))
             {
@@ -83,7 +84,8 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 SaveProfile = saveProfile,
                 GroupFilter = filter,
                 RunningInteractively = runningInteractively,
-                ForceRedeploy = forceRedeploy
+                ForceRedeploy = forceRedeploy,
+                Prioritise = prioritise
             });
         }
     }

@@ -249,6 +249,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Move tasks to top of the queue.
+        /// </summary>
+        internal static string Prioritise {
+            get {
+                return ResourceManager.GetString("Prioritise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The path to the json profile file you wish to deploy.
         /// </summary>
         internal static string ProfileFile {
@@ -380,6 +389,15 @@ namespace ShipItSharp.Core.Language.Resources {
         internal static string Variables {
             get {
                 return ResourceManager.GetString("Variables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display extra debug information where available.
+        /// </summary>
+        internal static string Verbose {
+            get {
+                return ResourceManager.GetString("Verbose", resourceCulture);
             }
         }
     }

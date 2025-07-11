@@ -231,4 +231,10 @@
     <data name="Variables" xml:space="preserve">
     <value>Add or update variables</value>
   </data>
+    <data name="Verbose" xml:space="preserve">
+      <value>Display extra debug information where available</value>
+    </data>
+    <data name="Prioritise" xml:space="preserve">
+      <value>Move tasks to top of the queue</value>
+    </data>
 </root>

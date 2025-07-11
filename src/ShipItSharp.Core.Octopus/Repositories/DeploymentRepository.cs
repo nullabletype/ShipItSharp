@@ -42,7 +42,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             _octopusHelper = octopusHelper;
         }
 
-        public async Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId)
+        public async Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false)
         {
             var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
             var deployment = new DeploymentResource
@@ -65,6 +65,16 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 }
             }
             var deployResult = await _octopusHelper.Client.Repository.Deployments.Create(deployment, CancellationToken.None);
+
+            if (toTopOfQueue)
+            {
+                var task = await _octopusHelper.Client.Repository.Tasks.Get(deployResult.TaskId, CancellationToken.None);
+                if (task != null)
+                {
+                    await _octopusHelper.Client.Repository.Tasks.Prioritize(task, CancellationToken.None);
+                }
+            }
+            
             return new Deployment.Models.Deployment
             {
                 TaskId = deployResult.TaskId

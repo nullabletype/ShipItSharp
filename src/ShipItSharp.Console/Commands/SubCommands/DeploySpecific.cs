@@ -61,6 +61,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             AddToRegister(DeployOptionNames.DefaultFallback, command.Option("-d|--fallbacktodefault", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToDefault"), CommandOptionType.NoValue));
             AddToRegister(DeployOptionNames.ReleaseName, command.Option("-r|--releasename", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ReleaseVersion"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.FallbackToChannel, command.Option("-f|--fallbacktochannel", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToChannel"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.Prioritise, command.Option("-p|--prioritise", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Prioritise"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
@@ -70,7 +71,8 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var releaseName = GetStringFromUser(DeployOptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseName"));
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
             var fallbackToChannel = GetStringFromUser(DeployOptionNames.FallbackToChannel, LanguageProvider.GetString(LanguageSection.UiStrings, "FallbackToChannel"));
-
+            var prioritise = GetBoolValueFromOption(DeployOptionNames.Prioritise);
+            
             _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
             var targetEnvironment = await FetchEnvironmentFromUserInput(targetEnvironmentName);
 
@@ -91,7 +93,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 fallbackChannel = fallbackToChannel;
             }
 
-            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, InInteractiveMode, fallbackChannel);
+            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, InInteractiveMode, fallbackChannel, prioritise: prioritise);
 
             if (configResult.IsFailure)
             {
@@ -129,6 +131,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             public const string DefaultFallback = "fallbacktodefault";
             public const string ReleaseName = "releasename";
             public const string FallbackToChannel = "fallbacktochannel";
+            public const string Prioritise = "prioritise";
         }
     }
 }

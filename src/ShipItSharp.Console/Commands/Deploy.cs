@@ -75,6 +75,7 @@ namespace ShipItSharp.Console.Commands
             AddToRegister(DeployOptionNames.SaveProfile, command.Option("-s|--saveprofile", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SaveProfile"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.DefaultFallback, command.Option("-d|--fallbacktodefault", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToDefault"), CommandOptionType.NoValue));
             AddToRegister(OptionNames.ReleaseName, command.Option("-r|--releasename", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ReleaseVersion"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.Prioritise, command.Option("-p|--prioritise", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Prioritise"), CommandOptionType.NoValue));
         }
 
 
@@ -92,6 +93,7 @@ namespace ShipItSharp.Console.Commands
             var environmentName = GetStringFromUser(DeployOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
             var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
+            var prioritise = GetBoolValueFromOption(DeployOptionNames.Prioritise);
 
             _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
 
@@ -102,7 +104,7 @@ namespace ShipItSharp.Console.Commands
                 return -2;
             }
 
-            var configResult = DeployConfig.Create(environment, channelName, forceDefault ? _configuration.DefaultChannel : null, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), InInteractiveMode);
+            var configResult = DeployConfig.Create(environment, channelName, forceDefault ? _configuration.DefaultChannel : null, groupRestriction, GetStringValueFromOption(DeployOptionNames.SaveProfile), InInteractiveMode, prioritise: prioritise);
 
             if (configResult.IsFailure)
             {
@@ -162,6 +164,7 @@ namespace ShipItSharp.Console.Commands
             public const string GroupFilter = "groupfilter";
             public const string SaveProfile = "saveprofile";
             public const string DefaultFallback = "fallbacktodefault";
+            public const string Prioritise = "prioritise";
         }
     }
 }

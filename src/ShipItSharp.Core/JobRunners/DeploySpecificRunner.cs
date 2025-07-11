@@ -82,6 +82,8 @@ namespace ShipItSharp.Core.JobRunners
             {
                 return -1;
             }
+            
+            deployment.SetPriority(_currentConfig.Prioritise);
 
             var result = await _deployer.CheckDeployment(deployment);
             if (!result.Success)

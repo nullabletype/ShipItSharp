@@ -58,52 +58,98 @@ namespace ShipItSharp.Core.Deployment
                 if (lifeCyle.Phases.Any())
                 {
                     var safe = false;
-                    if (lifeCyle.Phases[0].OptionalDeploymentTargetEnvironmentIds.Any())
+                    var firstPhase = lifeCyle.Phases[0];
+                    
+                    // Check if target environment is directly allowed in first phase
+                    if (firstPhase.OptionalDeploymentTargetEnvironmentIds.Contains(deployment.EnvironmentId) ||
+                        firstPhase.AutomaticDeploymentTargetEnvironmentIds.Contains(deployment.EnvironmentId))
                     {
-                        if (lifeCyle.Phases[0].OptionalDeploymentTargetEnvironmentIds.Contains(deployment.EnvironmentId))
-                        {
-                            safe = true;
-                        }
+                        safe = true;
                     }
-                    if (!safe && lifeCyle.Phases[0].AutomaticDeploymentTargetEnvironmentIds.Any())
+                    
+                    // If first phase has no specific environments (allows any environment), it's safe
+                    if (!safe && !firstPhase.OptionalDeploymentTargetEnvironmentIds.Any() && 
+                        !firstPhase.AutomaticDeploymentTargetEnvironmentIds.Any())
                     {
-                        if (lifeCyle.Phases[0].AutomaticDeploymentTargetEnvironmentIds.Contains(deployment.EnvironmentId))
-                        {
-                            safe = true;
-                        }
+                        safe = true;
                     }
+                    
                     if (!safe)
                     {
                         var phaseCheck = true;
                         var deployments = await _helper.Deployments.GetDeployments(project.ReleaseId);
-                        var previousEnvs = deployments.Select(d => d.EnvironmentId);
+                        var previousEnvs = deployments.Select(d => d.EnvironmentId).ToList();
+                        
+                        // Find which phase the target environment belongs to
+                        Phase targetPhase = null;
                         foreach (var phase in lifeCyle.Phases)
                         {
-                            if (!phase.Optional)
+                            var allPhaseEnvs = phase.OptionalDeploymentTargetEnvironmentIds
+                                .Concat(phase.AutomaticDeploymentTargetEnvironmentIds).ToList();
+                            
+                            // If phase has no specific environments, it accepts any environment
+                            if (!allPhaseEnvs.Any() || allPhaseEnvs.Contains(deployment.EnvironmentId))
                             {
-                                if (phase.MinimumEnvironmentsBeforePromotion == 0)
+                                targetPhase = phase;
+                                break;
+                            }
+                        }
+                        
+                        if (targetPhase == null)
+                        {
+                            phaseCheck = false;
+                        }
+                        else
+                        {
+                            // Check all phases before the target phase
+                            var targetPhaseIndex = lifeCyle.Phases.IndexOf(targetPhase);
+                            for (int i = 0; i < targetPhaseIndex; i++)
+                            {
+                                var phase = lifeCyle.Phases[i];
+                                if (!phase.Optional)
                                 {
-                                    if (!previousEnvs.All(e => phase.OptionalDeploymentTargetEnvironmentIds.Contains(e)) && !phase.OptionalDeploymentTargetEnvironmentIds.Contains(deployment.EnvironmentId))
+                                    var phaseEnvs = phase.OptionalDeploymentTargetEnvironmentIds
+                                        .Concat(phase.AutomaticDeploymentTargetEnvironmentIds).ToList();
+                                    
+                                    // If phase has no specific environments, any previous deployment satisfies it
+                                    if (!phaseEnvs.Any())
                                     {
-                                        phaseCheck = false;
-                                        break;
+                                        if (phase.MinimumEnvironmentsBeforePromotion > 0 && 
+                                            previousEnvs.Count < phase.MinimumEnvironmentsBeforePromotion)
+                                        {
+                                            phaseCheck = false;
+                                            break;
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    if (phase.MinimumEnvironmentsBeforePromotion > previousEnvs.Intersect(phase.OptionalDeploymentTargetEnvironmentIds).Count())
+                                    else
                                     {
-                                        phaseCheck = false;
-                                        break;
+                                        var deploymentsInPhase = previousEnvs.Intersect(phaseEnvs).Count();
+                                        if (phase.MinimumEnvironmentsBeforePromotion == 0)
+                                        {
+                                            // At least one deployment must be in this phase
+                                            if (deploymentsInPhase == 0)
+                                            {
+                                                phaseCheck = false;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (deploymentsInPhase < phase.MinimumEnvironmentsBeforePromotion)
+                                            {
+                                                phaseCheck = false;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                         safe = phaseCheck;
                     }
+                    
                     if (!safe)
                     {
-
                         return new DeploymentCheckResult
                         {
                             Success = false,

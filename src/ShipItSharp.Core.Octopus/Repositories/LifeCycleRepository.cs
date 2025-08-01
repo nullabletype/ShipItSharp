@@ -151,11 +151,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                         newPhase.AutomaticDeploymentTargetEnvironmentIds = phase.AutomaticDeploymentTargets.ToList();
                     }
 
-                    if (newPhase.AutomaticDeploymentTargetEnvironmentIds.Any() ||
-                        newPhase.OptionalDeploymentTargetEnvironmentIds.Any())
-                    {
-                        lc.Phases.Add(newPhase);
-                    }
+                    lc.Phases.Add(newPhase);
                 }
             }
 

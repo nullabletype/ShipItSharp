@@ -70,7 +70,7 @@ namespace ShipItSharp.Core.JobRunners
                     }
 
                     var channels = await _octopusHelper.Channels.GetChannelsForProject(projectStub.ProjectId, 9999);
-                    var packageSteps = await _octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, 9999);
+                    var packageSteps = await _octopusHelper.Packages.GetPackages(projectStub.ProjectId, null, null, allowNoVersion: true, config.MaxPackagesPerProject);
                     var packages = packageSteps.SelectMany(p => p.AvailablePackages);
 
                     foreach (var channel in channels)

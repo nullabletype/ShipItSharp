@@ -222,6 +222,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Number of packages to check per project before cleaning up Channels.
+        /// </summary>
+        internal static string MaxPackagesPerProject {
+            get {
+                return ResourceManager.GetString("MaxPackagesPerProject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Stay running monitoring for package updates, pausing for the specified time in seconds.
         /// </summary>
         internal static string MonitorForPackages {

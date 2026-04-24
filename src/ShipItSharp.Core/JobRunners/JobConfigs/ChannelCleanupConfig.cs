@@ -31,14 +31,16 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         private ChannelCleanupConfig() { }
         public string GroupFilter { get; private set; }
         public bool TestMode { get; private set; }
+        public int MaxPackagesPerProject { get; private set; }
 
-        public static Result<ChannelCleanupConfig> Create(string filter, bool testMode)
+        public static Result<ChannelCleanupConfig> Create(string filter, bool testMode, int maxPackagesPerProject = 100)
         {
 
             return Result.Success(new ChannelCleanupConfig
             {
                 GroupFilter = filter,
-                TestMode = testMode
+                TestMode = testMode,
+                MaxPackagesPerProject = maxPackagesPerProject
             });
         }
     }

@@ -429,6 +429,15 @@ namespace ShipItSharp.Core.Language.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Parameter {0} must be a valid number.
+        /// </summary>
+        internal static string MustBeNumber {
+            get {
+                return ResourceManager.GetString("MustBeNumber", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Name.
         /// </summary>
         internal static string Name {

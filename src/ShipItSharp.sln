@@ -1,9 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2037
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37027.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShipItSharp.Core", "ShipItSharp.Core\ShipItSharp.Core.csproj", "{1B72518D-986C-425D-AA81-13A5FCEB2148}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6E130F55-B14F-4844-B31F-24DC170119F3} = {6E130F55-B14F-4844-B31F-24DC170119F3}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShipItSharp.Core.Utilities", "ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj", "{67C633C8-F85F-4DB9-8227-C66492D1CDA3}"
 EndProject

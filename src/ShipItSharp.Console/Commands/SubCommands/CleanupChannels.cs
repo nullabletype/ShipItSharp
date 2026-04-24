@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
@@ -48,14 +49,21 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             AddToRegister(EnsureEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
             AddToRegister(EnsureEnvironmentOptionNames.TestMode, command.Option("-t|--testmode", LanguageProvider.GetString(LanguageSection.OptionsStrings, "TestMode"), CommandOptionType.NoValue));
+            AddToRegister(EnsureEnvironmentOptionNames.MaxPackagesPerProject, command.Option("-m|--maxpackagesperproject", LanguageProvider.GetString(LanguageSection.OptionsStrings, "MaxPackagesPerProject"), CommandOptionType.SingleOrNoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty);
             var testMode = GetBoolValueFromOption(EnsureEnvironmentOptionNames.TestMode);
+            
+            if (!TryGetIntValueFromOption(EnsureEnvironmentOptionNames.MaxPackagesPerProject, out int maxNumberOfPackagesPerProject))
+            {
+                System.Console.WriteLine(String.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "MustBeNumber"), "maxpackagesperproject"));
+                return -1;
+            }
 
-            var config = ChannelCleanupConfig.Create(groupFilter, testMode);
+            var config = ChannelCleanupConfig.Create(groupFilter, testMode, maxNumberOfPackagesPerProject);
 
             if (config.IsSuccess)
             {
@@ -69,6 +77,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             public const string GroupFilter = "groupfilter";
             public const string TestMode = "testmode";
+            public const string MaxPackagesPerProject = "maxpackagesperproject";
         }
     }
 }

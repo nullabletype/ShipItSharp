@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <AssemblyName>ShipItSharp.Core.Deployment.Models</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NuGet.Versioning" Version="6.14.0" />
+        <PackageReference Include="NuGet.Versioning" Version="7.3.1" />
     </ItemGroup>
 
 </Project>

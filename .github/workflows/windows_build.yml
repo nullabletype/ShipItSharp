@@ -8,12 +8,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     
     - name: build
       run: dotnet build -c Release src\ShipItSharp.sln
@@ -52,42 +52,42 @@ jobs:
       run: 7z a -tzip shipitsharp-release\zips\debug-symbols.zip .\shipitsharp-release\debug-symbols\*
       
       
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-portable
         path: shipitsharp-release\portable\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-win-x64
         path: shipitsharp-release\win-x64\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-win-x86
         path: shipitsharp-release\win-x86\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-linux-x64
         path: shipitsharp-release\linux-x64\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-linux-arm
         path: shipitsharp-release\linux-arm\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-osx-x64
         path: shipitsharp-release\osx-x64\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-debug-symbol
         path: shipitsharp-release\debug-symbols\
         if-no-files-found: error
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: shipitsharp-all
         path: shipitsharp-release\zips\

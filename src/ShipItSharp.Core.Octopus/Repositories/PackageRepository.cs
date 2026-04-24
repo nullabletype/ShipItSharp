@@ -41,9 +41,9 @@ namespace ShipItSharp.Core.Octopus.Repositories
             _octopusHelper = octopusHelper;
         }
 
-        public async Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, int take = 5)
+        public async Task<IList<PackageStep>> GetPackages(string projectIdOrHref, string versionRange, string tag, bool allowNoVersion = false, int take = 5)
         {
-            return await GetPackages(await _octopusHelper.ProjectsInternal.GetProject(projectIdOrHref), versionRange, tag, take);
+            return await GetPackages(await _octopusHelper.ProjectsInternal.GetProject(projectIdOrHref), versionRange, tag, allowNoVersion, take);
         }
 
         public async Task<PackageFull> GetFullPackage(PackageStub stub)
@@ -134,7 +134,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             return results;
         }
 
-        internal async Task<IList<PackageStep>> GetPackages(ProjectResource project, string versionRange, string tag, int take = 5)
+        internal async Task<IList<PackageStep>> GetPackages(ProjectResource project, string versionRange, string tag, bool allowNoChannel = false, int take = 5)
         {
             var packageIdResult = await GetPackages(project);
             var allPackages = new List<PackageStep>();
@@ -142,7 +142,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             {
                 if ((packageStepId != null) && !string.IsNullOrEmpty(packageStepId.PackageId))
                 {
-                    if (versionRange == null)
+                    if (versionRange == null && !allowNoChannel)
                     {
                         allPackages.Add(new PackageStep { AvailablePackages = new List<PackageStub>(), StepName = packageStepId.StepName, StepId = packageStepId.StepId });
                         continue; // If no versionRange specified, we likely have no channel so no packages

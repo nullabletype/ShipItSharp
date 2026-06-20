@@ -33,7 +33,7 @@ using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 
-namespace ShipItSharp.Core.JobRunners
+namespace ShipItSharp.Console.ConsoleTools
 {
     public class DeployWithProfileDirectoryRunner
     {
@@ -53,7 +53,7 @@ namespace ShipItSharp.Core.JobRunners
             {
                 if (!Directory.Exists(config.Directory))
                 {
-                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "PathDoesntExist"));
+                    System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "PathDoesntExist"));
                     return -1;
                 }
 
@@ -70,7 +70,7 @@ namespace ShipItSharp.Core.JobRunners
             }
             catch (Exception e)
             {
-                Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "UnexpectedError"), e.Message);
+                System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "UnexpectedError"), e.Message);
             }
 
             return 0;
@@ -110,13 +110,13 @@ namespace ShipItSharp.Core.JobRunners
 
                 foreach (var file in Directory.GetFiles(config.Directory, "*auto.profile"))
                 {
-                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingUsingConfig"), file);
+                    System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingUsingConfig"), file);
                     await _jobRunner.StartJob(file, null, null, config.ForceRedeploy);
                 }
 
                 if (config.MonitorDirectory)
                 {
-                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), config.MonitorDelay.ToString());
+                    System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), config.MonitorDelay.ToString());
                     await Task.Delay(config.MonitorDelay * 1000, cancellationToken);
                 }
 

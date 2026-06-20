@@ -31,6 +31,7 @@
         <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Octopus\ShipItSharp.Core.Octopus.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Utilities\ShipItSharp.Core.Utilities.csproj" />
+        <ProjectReference Include="..\ShipItSharp.Core.VersionChecking.Providers\ShipItSharp.Core.VersionChecking.Providers.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core\ShipItSharp.Core.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
     </ItemGroup>

@@ -24,7 +24,7 @@
 using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;

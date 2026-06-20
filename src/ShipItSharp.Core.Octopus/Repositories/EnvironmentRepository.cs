@@ -49,11 +49,16 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<List<Environment>> GetMatchingEnvironments(string keyword, bool extactMatch = false)
         {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return new List<Environment>();
+            }
+
             var environments = await GetEnvironments();
             var matchingEnvironments = environments.Where(env => env.Name.Equals(keyword, StringComparison.CurrentCultureIgnoreCase)).ToArray();
             if ((matchingEnvironments.Length == 0) && !extactMatch)
             {
-                matchingEnvironments = environments.Where(env => env.Name.ToLower().Contains(keyword.ToLower())).ToArray();
+                matchingEnvironments = environments.Where(env => env.Name.IndexOf(keyword, StringComparison.CurrentCultureIgnoreCase) >= 0).ToArray();
             }
             return matchingEnvironments.ToList();
         }
@@ -94,6 +99,11 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         private Environment ConvertEnvironment(EnvironmentResource env)
         {
+            if (env == null)
+            {
+                return null;
+            }
+
             return new Environment { Id = env.Id, Name = env.Name };
         }
     }

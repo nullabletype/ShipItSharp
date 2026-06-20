@@ -14,4 +14,8 @@
         <ProjectReference Include="..\ShipItSharp.Core.Models\ShipItSharp.Core.Deployment.Models.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="ShipItSharp.Core.Octopus.Tests" />
+    </ItemGroup>
+
 </Project>

@@ -93,7 +93,7 @@ namespace ShipItSharp.Core.Configuration
                 validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusUrl"));
             }
 
-            if (string.IsNullOrEmpty(config.OctopusUrl))
+            if (string.IsNullOrEmpty(config.ApiKey))
             {
                 validationResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "ValidationOctopusApiKey"));
             }
@@ -102,7 +102,7 @@ namespace ShipItSharp.Core.Configuration
             {
                 try
                 {
-                    var octoHelper = new OctopusHelper(config.OctopusUrl, config.ApiKey, null);
+                    var octoHelper = await OctopusHelper.CreateAsync(config.OctopusUrl, config.ApiKey);
                     await octoHelper.Environments.GetEnvironments();
                 }
                 catch (Exception e)

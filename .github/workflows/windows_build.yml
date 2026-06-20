@@ -17,6 +17,8 @@ jobs:
     
     - name: build
       run: dotnet build -c Release src\ShipItSharp.sln
+    - name: test
+      run: dotnet test -c Release --no-build src\ShipItSharp.sln
     - name: publish-portable
       run: dotnet publish -c Release src\ShipItSharp.Console\ShipItSharp.Console.csproj -o shipitsharp-release\portable /p:CopyOutputSymbolsToPublishDirectory=false
     - name: publish-win-x64

@@ -22,6 +22,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -72,19 +73,7 @@ namespace ShipItSharp.Console
             app.HelpOption("-?|-h|--help");
             app.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             app.Conventions.UseConstructorInjection(container);
-
-            var deployer = container.GetService<Deploy>();
-            app.Command(deployer.CommandName, deploy => deployer.Configure(deploy));
-            var promoter = container.GetService<Promote>();
-            app.Command(promoter.CommandName, promote => promoter.Configure(promote));
-            var environment = container.GetService<Commands.Environment>();
-            app.Command(environment.CommandName, env => environment.Configure(env));
-            var release = container.GetService<Release>();
-            app.Command(release.CommandName, env => release.Configure(env));
-            var variable = container.GetService<Variable>();
-            app.Command(variable.CommandName, vari => variable.Configure(vari));
-            var channel = container.GetService<Channel>();
-            app.Command(channel.CommandName, vari => channel.Configure(vari));
+            RegisterCommands(app, container);
 
             app.OnExecute(() =>
             {
@@ -93,6 +82,49 @@ namespace ShipItSharp.Console
             });
 
             return app.Execute(args);
+        }
+        
+        private static readonly IReadOnlyList<Action<CommandLineApplication, IServiceProvider>> CommandRegistrations =
+            new List<Action<CommandLineApplication, IServiceProvider>>
+            {
+                (app, provider) =>
+                {
+                    var deployer = provider.GetService<Deploy>();
+                    app.Command(deployer.CommandName, deploy => deployer.Configure(deploy));
+                },
+                (app, provider) =>
+                {
+                    var promoter = provider.GetService<Promote>();
+                    app.Command(promoter.CommandName, promote => promoter.Configure(promote));
+                },
+                (app, provider) =>
+                {
+                    var environment = provider.GetService<Commands.Environment>();
+                    app.Command(environment.CommandName, env => environment.Configure(env));
+                },
+                (app, provider) =>
+                {
+                    var release = provider.GetService<Release>();
+                    app.Command(release.CommandName, env => release.Configure(env));
+                },
+                (app, provider) =>
+                {
+                    var variable = provider.GetService<Variable>();
+                    app.Command(variable.CommandName, vari => variable.Configure(vari));
+                },
+                (app, provider) =>
+                {
+                    var channel = provider.GetService<Channel>();
+                    app.Command(channel.CommandName, vari => channel.Configure(vari));
+                }
+            };
+
+        private static void RegisterCommands(CommandLineApplication app, IServiceProvider provider)
+        {
+            foreach (var registration in CommandRegistrations)
+            {
+                registration(app, provider);
+            }
         }
 
         private static void HandleException(object sender, UnhandledExceptionEventArgs e)
@@ -114,23 +146,29 @@ namespace ShipItSharp.Console
         {
             var log = LoggingProvider.GetLogger<Program>();
             log.Info("Attempting IoC configuration...");
-            var container = IoC();
+            var services = IoC();
             log.Info("Attempting configuration load...");
             var configurationLoadResult = await ConfigurationProvider.LoadConfiguration(ConfigurationProviderTypes.Json, new LanguageProvider()); //todo: fix this!
             if (!configurationLoadResult.Success)
             {
                 log.Error("Failed to load config.");
-                return new Tuple<ConfigurationLoadResult, IServiceProvider>(configurationLoadResult, container.BuildServiceProvider());
+                return new Tuple<ConfigurationLoadResult, IServiceProvider>(configurationLoadResult, services.BuildServiceProvider());
             }
-            log.Info("ShipItSharp started...");
-            OctopusHelper.Init(configurationLoadResult.Configuration.OctopusUrl, configurationLoadResult.Configuration.ApiKey);
-            container.AddSingleton(OctopusHelper.Default);
-            container.AddSingleton(configurationLoadResult.Configuration);
-            log.Info("Set configuration in IoC");
 
-            var serviceProvider = container.BuildServiceProvider();
-            //Temporary filth
-            serviceProvider.GetService<IOctopusHelper>().SetCacheImplementation(serviceProvider.GetService<ICacheObjects>(), configurationLoadResult.Configuration.CacheTimeoutInSeconds);
+            log.Info("ShipItSharp started...");
+            services.AddSingleton(configurationLoadResult.Configuration);
+            var cache = new ShipItSharp.Core.Octopus.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
+            var octopusHelper = await OctopusHelper.InitAsync(
+                configurationLoadResult.Configuration.OctopusUrl,
+                configurationLoadResult.Configuration.ApiKey,
+                cache,
+                configurationLoadResult.Configuration.CacheTimeoutInSeconds);
+
+            services.AddSingleton<ICacheObjects>(cache);
+            services.AddSingleton(octopusHelper);
+            log.Info("Set configuration and Octopus helper in IoC");
+
+            var serviceProvider = services.BuildServiceProvider();
 
             var versionChecker = serviceProvider.GetService<IVersionChecker>();
             var checkResult = await versionChecker.GetLatestVersion();
@@ -173,7 +211,6 @@ namespace ShipItSharp.Console
             return new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<ConfigurationImplementation, JsonConfigurationProvider>()
-                .AddSingleton<IOctopusHelper, OctopusHelper>()
                 .AddSingleton<IDeployer, Deployer>()
                 .AddTransient<IChangeLogProvider, TeamCity>()
                 .AddTransient<IWebRequestHelper, WebRequestHelper>()

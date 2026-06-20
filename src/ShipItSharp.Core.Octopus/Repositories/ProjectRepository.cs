@@ -95,8 +95,13 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<List<ProjectGroup>> GetFilteredProjectGroups(string filter)
         {
+            if (string.IsNullOrWhiteSpace(filter))
+            {
+                return new List<ProjectGroup>();
+            }
+
             var groups = await _octoClient.Client.Repository.ProjectGroups.GetAll(CancellationToken.None);
-            return groups.Where(g => g.Name.ToLower().Contains(filter.ToLower())).Select(ConvertProjectGroup).ToList();
+            return groups.Where(g => g.Name.IndexOf(filter, System.StringComparison.CurrentCultureIgnoreCase) >= 0).Select(ConvertProjectGroup).ToList();
         }
 
         private async Task<Project> ConvertProject(ProjectResource project, string env, string channelRange, string tag)

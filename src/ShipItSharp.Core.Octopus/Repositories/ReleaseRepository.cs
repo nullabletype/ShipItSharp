@@ -25,6 +25,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Octopus.Client.Exceptions;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -80,7 +81,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             {
                 release = await _octopusHelper.Client.Repository.Projects.GetReleaseByVersion(projectRes, name, CancellationToken.None);
             }
-            catch
+            catch (OctopusResourceNotFoundException)
             {
                 return null;
             }
@@ -104,7 +105,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 }
                 release = (await _octopusHelper.Client.Repository.Channels.GetReleases(channelRes, 0, 1)).Items.FirstOrDefault();
             }
-            catch
+            catch (OctopusResourceNotFoundException)
             {
                 return null;
             }
@@ -167,9 +168,8 @@ namespace ShipItSharp.Core.Octopus.Repositories
         internal async Task<Release> ConvertRelease(ReleaseResource release)
         {
             var project = await _octopusHelper.Projects.GetProject(release.ProjectId);
-            var packages =
-                release.SelectedPackages.Select(
-                    async p => await _octopusHelper.PackagesInternal.ConvertPackage(project, p)).Select(t => t.Result).ToList();
+            var packageTasks = release.SelectedPackages.Select(p => _octopusHelper.PackagesInternal.ConvertPackage(project, p));
+            var packages = (await Task.WhenAll(packageTasks)).ToList();
             return new Release
             {
                 Id = release.Id,

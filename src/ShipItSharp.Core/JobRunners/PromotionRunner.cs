@@ -149,9 +149,10 @@ namespace ShipItSharp.Core.JobRunners
 
             progressBar.CleanCurrentLine();
 
-            foreach (var projectStub in projectStubs)
+            for (var i = 0; i < projectStubs.Count; i++)
             {
-                progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
+                var projectStub = projectStubs[i];
+                progressBar.WriteProgress(i + 1, projectStubs.Count(),
                     string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
                 if (!string.IsNullOrEmpty(config.GroupFilter))
                 {

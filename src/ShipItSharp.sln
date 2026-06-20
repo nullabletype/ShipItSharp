@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShipItSharp.Core.Language.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShipItSharp.Console.Tests", "ShipItSharp.Console.Tests\ShipItSharp.Console.Tests.csproj", "{0C630B08-522A-43F6-AE96-30E5F2CA2340}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShipItSharp.Core.Octopus.Tests", "ShipItSharp.Core.Octopus.Tests\ShipItSharp.Core.Octopus.Tests.csproj", "{8E2F85A3-63EA-4E2D-A0A6-5377B499B7EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +86,10 @@ Global
 		{0C630B08-522A-43F6-AE96-30E5F2CA2340}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C630B08-522A-43F6-AE96-30E5F2CA2340}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C630B08-522A-43F6-AE96-30E5F2CA2340}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E2F85A3-63EA-4E2D-A0A6-5377B499B7EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E2F85A3-63EA-4E2D-A0A6-5377B499B7EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E2F85A3-63EA-4E2D-A0A6-5377B499B7EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E2F85A3-63EA-4E2D-A0A6-5377B499B7EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

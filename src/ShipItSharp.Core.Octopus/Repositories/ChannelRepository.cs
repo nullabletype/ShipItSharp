@@ -69,7 +69,8 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 return (true, null);
             }
 
-            return (false, allReleases.Select(async r => await _octopusHelper.ReleasesInternal.ConvertRelease(r)).Select(t => t.Result));
+            var converted = await Task.WhenAll(allReleases.Select(r => _octopusHelper.ReleasesInternal.ConvertRelease(r)));
+            return (false, converted);
         }
 
         private Channel ConvertChannel(ChannelResource channel)

@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Threading.Tasks;
 using Octopus.Client;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -30,7 +31,8 @@ namespace ShipItSharp.Core.Octopus
 {
     public class OctopusHelper : IOctopusHelper
     {
-        public static IOctopusHelper Default;
+        public static IOctopusHelper Default { get; private set; }
+        internal static Func<OctopusServerEndpoint, Task<IOctopusAsyncClient>> ClientCreator { get; set; } = endpoint => OctopusAsyncClient.Create(endpoint);
         private readonly ChannelRepository _channelsInternal;
         private readonly EnvironmentRepository _environmentsInternal;
         private readonly LifeCycleRepository _lifeCyclesInternal;
@@ -44,23 +46,15 @@ namespace ShipItSharp.Core.Octopus
         internal ICacheObjects CacheProvider;
 
         public OctopusHelper(string url, string apiKey, ICacheObjects cacheProvider)
-        {
-            _teamsInternal = new TeamsRepository(this);
-            _lifeCyclesInternal = new LifeCycleRepository(this);
-            DeploymentsInternal = new DeploymentRepository(this);
-            ReleasesInternal = new ReleaseRepository(this);
-            _environmentsInternal = new EnvironmentRepository(this);
-            _channelsInternal = new ChannelRepository(this);
-            VariablesInternal = new VariableRepository(this);
-            PackagesInternal = new PackageRepository(this);
-            ProjectsInternal = new ProjectRepository(this);
-
-            CacheProvider = cacheProvider;
-            Client = InitClient(url, apiKey);
-        }
+            : this(CreateClient(url, apiKey).GetAwaiter().GetResult(), cacheProvider) { }
 
         public OctopusHelper(IOctopusAsyncClient client, ICacheObjects memoryCache = null)
         {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
             _teamsInternal = new TeamsRepository(this);
             _lifeCyclesInternal = new LifeCycleRepository(this);
             DeploymentsInternal = new DeploymentRepository(this);
@@ -86,24 +80,43 @@ namespace ShipItSharp.Core.Octopus
 
         public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
         {
-            SetCacheImplementationInternal(CacheProvider);
+            SetCacheImplementationInternal(memoryCacheImp);
             CacheProvider.SetCacheTimeout(cacheTimeoutToSet);
+        }
+
+        public static async Task<IOctopusHelper> CreateAsync(string url, string apikey, ICacheObjects memoryCache = null, int cacheTimeoutSeconds = 1)
+        {
+            var client = await CreateClient(url, apikey);
+            var helper = new OctopusHelper(client, memoryCache);
+            helper.SetCacheImplementation(memoryCache, cacheTimeoutSeconds);
+            return helper;
+        }
+
+        public static async Task<IOctopusHelper> InitAsync(string url, string apikey, ICacheObjects memoryCache = null, int cacheTimeoutSeconds = 1)
+        {
+            var helper = await CreateAsync(url, apikey, memoryCache, cacheTimeoutSeconds);
+            Default = helper;
+            return helper;
         }
 
         public static IOctopusHelper Init(string url, string apikey, ICacheObjects memoryCache = null)
         {
-            var client = InitClient(url, apikey);
-            Default = new OctopusHelper(client, memoryCache);
-            Default.SetCacheImplementation(memoryCache, 1);
-            return Default;
+            return InitAsync(url, apikey, memoryCache, 1).GetAwaiter().GetResult();
         }
 
-        private static IOctopusAsyncClient InitClient(string url, string apikey)
+        private static async Task<IOctopusAsyncClient> CreateClient(string url, string apikey)
         {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentException("Octopus URL must be provided.", nameof(url));
+            }
+            if (string.IsNullOrWhiteSpace(apikey))
+            {
+                throw new ArgumentException("Octopus API key must be provided.", nameof(apikey));
+            }
+
             var endpoint = new OctopusServerEndpoint(url, apikey);
-            IOctopusAsyncClient client = null;
-            Task.Run(async () => { client = await OctopusAsyncClient.Create(endpoint); }).Wait();
-            return client;
+            return await ClientCreator(endpoint);
         }
 
         private void SetCacheImplementationInternal(ICacheObjects memoryCache)

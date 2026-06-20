@@ -11,7 +11,7 @@ using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Octopus.Interfaces;
 
-namespace ShipItSharp.Console.Tests;
+namespace ShipItSharp.Core.Tests;
 
 [TestFixture]
 public class DeployRunnerTests

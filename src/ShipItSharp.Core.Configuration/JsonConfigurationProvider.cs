@@ -30,20 +30,31 @@ using Newtonsoft.Json;
 using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Logging;
-using ShipItSharp.Core.Octopus;
 
 namespace ShipItSharp.Core.Configuration
 {
     public class JsonConfigurationProvider : ConfigurationImplementation
     {
 
-        private string _configurationFileName = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "config.json");
-        public JsonConfigurationProvider(ILanguageProvider languageProvider) : base(languageProvider) { }
+        private string _configurationFileName;
+        private readonly bool _hasExplicitConfigurationFileName;
+        private readonly IConfigurationConnectivityValidator _connectivityValidator;
+
+        public JsonConfigurationProvider(ILanguageProvider languageProvider)
+            : this(languageProvider, null, null) { }
+
+        public JsonConfigurationProvider(ILanguageProvider languageProvider, IConfigurationConnectivityValidator connectivityValidator, string configurationFileName = null)
+            : base(languageProvider)
+        {
+            _connectivityValidator = connectivityValidator ?? new OctopusConfigurationConnectivityValidator();
+            _hasExplicitConfigurationFileName = configurationFileName != null;
+            _configurationFileName = configurationFileName ?? Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "config.json");
+        }
 
         public override async Task<ConfigurationLoadResult> LoadConfiguration()
         {
             var loadResult = new ConfigurationLoadResult();
-            if (!File.Exists(_configurationFileName))
+            if (!_hasExplicitConfigurationFileName && !File.Exists(_configurationFileName))
             {
                 _configurationFileName = "config.json";
             }
@@ -70,6 +81,11 @@ namespace ShipItSharp.Core.Configuration
             try
             {
                 var config = JsonConvert.DeserializeObject<Configuration>(stringContent);
+                if (config == null)
+                {
+                    loadResult.Errors.Add(LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "LoadCouldntParseFile"));
+                    return loadResult;
+                }
                 await ValidateConfiguration(config, loadResult);
                 if (loadResult.Success)
                 {
@@ -102,8 +118,7 @@ namespace ShipItSharp.Core.Configuration
             {
                 try
                 {
-                    var octoHelper = await OctopusHelper.CreateAsync(config.OctopusUrl, config.ApiKey);
-                    await octoHelper.Environments.GetEnvironments();
+                    await _connectivityValidator.ValidateConnectivity(config);
                 }
                 catch (Exception e)
                 {

@@ -6,8 +6,9 @@ using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Octopus.Interfaces;
+using DeploymentModel = ShipItSharp.Core.Deployment.Models.Deployment;
 
-namespace ShipItSharp.Console.Tests;
+namespace ShipItSharp.Core.Tests;
 
 [TestFixture]
 public class ShowEnvironmentRunnerTests
@@ -31,7 +32,7 @@ public class ShowEnvironmentRunnerTests
             new() { ProjectId = "Projects-1", ProjectName = "Payments", ProjectGroupId = "Groups-1" }
         }));
         releases.GetReleasedVersion("Projects-1", "Environments-1")
-            .Returns(Task.FromResult((new Release { Version = "1.2.3", DisplayPackageVersion = "pkg-1.2.3", LastModifiedBy = "steven" }, new Deployment())));
+            .Returns(Task.FromResult((new Release { Version = "1.2.3", DisplayPackageVersion = "pkg-1.2.3", LastModifiedBy = "steven" }, new DeploymentModel())));
 
         var runner = new ShowEnvironmentRunner(helper);
 

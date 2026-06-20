@@ -22,6 +22,7 @@
 
 
 using System.Threading.Tasks;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Language;
 
 namespace ShipItSharp.Core.Configuration
@@ -30,9 +31,14 @@ namespace ShipItSharp.Core.Configuration
     {
         public static async Task<ConfigurationLoadResult> LoadConfiguration(ConfigurationProviderTypes type, ILanguageProvider languageProvider)
         {
+            return await LoadConfiguration(type, languageProvider, null);
+        }
+
+        public static async Task<ConfigurationLoadResult> LoadConfiguration(ConfigurationProviderTypes type, ILanguageProvider languageProvider, IConfigurationConnectivityValidator connectivityValidator)
+        {
             if (type == ConfigurationProviderTypes.Json)
             {
-                return await new JsonConfigurationProvider(languageProvider).LoadConfiguration();
+                return await new JsonConfigurationProvider(languageProvider, connectivityValidator).LoadConfiguration();
             }
 
             return null;

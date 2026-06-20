@@ -122,7 +122,7 @@ namespace ShipItSharp.Core.ChangeLogs.TeamCity
             {
                 _log.Info("Managed to get both build ids from packages. From: " + fromBuildId + " to: " + toBuildId);
                 var build = GetChangeBuild(fromBuildId);
-                var toBuild = GetChangeBuild(fromBuildId);
+                var toBuild = GetChangeBuild(toBuildId);
 
                 var fromBuildChange = GetChangeFromBuildId(fromBuildId, build);
 

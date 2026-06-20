@@ -5,7 +5,7 @@ using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Octopus.Repositories;
 
-namespace ShipItSharp.Console.Tests;
+namespace ShipItSharp.Core.Tests;
 
 [TestFixture]
 public class EnvironmentToLifecycleRunnerTests

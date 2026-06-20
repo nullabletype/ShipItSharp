@@ -34,6 +34,7 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
 {
     public class GitLabVersionChecker : IVersionCheckingProvider
     {
+        private static readonly HttpClient Client = CreateClient();
         private readonly ILogger _log;
 
         public GitLabVersionChecker()
@@ -45,17 +46,22 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
         {
             try
             {
-                var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
-                var response = await client.GetStringAsync("https://gitlab.com/api/v4/projects/10756071/releases");
-                var release = JsonConvert.DeserializeObject<List<Release>>(response).First();
+                var response = await Client.GetStringAsync("https://gitlab.com/api/v4/projects/10756071/releases");
+                var release = JsonConvert.DeserializeObject<List<Release>>(response)?.FirstOrDefault();
                 return release;
             }
             catch (Exception e)
             {
-                _log.Error("Couldn't load the latest version information from github", e);
+                _log.Error("Couldn't load the latest version information from gitlab", e);
             }
             return null;
+        }
+
+        private static HttpClient CreateClient()
+        {
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
+            return client;
         }
     }
 }

@@ -34,6 +34,7 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
 {
     public class GitHubVersionChecker : IVersionCheckingProvider
     {
+        private static readonly HttpClient Client = CreateClient();
         private readonly ILogger _log;
 
         public GitHubVersionChecker()
@@ -45,10 +46,8 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
         {
             try
             {
-                var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
-                var response = await client.GetStringAsync("https://api.github.com/repos/nullabletype/ShipItSharp/releases");
-                var release = JsonConvert.DeserializeObject<List<Release>>(response).First();
+                var response = await Client.GetStringAsync("https://api.github.com/repos/nullabletype/ShipItSharp/releases");
+                var release = JsonConvert.DeserializeObject<List<Release>>(response)?.FirstOrDefault();
                 return release;
             }
             catch (Exception e)
@@ -56,6 +55,13 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
                 _log.Error("Couldn't load the latest version information from github", e);
             }
             return null;
+        }
+
+        private static HttpClient CreateClient()
+        {
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            client.DefaultRequestHeaders.Add("user-agent", "ShipItSharp");
+            return client;
         }
     }
 }

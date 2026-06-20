@@ -66,6 +66,10 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
             set { }
         }
 
-        public IAsset[] Assets { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public IAsset[] Assets
+        {
+            get => Array.Empty<IAsset>();
+            set { }
+        }
     }
 }

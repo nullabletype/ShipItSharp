@@ -59,18 +59,7 @@ namespace ShipItSharp.Core.JobRunners
 
                 if (config.MonitorDirectory)
                 {
-                    var hostBuilder = Host.CreateDefaultBuilder()
-                        .ConfigureLogging(
-                            options => options.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.Information))
-                        .ConfigureServices((_, services) =>
-                        {
-                            services.AddHostedService(_ => new DeployWithProfileDirectoryService(this, config))
-                                .Configure<EventLogSettings>(configObject =>
-                                {
-                                    configObject.LogName = "Sample Service";
-                                    configObject.SourceName = "Sample Service Source";
-                                });
-                        }).UseWindowsService();
+                    var hostBuilder = CreateProfileDirectoryHostBuilder(config);
 
                     await hostBuilder.Build().RunAsync();
                 }
@@ -87,10 +76,38 @@ namespace ShipItSharp.Core.JobRunners
             return 0;
         }
 
-        private async Task RunProfiles(DeployWithProfileDirectoryConfig config)
+        private IHostBuilder CreateProfileDirectoryHostBuilder(DeployWithProfileDirectoryConfig config)
+        {
+            return OperatingSystem.IsWindows()
+                ? CreateWindowsProfileDirectoryHostBuilder(config)
+                : Host.CreateDefaultBuilder().ConfigureServices((_, services) =>
+                    services.AddHostedService(_ => new DeployWithProfileDirectoryService(this, config)));
+        }
+
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private IHostBuilder CreateWindowsProfileDirectoryHostBuilder(DeployWithProfileDirectoryConfig config)
+        {
+            return Host.CreateDefaultBuilder()
+                .ConfigureLogging(
+                    options => options.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.Information))
+                .ConfigureServices((_, services) =>
+                {
+                    services.AddHostedService(_ => new DeployWithProfileDirectoryService(this, config))
+                        .Configure<EventLogSettings>(configObject =>
+                        {
+                            configObject.LogName = "ShipItSharp";
+                            configObject.SourceName = "ShipItSharp";
+                        });
+                })
+                .UseWindowsService();
+        }
+
+        private async Task RunProfiles(DeployWithProfileDirectoryConfig config, CancellationToken cancellationToken = default)
         {
             do
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 foreach (var file in Directory.GetFiles(config.Directory, "*auto.profile"))
                 {
                     Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingUsingConfig"), file);
@@ -100,10 +117,10 @@ namespace ShipItSharp.Core.JobRunners
                 if (config.MonitorDirectory)
                 {
                     Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), config.MonitorDelay.ToString());
-                    await Task.Delay(config.MonitorDelay * 1000);
+                    await Task.Delay(config.MonitorDelay * 1000, cancellationToken);
                 }
 
-            } while (config.MonitorDirectory);
+            } while (config.MonitorDirectory && !cancellationToken.IsCancellationRequested);
         }
 
         private class DeployWithProfileDirectoryService : BackgroundService
@@ -119,10 +136,7 @@ namespace ShipItSharp.Core.JobRunners
 
             protected override async Task ExecuteAsync(CancellationToken stoppingToken)
             {
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    await _runner.RunProfiles(_config);
-                }
+                await _runner.RunProfiles(_config, stoppingToken);
             }
         }
     }

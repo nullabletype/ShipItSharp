@@ -52,13 +52,13 @@ namespace ShipItSharp.Console
 {
     internal class Program
     {
-        private static int Main(string[] args)
+        private static async Task<int> Main(string[] args)
         {
             var cwd = Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]);
             Directory.SetCurrentDirectory(cwd ?? ".");
             args = args.Select(a => a.Replace("action:", "--action")).ToArray();
             AppDomain.CurrentDomain.UnhandledException += HandleException;
-            var initResult = CheckConfigurationAndInit().GetAwaiter().GetResult();
+            var initResult = await CheckConfigurationAndInit();
             if (!initResult.Item1.Success)
             {
                 System.Console.Write(string.Join(Environment.NewLine, initResult.Item1.Errors));

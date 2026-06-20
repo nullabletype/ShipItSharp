@@ -52,11 +52,9 @@ namespace ShipItSharp.Core.Octopus
             {
                 return;
             }
-            lock (string.Intern(key))
-            {
-                var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(_cacheTimeout));
-                _cache.Set(key + typeof(T).Name, value, cacheEntryOptions);
-            }
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(_cacheTimeout));
+            _cache.Set(CreateCacheKey<T>(key), value, cacheEntryOptions);
         }
 
         public T GetCachedObject<T>(string key)
@@ -65,14 +63,22 @@ namespace ShipItSharp.Core.Octopus
             {
                 return default(T);
             }
-            lock (string.Intern(key))
+
+            if (_cache.TryGetValue(CreateCacheKey<T>(key), out T cachedValue))
             {
-                if (_cache.TryGetValue(key + typeof(T).Name, out T cachedValue))
-                {
-                    return cachedValue;
-                }
+                return cachedValue;
             }
             return default(T);
+        }
+
+        private static string CreateCacheKey<T>(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new ArgumentException("Cache key must be provided.", nameof(key));
+            }
+
+            return $"{typeof(T).FullName}:{key}";
         }
     }
 }

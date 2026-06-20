@@ -26,7 +26,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
-using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
@@ -35,16 +34,10 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    internal class ShowEnvironment : BaseCommand
+    internal class ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, ShowEnvironmentRunner runner)
+        : BaseCommand(octopusHelper, languageProvider)
     {
-        private readonly IProgressBar _progressBar;
-        private readonly ShowEnvironmentRunner _runner;
 
-        public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration, ShowEnvironmentRunner runner) : base(octopusHelper, languageProvider)
-        {
-            _progressBar = progressBar;
-            _runner = runner;
-        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "show";
 
@@ -62,10 +55,10 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty);
             var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true);
 
-            var result = await _runner.Run(
+            var result = await runner.Run(
                 id,
                 groupFilter,
-                _progressBar,
+                progressBar,
                 LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"),
                 LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"),
                 LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"));

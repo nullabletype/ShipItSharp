@@ -29,6 +29,7 @@ using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -36,12 +37,13 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class ShowEnvironment : BaseCommand
     {
-        //todo convert to runner
         private readonly IProgressBar _progressBar;
+        private readonly ShowEnvironmentRunner _runner;
 
-        public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration) : base(octopusHelper, languageProvider)
+        public ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, IConfiguration configuration, ShowEnvironmentRunner runner) : base(octopusHelper, languageProvider)
         {
             _progressBar = progressBar;
+            _runner = runner;
         }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "show";
@@ -60,45 +62,28 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty);
             var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true);
 
-            var found = await OctoHelper.Environments.GetEnvironment(id);
-            if (found != null)
+            var result = await _runner.Run(
+                id,
+                groupFilter,
+                _progressBar,
+                LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"),
+                LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"),
+                LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"));
+
+            if (!result.Found)
             {
-                _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
-                var projectStubs = await OctoHelper.Projects.GetProjectStubs();
-
-                var groupIds = new List<string>();
-                if (!string.IsNullOrEmpty(groupFilter))
-                {
-                    _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
-                    groupIds =
-                        (await OctoHelper.Projects.GetFilteredProjectGroups(groupFilter))
-                        .Select(g => g.Id).ToList();
-                }
-
-                var releases = new List<(Core.Deployment.Models.Release Release, Deployment Deployment)>();
-
-                var table = new ConsoleTable("Project", "Release Name", "Packages", "Deployed On", "Deployed By");
-
-                foreach (var projectStub in projectStubs)
-                {
-                    if (!string.IsNullOrEmpty(groupFilter))
-                    {
-                        if (!groupIds.Contains(projectStub.ProjectGroupId))
-                        {
-                            continue;
-                        }
-                    }
-
-                    var release = await OctoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, found.Id);
-
-                    table.AddRow(projectStub.ProjectName, release.Release.Version);
-                }
-
-
-
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id);
+                return -1;
             }
-            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id);
-            return -1;
+
+            var table = new ConsoleTable("Project", "Release Name", "Packages", "Deployed On", "Deployed By");
+            foreach (var row in result.Rows)
+            {
+                table.AddRow(row.ProjectName, row.ReleaseName, row.Packages, row.DeployedOn, row.DeployedBy);
+            }
+
+            table.Write(Format.Minimal);
+            return 0;
         }
 
         private struct ShowEnvironmentOptionNames

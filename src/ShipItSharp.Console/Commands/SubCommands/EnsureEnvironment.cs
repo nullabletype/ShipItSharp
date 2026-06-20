@@ -24,6 +24,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -31,8 +32,12 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class EnsureEnvironment : BaseCommand
     {
-        //todo convert to runner
-        public EnsureEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        private readonly EnsureEnvironmentRunner _runner;
+
+        public EnsureEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnsureEnvironmentRunner runner) : base(octopusHelper, languageProvider)
+        {
+            _runner = runner;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "ensure";
 
@@ -49,20 +54,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var name = GetStringFromUser(EnsureEnvironmentOptionNames.Name, string.Empty);
             var description = GetStringFromUser(EnsureEnvironmentOptionNames.Description, string.Empty, true);
-            var found = await OctoHelper.Environments.GetMatchingEnvironments(name);
-            Core.Deployment.Models.Environment env;
-            if (found.Any())
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), name);
-                env = found.First();
-            }
-            else
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), name);
-                env = await OctoHelper.Environments.CreateEnvironment(name, description);
-            }
-            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvionmentId"), env.Id);
-            return 0;
+            return await _runner.Run(name, description);
         }
 
         private struct EnsureEnvironmentOptionNames

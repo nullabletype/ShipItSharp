@@ -21,17 +21,13 @@
 #endregion
 
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
-using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Configuration.Interfaces;
-using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -44,10 +40,11 @@ namespace ShipItSharp.Console.Commands
         private readonly DeploySpecific _deploySpecific;
         private readonly DeployWithProfile _profile;
         private readonly DeployWithProfileDirectory _profileDir;
+        private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly DeployRunner _runner;
 
-        public Deploy(DeployRunner deployRunner, IConfiguration configuration, IOctopusHelper octoHelper, DeployWithProfile profile, DeployWithProfileDirectory profileDir, DeploySpecific deploySpecific, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
+        public Deploy(DeployRunner deployRunner, IConfiguration configuration, IOctopusHelper octoHelper, DeployWithProfile profile, DeployWithProfileDirectory profileDir, DeploySpecific deploySpecific, IProgressBar progressBar, ILanguageProvider languageProvider, ICommandInteraction interaction) : base(octoHelper, languageProvider)
         {
             _configuration = configuration;
             _profile = profile;
@@ -55,6 +52,7 @@ namespace ShipItSharp.Console.Commands
             _progressBar = progressBar;
             _runner = deployRunner;
             _deploySpecific = deploySpecific;
+            _interaction = interaction;
         }
 
         protected override bool SupportsInteractiveMode => true;
@@ -111,50 +109,7 @@ namespace ShipItSharp.Console.Commands
                 System.Console.WriteLine(configResult.Error);
                 return -1;
             }
-            return await _runner.Run(configResult.Value, _progressBar, projectStubs, InteractivePrompt, PromptForStringWithoutQuitting, text => { return Prompt.GetString(text); });
-        }
-
-        private IEnumerable<int> InteractivePrompt(DeployConfig config, IList<Project> projects)
-        {
-            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "DeployingTo"), config.Channel, config.Environment.Name), LanguageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), projects);
-            return runner.GetSelectedIndexes();
-        }
-
-
-        private InteractiveRunner PopulateRunner(string prompt, string unselectableText, IEnumerable<Project> projects)
-        {
-            var runner = new InteractiveRunner(prompt,
-                unselectableText,
-                LanguageProvider,
-                LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"),
-                LanguageProvider.GetString(LanguageSection.UiStrings, "CurrentRelease"),
-                LanguageProvider.GetString(LanguageSection.UiStrings, "CurrentPackage"),
-                LanguageProvider.GetString(LanguageSection.UiStrings, "NewPackage"),
-                LanguageProvider.GetString(LanguageSection.UiStrings, "OldestPackagePublish"),
-                LanguageProvider.GetString(LanguageSection.UiStrings, "PackageAgeDays")
-            );
-
-            foreach (var project in projects)
-            {
-                var packagesAvailable = (project.AvailablePackages.Count > 0) && project.AvailablePackages.All(p => p.SelectedPackage != null);
-
-                DateTime? lastModified = null;
-
-                foreach (var package in project.AvailablePackages)
-                {
-                    if (((lastModified == null) && (package.SelectedPackage != null) && package.SelectedPackage.PublishedOn.HasValue) || ((package.SelectedPackage != null) && package.SelectedPackage.PublishedOn.HasValue && (package.SelectedPackage.PublishedOn < lastModified)))
-                    {
-                        lastModified = package.SelectedPackage.PublishedOn;
-                    }
-                }
-
-                runner.AddRow(project.Checked, packagesAvailable, project.ProjectName, project.CurrentRelease.Version, project.AvailablePackages.Count > 1 ? LanguageProvider.GetString(LanguageSection.UiStrings, "Multi") : project.CurrentRelease.DisplayPackageVersion, project.AvailablePackages.Count > 1 ? LanguageProvider.GetString(LanguageSection.UiStrings, "Multi") :
-                    packagesAvailable ? project.AvailablePackages.First().SelectedPackage.Version : string.Empty, lastModified.HasValue ? $"{lastModified.Value.ToShortDateString()} : {lastModified.Value.ToShortTimeString()}" : string.Empty,
-                    lastModified.HasValue ? $"{DateTime.Now.Subtract(lastModified.Value).Days.ToString()}{(lastModified.Value < DateTime.Now.AddDays(-7) ? "*" : string.Empty)}" : string.Empty);
-
-            }
-            runner.Run();
-            return runner;
+            return await _runner.Run(configResult.Value, _progressBar, projectStubs, _interaction);
         }
 
         private struct DeployOptionNames

@@ -78,6 +78,7 @@ namespace ShipItSharp.Console.Commands
                         command.ShowHelp();
                     }
                 }
+                return code;
             });
         }
 

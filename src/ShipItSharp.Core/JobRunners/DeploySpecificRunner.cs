@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -41,9 +42,6 @@ namespace ShipItSharp.Core.JobRunners
         private readonly ILanguageProvider _languageProvider;
         private readonly IUiLogger _uiLogger;
 
-        private DeploySpecificConfig _currentConfig;
-        private IProgressBar _progressBar;
-
         public DeploySpecificRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger)
         {
             _languageProvider = languageProvider;
@@ -52,18 +50,15 @@ namespace ShipItSharp.Core.JobRunners
             _uiLogger = uiLogger;
         }
 
-        public async Task<int> Run(DeploySpecificConfig config, IProgressBar progressBar, Func<DeploySpecificConfig, (List<Project> currentProjects, List<Release> targetReleases), IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt)
+        public async Task<int> Run(DeploySpecificConfig config, IProgressBar progressBar, ICommandInteraction interaction)
         {
-            _currentConfig = config;
-            _progressBar = progressBar;
-
-            var (projects, targetProjects) = await GenerateProjectList();
+            var (projects, targetProjects) = await GenerateProjectList(config, progressBar);
 
             var indexes = new List<int>();
 
             if (config.RunningInteractively)
             {
-                indexes.AddRange(setDeploymentProjects(_currentConfig, (projects, targetProjects)));
+                indexes.AddRange(interaction.SelectDeploySpecificProjects(config, projects, targetProjects));
             }
             else
             {
@@ -76,14 +71,14 @@ namespace ShipItSharp.Core.JobRunners
                 }
             }
 
-            var deployment = GenerateEnvironmentDeployment(indexes, projects, targetProjects);
+            var deployment = GenerateEnvironmentDeployment(config, indexes, projects, targetProjects);
 
             if (deployment == null)
             {
                 return -1;
             }
             
-            deployment.SetPriority(_currentConfig.Prioritise);
+            deployment.SetPriority(config.Prioritise);
 
             var result = await _deployer.CheckDeployment(deployment);
             if (!result.Success)
@@ -92,14 +87,14 @@ namespace ShipItSharp.Core.JobRunners
                 return -1;
             }
 
-            _deployer.FillRequiredVariables(deployment.ProjectDeployments, userPrompt, _currentConfig.RunningInteractively);
+            _deployer.FillRequiredVariables(deployment.ProjectDeployments, interaction.Prompt, config.RunningInteractively);
 
             await _deployer.StartJob(deployment, _uiLogger);
 
             return 0;
         }
 
-        private EnvironmentDeployment GenerateEnvironmentDeployment(IEnumerable<int> indexes, List<Project> projects, List<Release> targetReleases)
+        private EnvironmentDeployment GenerateEnvironmentDeployment(DeploySpecificConfig config, IEnumerable<int> indexes, List<Project> projects, List<Release> targetReleases)
         {
             if (!indexes.Any())
             {
@@ -111,8 +106,8 @@ namespace ShipItSharp.Core.JobRunners
             {
                 ChannelName = string.Empty,
                 DeployAsync = true,
-                EnvironmentId = _currentConfig.DestinationEnvironment.Id,
-                EnvironmentName = _currentConfig.DestinationEnvironment.Name
+                EnvironmentId = config.DestinationEnvironment.Id,
+                EnvironmentName = config.DestinationEnvironment.Name
             };
 
             foreach (var index in indexes)
@@ -135,30 +130,30 @@ namespace ShipItSharp.Core.JobRunners
             return deployment;
         }
 
-        private async Task<(List<Project> projects, List<Release> targetReleases)> GenerateProjectList()
+        private async Task<(List<Project> projects, List<Release> targetReleases)> GenerateProjectList(DeploySpecificConfig config, IProgressBar progressBar)
         {
             var projects = new List<Project>();
             var targetReleases = new List<Release>();
 
-            _progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
+            progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "FetchingProjectList"));
             var projectStubs = await _helper.Projects.GetProjectStubs();
 
             var groupIds = new List<string>();
-            if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
+            if (!string.IsNullOrEmpty(config.GroupFilter))
             {
-                _progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
+                progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await _helper.Projects.GetFilteredProjectGroups(_currentConfig.GroupFilter))
+                    (await _helper.Projects.GetFilteredProjectGroups(config.GroupFilter))
                     .Select(g => g.Id).ToList();
             }
 
-            _progressBar.CleanCurrentLine();
+            progressBar.CleanCurrentLine();
 
             foreach (var projectStub in projectStubs)
             {
-                _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
+                progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
                     string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
-                if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
+                if (!string.IsNullOrEmpty(config.GroupFilter))
                 {
                     if (!groupIds.Contains(projectStub.ProjectGroupId))
                     {
@@ -166,13 +161,13 @@ namespace ShipItSharp.Core.JobRunners
                     }
                 }
 
-                var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.DestinationEnvironment.Id, null, null);
+                var project = await _helper.Projects.ConvertProject(projectStub, config.DestinationEnvironment.Id, null, null);
 
-                var newRelease = await _helper.Releases.GetRelease(_currentConfig.ReleaseName, project);
+                var newRelease = await _helper.Releases.GetRelease(config.ReleaseName, project);
 
-                if ((newRelease == null) && _currentConfig.FallbackToDefaultChannel)
+                if ((newRelease == null) && config.FallbackToDefaultChannel)
                 {
-                    newRelease = await _helper.Releases.GetLatestRelease(project, _currentConfig.DefaultFallbackChannel);
+                    newRelease = await _helper.Releases.GetLatestRelease(project, config.DefaultFallbackChannel);
                 }
 
                 var currentRelease = project.CurrentRelease;
@@ -200,9 +195,10 @@ namespace ShipItSharp.Core.JobRunners
                 }
             }
 
-            _progressBar.CleanCurrentLine();
+            progressBar.CleanCurrentLine();
 
             return (projects, targetReleases);
         }
+
     }
 }

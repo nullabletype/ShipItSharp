@@ -21,15 +21,12 @@
 #endregion
 
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Configuration.Interfaces;
-using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -39,14 +36,16 @@ namespace ShipItSharp.Console.Commands.SubCommands
     internal class DeploySpecific : BaseCommand
     {
         private readonly IConfiguration _configuration;
+        private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly DeploySpecificRunner _runner;
 
-        public DeploySpecific(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, DeploySpecificRunner runner, IConfiguration configuration) : base(octopusHelper, languageProvider)
+        public DeploySpecific(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, DeploySpecificRunner runner, IConfiguration configuration, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _progressBar = progressBar;
             _runner = runner;
             _configuration = configuration;
+            _interaction = interaction;
         }
         protected override bool SupportsInteractiveMode => true;
         public override string CommandName => "specific";
@@ -100,28 +99,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 System.Console.WriteLine(configResult.Error);
                 return -1;
             }
-            return await _runner.Run(configResult.Value, _progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
-        }
-
-        private IEnumerable<int> InteractivePrompt(DeploySpecificConfig config, (List<Project> currentProjects, List<Core.Deployment.Models.Release> targetReleases) projects)
-        {
-            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "DeployingSpecificRelease"), config.ReleaseName, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetReleases);
-            return runner.GetSelectedIndexes();
-        }
-
-        private InteractiveRunner PopulateRunner(string prompt, IList<Project> projects, IList<Core.Deployment.Models.Release> targetReleases)
-        {
-            var runner = new InteractiveRunner(prompt, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseNotSelectable"), LanguageProvider, LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnTarget"), LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseToDeploy"));
-            foreach (var project in projects)
-            {
-                var release = targetReleases.FirstOrDefault(r => r.ProjectId == project.ProjectId);
-
-                var packagesAvailable = release != null;
-
-                runner.AddRow(project.Checked, packagesAvailable, project.ProjectName, project.CurrentRelease.Version, release?.Version);
-            }
-            runner.Run();
-            return runner;
+            return await _runner.Run(configResult.Value, _progressBar, _interaction);
         }
 
         private struct DeployOptionNames

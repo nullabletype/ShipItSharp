@@ -39,7 +39,6 @@ namespace ShipItSharp.Core.JobRunners
     {
         private readonly IJobRunner _jobRunner;
         private readonly ILanguageProvider _languageProvider;
-        private DeployWithProfileDirectoryConfig _currentConfig;
 
         public DeployWithProfileDirectoryRunner(IJobRunner jobRunner, ILanguageProvider languageProvider)
         {
@@ -50,7 +49,6 @@ namespace ShipItSharp.Core.JobRunners
 
         public async Task<int> Run(DeployWithProfileDirectoryConfig config)
         {
-            _currentConfig = config;
             try
             {
                 if (!Directory.Exists(config.Directory))
@@ -66,7 +64,7 @@ namespace ShipItSharp.Core.JobRunners
                             options => options.AddFilter<EventLogLoggerProvider>(level => level >= LogLevel.Information))
                         .ConfigureServices((_, services) =>
                         {
-                            services.AddHostedService(_ => new DeployWithProfileDirectoryService(this))
+                            services.AddHostedService(_ => new DeployWithProfileDirectoryService(this, config))
                                 .Configure<EventLogSettings>(configObject =>
                                 {
                                     configObject.LogName = "Sample Service";
@@ -78,7 +76,7 @@ namespace ShipItSharp.Core.JobRunners
                 }
                 else
                 {
-                    await RunProfiles();
+                    await RunProfiles(config);
                 }
             }
             catch (Exception e)
@@ -89,39 +87,41 @@ namespace ShipItSharp.Core.JobRunners
             return 0;
         }
 
-        private async Task RunProfiles()
+        private async Task RunProfiles(DeployWithProfileDirectoryConfig config)
         {
             do
             {
-                foreach (var file in Directory.GetFiles(_currentConfig.Directory, "*auto.profile"))
+                foreach (var file in Directory.GetFiles(config.Directory, "*auto.profile"))
                 {
                     Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingUsingConfig"), file);
-                    await _jobRunner.StartJob(file, null, null, _currentConfig.ForceRedeploy);
+                    await _jobRunner.StartJob(file, null, null, config.ForceRedeploy);
                 }
 
-                if (_currentConfig.MonitorDirectory)
+                if (config.MonitorDirectory)
                 {
-                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), _currentConfig.MonitorDelay.ToString());
-                    await Task.Delay(_currentConfig.MonitorDelay * 1000);
+                    Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "SleepingForSeconds"), config.MonitorDelay.ToString());
+                    await Task.Delay(config.MonitorDelay * 1000);
                 }
 
-            } while (_currentConfig.MonitorDirectory);
+            } while (config.MonitorDirectory);
         }
 
         private class DeployWithProfileDirectoryService : BackgroundService
         {
             private readonly DeployWithProfileDirectoryRunner _runner;
+            private readonly DeployWithProfileDirectoryConfig _config;
 
-            public DeployWithProfileDirectoryService(DeployWithProfileDirectoryRunner runner)
+            public DeployWithProfileDirectoryService(DeployWithProfileDirectoryRunner runner, DeployWithProfileDirectoryConfig config)
             {
                 _runner = runner;
+                _config = config;
             }
 
             protected override async Task ExecuteAsync(CancellationToken stoppingToken)
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    await _runner.RunProfiles();
+                    await _runner.RunProfiles(_config);
                 }
             }
         }

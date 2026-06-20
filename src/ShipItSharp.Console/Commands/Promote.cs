@@ -21,14 +21,11 @@
 #endregion
 
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Console.ConsoleTools;
-using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -37,13 +34,15 @@ namespace ShipItSharp.Console.Commands
 {
     internal class Promote : BaseCommand
     {
+        private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly PromotionRunner _runner;
 
-        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner) : base(octoHelper, languageProvider)
+        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner, ICommandInteraction interaction) : base(octoHelper, languageProvider)
         {
             _progressBar = progressBar;
             _runner = runner;
+            _interaction = interaction;
         }
 
         protected override bool SupportsInteractiveMode => true;
@@ -85,27 +84,7 @@ namespace ShipItSharp.Console.Commands
                 System.Console.WriteLine(configResult.Error);
                 return -1;
             }
-            return await _runner.Run(configResult.Value, _progressBar, InteractivePrompt, PromptForStringWithoutQuitting);
-        }
-
-
-        private IEnumerable<int> InteractivePrompt(PromotionConfig config, (List<Project> currentProjects, List<Project> targetProjects) projects)
-        {
-            var runner = PopulateRunner(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "PromotingTo"), config.SourceEnvironment.Name, config.DestinationEnvironment.Name), projects.currentProjects, projects.targetProjects);
-            return runner.GetSelectedIndexes();
-        }
-
-        private InteractiveRunner PopulateRunner(string prompt, IList<Project> projects, IList<Project> targetProjects)
-        {
-            var runner = new InteractiveRunner(prompt, LanguageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"), LanguageProvider, LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnSource"), LanguageProvider.GetString(LanguageSection.UiStrings, "OnTarget"));
-            foreach (var project in projects)
-            {
-                var packagesAvailable = project.CurrentRelease != null;
-
-                runner.AddRow(project.Checked, packagesAvailable, project.ProjectName, project.CurrentRelease.Version, targetProjects.FirstOrDefault(p => p.ProjectId == project.ProjectId)?.CurrentRelease?.Version);
-            }
-            runner.Run();
-            return runner;
+            return await _runner.Run(configResult.Value, _progressBar, _interaction);
         }
 
         private struct PromoteOptionNames

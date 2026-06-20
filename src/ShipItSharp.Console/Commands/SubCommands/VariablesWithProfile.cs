@@ -25,7 +25,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using ShipItSharp.Core.Deployment.Models.Variables;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
@@ -34,8 +34,12 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class VariablesWithProfile : BaseCommand
     {
-        //todo convert to runner
-        public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        private readonly VariablesWithProfileRunner _runner;
+
+        public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, VariablesWithProfileRunner runner) : base(octopusHelper, languageProvider)
+        {
+            _runner = runner;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "profile";
 
@@ -50,33 +54,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var file = GetStringFromUser(VariablesWithProfileOptionNames.File, string.Empty);
-
-            var config = StandardSerialiser.DeserializeFromJsonNet<VariableSetCollection>(File.ReadAllText(file));
-
-            if (config != null)
-            {
-                foreach (var varSet in config.VariableSets)
-                {
-                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UpdatingVariableSet"), varSet.Id, varSet.Variables.Count);
-                    try
-                    {
-                        await OctoHelper.Variables.UpdateVariableSet(varSet);
-                    }
-                    catch (Exception e)
-                    {
-                        System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FailedUpdatingVariableSet"), e.Message);
-                        return -1;
-                    }
-                }
-            }
-            else
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "FailedParsingVariableFile"));
-            }
-
-            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
-
-            return 0;
+            return await _runner.Run(file);
         }
 
         private struct VariablesWithProfileOptionNames

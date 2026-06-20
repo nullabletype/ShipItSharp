@@ -22,13 +22,11 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using NuGet.Versioning;
-using ShipItSharp.Console.ConsoleTools;
-using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
+using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -37,12 +35,15 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class RenameRelease : BaseCommand
     {
-        //todo convert to runner
+        private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
+        private readonly RenameReleaseRunner _runner;
 
-        public RenameRelease(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider)
+        public RenameRelease(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, RenameReleaseRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _progressBar = progressBar;
+            _runner = runner;
+            _interaction = interaction;
         }
 
         protected override bool SupportsInteractiveMode => true;
@@ -71,76 +72,14 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 return -2;
             }
 
-            if (!SemanticVersion.TryParse(releaseName, out _))
+            var configResult = RenameReleaseConfig.Create(groupRestriction, environment, InInteractiveMode, releaseName);
+            if (configResult.IsFailure)
             {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "InvalidReleaseVersion"));
-                return -2;
+                System.Console.WriteLine(configResult.Error);
+                return -1;
             }
 
-            var groupIds = new List<string>();
-            if (!string.IsNullOrEmpty(groupRestriction))
-            {
-                _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
-                groupIds =
-                    (await OctoHelper.Projects.GetFilteredProjectGroups(groupRestriction))
-                    .Select(g => g.Id).ToList();
-            }
-
-            var projectStubs = await OctoHelper.Projects.GetProjectStubs();
-
-            var toRename = new List<ProjectRelease>();
-
-            _progressBar.CleanCurrentLine();
-
-            foreach (var projectStub in projectStubs)
-            {
-                _progressBar.WriteProgress(projectStubs.IndexOf(projectStub) + 1, projectStubs.Count(),
-                    string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
-                if (!string.IsNullOrEmpty(groupRestriction))
-                {
-                    if (!groupIds.Contains(projectStub.ProjectGroupId))
-                    {
-                        continue;
-                    }
-                }
-
-                var release = (await OctoHelper.Releases.GetReleasedVersion(projectStub.ProjectId, environment.Id)).Release;
-                if ((release != null) && !release.Version.Equals("none", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    toRename.Add(new ProjectRelease { Release = release, ProjectStub = projectStub });
-                }
-            }
-            _progressBar.StopAnimation();
-            _progressBar.CleanCurrentLine();
-
-            System.Console.WriteLine();
-
-            var table = new ConsoleTable(LanguageProvider.GetString(LanguageSection.UiStrings, "ProjectName"), LanguageProvider.GetString(LanguageSection.UiStrings, "CurrentRelease"));
-            foreach (var release in toRename)
-            {
-                table.AddRow(release.ProjectStub.ProjectName, release.Release.Version);
-            }
-
-            table.Write(Format.Minimal);
-
-            if (Prompt.GetYesNo(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "GoingToRename"), releaseName), true))
-            {
-                foreach (var release in toRename)
-                {
-                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Processing"), release.ProjectStub.ProjectName);
-                    var result = await OctoHelper.Releases.RenameRelease(release.Release.Id, releaseName);
-                    if (result.success)
-                    {
-                        System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), release.ProjectStub.ProjectName);
-                    }
-                    else
-                    {
-                        System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Failed"), release.ProjectStub.ProjectName, result.error);
-                    }
-                }
-            }
-
-            return 0;
+            return await _runner.Run(configResult.Value, _progressBar, _interaction);
         }
 
         private struct RenameReleaseOptionNames
@@ -148,12 +87,6 @@ namespace ShipItSharp.Console.Commands.SubCommands
             public const string Environment = "environment";
             public const string GroupFilter = "groupfilter";
             public const string ReleaseName = "releasename";
-        }
-
-        private class ProjectRelease
-        {
-            public ProjectStub ProjectStub { get; init; }
-            public Core.Deployment.Models.Release Release { get; init; }
         }
     }
 }

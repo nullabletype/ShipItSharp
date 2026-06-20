@@ -25,8 +25,8 @@ using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Console.ConsoleTools;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Language;
-using ShipItSharp.Core.Octopus;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands
@@ -34,16 +34,20 @@ namespace ShipItSharp.Console.Commands
     internal class Environment : BaseCommand
     {
         private readonly DeleteEnvironment _delEnv;
+        private readonly EnvironmentRunner _environmentRunner;
         private readonly EnsureEnvironment _ensureEnv;
         private readonly EnvironmentToLifecycle _envToLifecycle;
         private readonly EnvironmentToTeam _envToTeam;
+        private readonly ShowEnvironment _showEnv;
 
-        public Environment(IOctopusHelper octoHelper, EnsureEnvironment ensureEnv, DeleteEnvironment delEnv, EnvironmentToTeam envToTeam, EnvironmentToLifecycle envToLifecycle, ILanguageProvider languageProvider) : base(octoHelper, languageProvider)
+        public Environment(IOctopusHelper octoHelper, EnsureEnvironment ensureEnv, DeleteEnvironment delEnv, EnvironmentToTeam envToTeam, EnvironmentToLifecycle envToLifecycle, ShowEnvironment showEnv, ILanguageProvider languageProvider, EnvironmentRunner environmentRunner) : base(octoHelper, languageProvider)
         {
             _ensureEnv = ensureEnv;
             _delEnv = delEnv;
             _envToTeam = envToTeam;
             _envToLifecycle = envToLifecycle;
+            _showEnv = showEnv;
+            _environmentRunner = environmentRunner;
         }
 
         protected override bool SupportsInteractiveMode => false;
@@ -56,13 +60,14 @@ namespace ShipItSharp.Console.Commands
             ConfigureSubCommand(_delEnv, command);
             ConfigureSubCommand(_envToTeam, command);
             ConfigureSubCommand(_envToLifecycle, command);
+            ConfigureSubCommand(_showEnv, command);
 
             command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentCommands");
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var envs = await OctopusHelper.Default.Environments.GetEnvironments();
+            var envs = await _environmentRunner.GetEnvironments();
             var table = new ConsoleTable(LanguageProvider.GetString(LanguageSection.UiStrings, "Name"), LanguageProvider.GetString(LanguageSection.UiStrings, "Id"));
             foreach (var env in envs)
             {

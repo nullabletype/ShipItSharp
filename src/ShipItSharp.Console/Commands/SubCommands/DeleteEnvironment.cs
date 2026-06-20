@@ -24,6 +24,8 @@
 using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
+using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -31,8 +33,14 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class DeleteEnvironment : BaseCommand
     {
-        //todo convert to runner
-        public DeleteEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        private readonly ICommandInteraction _interaction;
+        private readonly DeleteEnvironmentRunner _runner;
+
+        public DeleteEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, DeleteEnvironmentRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
+        {
+            _runner = runner;
+            _interaction = interaction;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "delete";
 
@@ -48,34 +56,8 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var id = GetStringFromUser(EnsureEnvironmentOptionNames.Id, string.Empty);
-            var skipConfirm = GetOption(EnsureEnvironmentOptionNames.SkipConfirmation);
-            var found = await OctoHelper.Environments.GetEnvironment(id);
-            if (found != null)
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentFound"), id);
-                if (skipConfirm == null || !skipConfirm.HasValue())
-                {
-                    if (!Prompt.GetYesNo(string.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "ConfirmationCheck"), found.Name), false))
-                    {
-                        return 0;
-                    }
-                }
-                try
-                {
-                    await OctoHelper.Teams.RemoveEnvironmentsFromTeams(found.Id);
-                    await OctoHelper.LifeCycles.RemoveEnvironmentsFromLifecycles(found.Id);
-                    await OctoHelper.Environments.DeleteEnvironment(found.Id);
-                }
-                catch (Exception e)
-                {
-                    System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Error") + e.Message);
-                    return -1;
-                }
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
-                return 0;
-            }
-            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), id);
-            return -1;
+            var skipConfirm = GetOption(EnsureEnvironmentOptionNames.SkipConfirmation).HasValue();
+            return await _runner.Run(id, skipConfirm, _interaction);
         }
 
         private struct EnsureEnvironmentOptionNames

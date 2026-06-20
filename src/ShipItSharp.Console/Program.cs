@@ -180,6 +180,7 @@ namespace ShipItSharp.Console
                 .AddTransient<IVersionCheckingProvider, GitHubVersionChecker>()
                 .AddTransient<IVersionChecker, VersionChecker>()
                 .AddTransient<IJobRunner, ConsoleJobRunner>()
+                .AddTransient<ICommandInteraction, ConsoleCommandInteraction>()
                 .AddTransient<Deploy, Deploy>()
                 .AddTransient<Promote, Promote>()
                 .AddTransient<Release, Release>()
@@ -192,6 +193,7 @@ namespace ShipItSharp.Console
                 .AddTransient<DeleteEnvironment, DeleteEnvironment>()
                 .AddTransient<EnvironmentToTeam, EnvironmentToTeam>()
                 .AddTransient<EnvironmentToLifecycle, EnvironmentToLifecycle>()
+                .AddTransient<ShowEnvironment, ShowEnvironment>()
                 .AddTransient<Variable, Variable>()
                 .AddTransient<VariablesWithProfile, VariablesWithProfile>()
                 .AddTransient<Channel, Channel>()
@@ -205,6 +207,15 @@ namespace ShipItSharp.Console
                 .AddTransient<DeployRunner, DeployRunner>()
                 .AddTransient<DeploySpecificRunner, DeploySpecificRunner>()
                 .AddTransient<ChannelsRunner, ChannelsRunner>()
+                .AddTransient<EnvironmentRunner, EnvironmentRunner>()
+                .AddTransient<EnsureEnvironmentRunner, EnsureEnvironmentRunner>()
+                .AddTransient<DeleteEnvironmentRunner, DeleteEnvironmentRunner>()
+                .AddTransient<EnvironmentToTeamRunner, EnvironmentToTeamRunner>()
+                .AddTransient<EnvironmentToLifecycleRunner, EnvironmentToLifecycleRunner>()
+                .AddTransient<ShowEnvironmentRunner, ShowEnvironmentRunner>()
+                .AddTransient<RenameReleaseRunner, RenameReleaseRunner>()
+                .AddTransient<UpdateReleaseVariablesRunner, UpdateReleaseVariablesRunner>()
+                .AddTransient<VariablesWithProfileRunner, VariablesWithProfileRunner>()
                 .AddTransient<ICacheObjects, MemoryCache>();
         }
     }

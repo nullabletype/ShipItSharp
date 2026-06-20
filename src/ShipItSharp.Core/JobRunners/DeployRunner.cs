@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -43,9 +44,6 @@ namespace ShipItSharp.Core.JobRunners
         private readonly ILanguageProvider _languageProvider;
         private readonly IUiLogger _uiLogger;
 
-        private DeployConfig _currentConfig;
-        private IProgressBar _progressBar;
-
         public DeployRunner(ILanguageProvider languageProvider, IOctopusHelper helper, IDeployer deployer, IUiLogger uiLogger)
         {
             _languageProvider = languageProvider;
@@ -54,25 +52,28 @@ namespace ShipItSharp.Core.JobRunners
             _uiLogger = uiLogger;
         }
 
-        public async Task<int> Run(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, Func<DeployConfig, List<Project>, IEnumerable<int>> setDeploymentProjects, Func<string, string> userPrompt, Func<string, string> promptForReleaseName)
+        public async Task<int> Run(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, ICommandInteraction interaction)
         {
-            _currentConfig = config;
-            _progressBar = progressBar;
             var groupIds = new List<string>();
 
-            if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
+            if (!string.IsNullOrEmpty(config.GroupFilter))
             {
                 progressBar.WriteStatusLine(_languageProvider.GetString(LanguageSection.UiStrings, "GettingGroupInfo"));
                 groupIds =
-                    (await _helper.Projects.GetFilteredProjectGroups(_currentConfig.GroupFilter))
+                    (await _helper.Projects.GetFilteredProjectGroups(config.GroupFilter))
                     .Select(g => g.Id).ToList();
             }
 
             progressBar.CleanCurrentLine();
-            var projects = await ConvertProjectStubsToProjects(projectStubs, groupIds);
+            var projects = await ConvertProjectStubsToProjects(config, progressBar, projectStubs, groupIds);
             progressBar.CleanCurrentLine();
 
-            var deployment = await GenerateDeployment(projects, setDeploymentProjects);
+            var deployment = await GenerateDeployment(config, progressBar, projects, interaction);
+            if (deployment == null)
+            {
+                return -1;
+            }
+
             var result = await _deployer.CheckDeployment(deployment);
 
             if (!result.Success)
@@ -81,16 +82,16 @@ namespace ShipItSharp.Core.JobRunners
                 return -1;
             }
 
-            SetReleaseName(promptForReleaseName, deployment);
+            SetReleaseName(config, interaction, deployment);
 
-            _deployer.FillRequiredVariables(deployment.ProjectDeployments, userPrompt, _currentConfig.RunningInteractively);
+            _deployer.FillRequiredVariables(deployment.ProjectDeployments, interaction.Prompt, config.RunningInteractively);
 
-            deployment.FallbackToDefaultChannel = _currentConfig.FallbackToDefaultChannel;
-            deployment.SetPriority(_currentConfig.Prioritise);
+            deployment.FallbackToDefaultChannel = config.FallbackToDefaultChannel;
+            deployment.SetPriority(config.Prioritise);
 
-            if (!string.IsNullOrEmpty(_currentConfig.SaveProfile))
+            if (!string.IsNullOrEmpty(config.SaveProfile))
             {
-                SaveProfile(deployment);
+                SaveProfile(config, deployment);
             }
             else
             {
@@ -100,13 +101,13 @@ namespace ShipItSharp.Core.JobRunners
             return 0;
         }
 
-        private void SetReleaseName(Func<string, string> promptForReleaseName, EnvironmentDeployment deployment)
+        private void SetReleaseName(DeployConfig config, ICommandInteraction interaction, EnvironmentDeployment deployment)
         {
-            var releaseName = _currentConfig.ReleaseName;
+            var releaseName = config.ReleaseName;
 
-            if (_currentConfig.RunningInteractively && string.IsNullOrEmpty(_currentConfig.ReleaseName))
+            if (config.RunningInteractively && string.IsNullOrEmpty(config.ReleaseName))
             {
-                releaseName = promptForReleaseName(_languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"));
+                releaseName = interaction.Prompt(_languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"));
             }
 
             if (!string.IsNullOrEmpty(releaseName))
@@ -118,13 +119,13 @@ namespace ShipItSharp.Core.JobRunners
             }
         }
 
-        private async Task<EnvironmentDeployment> GenerateDeployment(List<Project> projects, Func<DeployConfig, List<Project>, IEnumerable<int>> setDeploymentProjects)
+        private async Task<EnvironmentDeployment> GenerateDeployment(DeployConfig config, IProgressBar progressBar, List<Project> projects, ICommandInteraction interaction)
         {
             var indexes = new List<int>();
 
-            if (_currentConfig.RunningInteractively)
+            if (config.RunningInteractively)
             {
-                indexes.AddRange(setDeploymentProjects(_currentConfig, projects));
+                indexes.AddRange(interaction.SelectDeployProjects(config, projects));
                 if (!indexes.Any())
                 {
                     Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NothingSelected"));
@@ -142,68 +143,64 @@ namespace ShipItSharp.Core.JobRunners
                 }
             }
 
-            var deployment = await PrepareEnvironmentDeployment(projects, indexes);
+            var deployment = await PrepareEnvironmentDeployment(config, progressBar, projects, indexes);
 
             return deployment;
         }
 
-        private async Task<List<Project>> ConvertProjectStubsToProjects(List<ProjectStub> projectStubs, List<string> groupIds)
+        private async Task<List<Project>> ConvertProjectStubsToProjects(DeployConfig config, IProgressBar progressBar, List<ProjectStub> projectStubs, List<string> groupIds)
         {
-            var projects = new List<Project>();
             var filteredStubs = projectStubs.ToList();
+            var projects = new Project[filteredStubs.Count];
 
-            if (!string.IsNullOrEmpty(_currentConfig.GroupFilter))
+            if (!string.IsNullOrEmpty(config.GroupFilter))
             {
                 filteredStubs = filteredStubs.Where(p => groupIds.Contains((p.ProjectGroupId))).ToList();
+                projects = new Project[filteredStubs.Count];
             }
 
-            await Parallel.ForEachAsync(filteredStubs, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (projectStub, _) =>
+            await Parallel.ForEachAsync(Enumerable.Range(0, filteredStubs.Count), new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (index, _) =>
             {
-                {
-                    _progressBar.WriteProgress(filteredStubs.IndexOf(projectStub) + 1, filteredStubs.Count(),
-                        string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
+                var projectStub = filteredStubs[index];
+                progressBar.WriteProgress(index + 1, filteredStubs.Count,
+                    string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "LoadingInfoFor"), projectStub.ProjectName));
 
-                    var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.Channel);
-                    var project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, channel?.VersionRange, channel?.VersionTag);
-                    var currentPackages = project.CurrentRelease.SelectedPackages;
-                    project.Checked = false;
-                    if (project.SelectedPackageStubs != null)
+                var channel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, config.Channel);
+                var project = await _helper.Projects.ConvertProject(projectStub, config.Environment.Id, channel?.VersionRange, channel?.VersionTag);
+                var currentPackages = project.CurrentRelease.SelectedPackages;
+                project.Checked = false;
+
+                if (project.SelectedPackageStubs != null)
+                {
+                    foreach (var packageStep in project.AvailablePackages)
                     {
-                        foreach (var packageStep in project.AvailablePackages)
+                        var stub = packageStep.SelectedPackage;
+                        if (stub == null && !string.IsNullOrEmpty(config.DefaultFallbackChannel))
                         {
-                            var stub = packageStep.SelectedPackage;
-                            if (stub == null)
-                            {
-                                if (_currentConfig.DefaultFallbackChannel != null)
-                                {
-                                    var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, _currentConfig.DefaultFallbackChannel);
-                                    project = await _helper.Projects.ConvertProject(projectStub, _currentConfig.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
-                                    stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId)?.SelectedPackage;
-                                }
-                            }
-                            var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
-                            if ((matchingCurrent != null) && (stub != null))
-                            {
-                                project.Checked = matchingCurrent.Version != stub.Version;
-                                break;
-                            }
-                            if (stub == null)
-                            {
-                                project.Checked = false;
-                            }
-                            project.Checked = true;
+                            var defaultChannel = await _helper.Channels.GetChannelByName(projectStub.ProjectId, config.DefaultFallbackChannel);
+                            project = await _helper.Projects.ConvertProject(projectStub, config.Environment.Id, defaultChannel?.VersionRange, defaultChannel?.VersionTag);
+                            stub = project.AvailablePackages.FirstOrDefault(p => p.StepId == packageStep.StepId)?.SelectedPackage;
+                        }
+
+                        var matchingCurrent = currentPackages.FirstOrDefault(p => p.StepId == packageStep.StepId);
+                        if ((matchingCurrent != null) && (stub != null))
+                        {
+                            project.Checked = matchingCurrent.Version != stub.Version;
                             break;
                         }
-                    }
 
-                    projects.Add(project);
+                        project.Checked = stub != null;
+                        break;
+                    }
                 }
+
+                projects[index] = project;
             });
 
-            return projects;
+            return projects.Where(p => p != null).ToList();
         }
 
-        private void SaveProfile(EnvironmentDeployment deployment)
+        private void SaveProfile(DeployConfig config, EnvironmentDeployment deployment)
         {
             foreach (var project in deployment.ProjectDeployments)
             {
@@ -214,29 +211,29 @@ namespace ShipItSharp.Core.JobRunners
                 }
             }
             var content = StandardSerialiser.SerializeToJsonNet(deployment, true);
-            File.WriteAllText(_currentConfig.SaveProfile, content);
-            Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "ProfileSaved"), _currentConfig.SaveProfile);
+            File.WriteAllText(config.SaveProfile, content);
+            Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "ProfileSaved"), config.SaveProfile);
         }
 
-        private async Task<EnvironmentDeployment> PrepareEnvironmentDeployment(IList<Project> projects, IEnumerable<int> indexes = null)
+        private async Task<EnvironmentDeployment> PrepareEnvironmentDeployment(DeployConfig config, IProgressBar progressBar, IList<Project> projects, IEnumerable<int> indexes = null)
         {
             var deployment = new EnvironmentDeployment
             {
-                ChannelName = _currentConfig.Channel,
+                ChannelName = config.Channel,
                 DeployAsync = true,
-                EnvironmentId = _currentConfig.Environment.Id,
-                EnvironmentName = _currentConfig.Environment.Name
+                EnvironmentId = config.Environment.Id,
+                EnvironmentName = config.Environment.Name
             };
 
             var count = 0;
 
-            if (_currentConfig.ForceRedeploy)
+            if (config.ForceRedeploy)
             {
                 var projectsWithAvailablePackages = projects.Where(p => p.AvailablePackages.Any());
                 foreach (var project in projectsWithAvailablePackages)
                 {
-                    _progressBar.WriteProgress(count++, projectsWithAvailablePackages.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), project.ProjectName));
-                    deployment.ProjectDeployments.Add(await GenerateProjectDeployment(project));
+                    progressBar.WriteProgress(count++, projectsWithAvailablePackages.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), project.ProjectName));
+                    deployment.ProjectDeployments.Add(await GenerateProjectDeployment(config, current: project));
                 }
             }
             else
@@ -247,18 +244,18 @@ namespace ShipItSharp.Core.JobRunners
 
                     if (current.AvailablePackages.Any())
                     {
-                        _progressBar.WriteProgress(count++, indexes.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), projects[index].ProjectName));
-                        deployment.ProjectDeployments.Add(await GenerateProjectDeployment(current));
+                        progressBar.WriteProgress(count++, indexes.Count(), string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "BuildingDeploymentJob"), projects[index].ProjectName));
+                        deployment.ProjectDeployments.Add(await GenerateProjectDeployment(config, current));
                     }
                 }
             }
 
-            _progressBar.CleanCurrentLine();
+            progressBar.CleanCurrentLine();
 
             return deployment;
         }
 
-        private async Task<ProjectDeployment> GenerateProjectDeployment(Project current)
+        private async Task<ProjectDeployment> GenerateProjectDeployment(DeployConfig config, Project current)
         {
 
             if (current.AvailablePackages == null)
@@ -266,10 +263,10 @@ namespace ShipItSharp.Core.JobRunners
                 Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "NoPackagesFound"), current.ProjectName);
             }
 
-            var projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.Channel);
-            if ((_currentConfig.DefaultFallbackChannel != null) && (projectChannel == null))
+            var projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, config.Channel);
+            if ((config.DefaultFallbackChannel != null) && (projectChannel == null))
             {
-                projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, _currentConfig.DefaultFallbackChannel);
+                projectChannel = await _helper.Channels.GetChannelByName(current.ProjectId, config.DefaultFallbackChannel);
             }
 
             return new ProjectDeployment

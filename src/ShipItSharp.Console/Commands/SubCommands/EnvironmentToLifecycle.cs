@@ -24,6 +24,7 @@
 using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
+using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -31,8 +32,12 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class EnvironmentToLifecycle : BaseCommand
     {
-        //todo convert to runner
-        public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider) : base(octopusHelper, languageProvider) { }
+        private readonly EnvironmentToLifecycleRunner _runner;
+
+        public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnvironmentToLifecycleRunner runner) : base(octopusHelper, languageProvider)
+        {
+            _runner = runner;
+        }
         protected override bool SupportsInteractiveMode => false;
         public override string CommandName => "addtolifecycle";
 
@@ -53,36 +58,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var lcId = GetStringFromUser(EnvironmentToLifecycleOptions.LcId, string.Empty, true);
             var stringPhaseId = GetStringFromUser(EnvironmentToLifecycleOptions.PhaseId, string.Empty, true);
             var auto = GetOption(EnvironmentToLifecycleOptions.Automatic).HasValue();
-
-            if (string.IsNullOrEmpty(environmentId))
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingEnvironments"));
-                return -1;
-            }
-
-            if (string.IsNullOrEmpty(lcId))
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "LifecycleDoesntExist"));
-                return -1;
-            }
-
-            if (string.IsNullOrEmpty(stringPhaseId) || !int.TryParse(stringPhaseId, out var phaseId))
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "LifecyclePhaseIsInvalid"));
-                return -1;
-            }
-
-            try
-            {
-                await OctoHelper.LifeCycles.AddEnvironmentToLifecyclePhase(environmentId, lcId, phaseId - 1, auto);
-            }
-            catch (Exception e)
-            {
-                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CouldntAddEnvToTeam"), e.Message);
-                return -1;
-            }
-            System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "Done"), string.Empty);
-            return 0;
+            return await _runner.Run(environmentId, lcId, stringPhaseId, auto);
         }
 
         private struct EnvironmentToLifecycleOptions

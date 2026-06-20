@@ -34,4 +34,8 @@
         <ProjectReference Include="..\ShipItSharp.Core\ShipItSharp.Core.csproj" />
         <ProjectReference Include="..\ShipItSharp.Core.Language\ShipItSharp.Core.Language.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="ShipItSharp.Console.Tests" />
+    </ItemGroup>
 </Project>

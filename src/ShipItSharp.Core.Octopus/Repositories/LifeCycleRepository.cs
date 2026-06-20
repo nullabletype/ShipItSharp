@@ -92,7 +92,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             {
                 return (false, LifecycleErrorType.UnexpectedError, e.Message);
             }
-            if (lifecycle.Phases.Count < phaseId)
+            if (lifecycle.Phases == null || phaseId < 0 || phaseId >= lifecycle.Phases.Count)
             {
                 return (false, LifecycleErrorType.PhaseInLifeCycleNotFound, string.Empty);
             }
@@ -118,7 +118,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             {
                 return (false, LifecycleErrorType.UnexpectedError, e.Message);
             }
-            return (false, LifecycleErrorType.None, string.Empty);
+            return (true, LifecycleErrorType.None, string.Empty);
         }
 
         private LifeCycle ConvertLifeCycle(LifecycleResource lifeCycle)

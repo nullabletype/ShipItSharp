@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -184,7 +185,16 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         internal async Task<PackageStub> ConvertPackage(ProjectResource project, SelectedPackage package)
         {
+            if (package == null)
+            {
+                throw new ArgumentNullException(nameof(package));
+            }
+
             var packageDetails = await GetPackageId(project, package.ActionName, package.ActionName);
+            if (packageDetails == null)
+            {
+                throw new InvalidOperationException($"Could not find package details for action '{package.ActionName}'.");
+            }
             return new PackageStub { Version = package.Version, StepName = packageDetails.StepName, StepId = packageDetails.StepId, Id = packageDetails.PackageId };
         }
 

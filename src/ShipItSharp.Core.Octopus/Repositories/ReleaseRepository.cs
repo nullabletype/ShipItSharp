@@ -118,13 +118,17 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<Release> CreateRelease(ProjectDeployment project, bool ignoreChannelRules = false)
         {
-            var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
-            var split = project.Packages.First().PackageName.Split('.');
-            var releaseName = project.ReleaseVersion ?? split[0] + "." + split[1] + ".i";
-            if ((project.ReleaseVersion == null) && !string.IsNullOrEmpty(project.ChannelName))
+            if (project == null)
             {
-                releaseName += "-" + project.ChannelName;
+                throw new ArgumentNullException(nameof(project));
             }
+            if (project.Packages == null || !project.Packages.Any())
+            {
+                throw new InvalidOperationException($"Cannot create a release for project '{project.ProjectName}' because no packages were selected.");
+            }
+
+            var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
+            var releaseName = project.ReleaseVersion ?? BuildInferredReleaseName(project.Packages.First().PackageName, project.ChannelName, project.ProjectName);
             var release = new ReleaseResource
             {
                 Assembled = DateTimeOffset.UtcNow,
@@ -137,6 +141,10 @@ namespace ShipItSharp.Core.Octopus.Repositories
             };
             foreach (var package in project.Packages)
             {
+                if (string.IsNullOrWhiteSpace(package.PackageName))
+                {
+                    throw new InvalidOperationException($"Cannot create a release for project '{project.ProjectName}' because package '{package.StepName}' has no version.");
+                }
                 release.SelectedPackages.Add(new SelectedPackage { Version = package.PackageName, ActionName = package.StepName });
             }
             var result =
@@ -147,6 +155,27 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 Id = result.Id,
                 ReleaseNotes = result.ReleaseNotes
             };
+        }
+
+        internal static string BuildInferredReleaseName(string packageVersion, string channelName, string projectName)
+        {
+            if (string.IsNullOrWhiteSpace(packageVersion))
+            {
+                throw new InvalidOperationException($"Cannot infer a release version for project '{projectName}' because the first package has no version.");
+            }
+
+            var split = packageVersion.Split('.');
+            if (split.Length < 2 || string.IsNullOrWhiteSpace(split[0]) || string.IsNullOrWhiteSpace(split[1]))
+            {
+                throw new InvalidOperationException($"Cannot infer a release version for project '{projectName}' from package version '{packageVersion}'. Provide an explicit release version.");
+            }
+
+            var releaseName = split[0] + "." + split[1] + ".i";
+            if (!string.IsNullOrEmpty(channelName))
+            {
+                releaseName += "-" + channelName;
+            }
+            return releaseName;
         }
 
         public async Task<(string error, bool success)> RenameRelease(string releaseId, string newReleaseVersion)

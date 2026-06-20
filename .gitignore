@@ -6,6 +6,7 @@
 **custom.config
 **custom.*.config
 **/App_Data/
+.DS_Store
 **/Logs/
 **/log/
 **/packages/
@@ -26,4 +27,3 @@
 .vs
 .idea/
 src/Core/publish/
-

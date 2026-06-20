@@ -45,6 +45,35 @@ public class ShowEnvironmentRunnerTests
     }
 
     [Test]
+    public async Task Run_UsesResolvedEnvironmentId_WhenEnvironmentIsProvidedByName()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var environments = Substitute.For<IEnvironmentRepository>();
+        var projects = Substitute.For<IProjectRepository>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var progressBar = Substitute.For<IProgressBar>();
+
+        helper.Environments.Returns(environments);
+        helper.Projects.Returns(projects);
+        helper.Releases.Returns(releases);
+
+        environments.GetEnvironment("Dev").Returns(Task.FromResult(new Environment { Id = "Environments-1", Name = "Dev" }));
+        projects.GetProjectStubs().Returns(Task.FromResult(new List<ProjectStub>
+        {
+            new() { ProjectId = "Projects-1", ProjectName = "Payments" }
+        }));
+        releases.GetReleasedVersion("Projects-1", "Environments-1")
+            .Returns(Task.FromResult((new Release { Version = "1.2.3" }, new DeploymentModel())));
+
+        var runner = new ShowEnvironmentRunner(helper);
+
+        var result = await runner.Run("Dev", null, progressBar, "fetch", "groups", "loading {0}");
+
+        Assert.That(result.Found, Is.True);
+        await releases.Received(1).GetReleasedVersion("Projects-1", "Environments-1");
+    }
+
+    [Test]
     public async Task Run_ReturnsNotFound_WhenEnvironmentIsMissing()
     {
         var helper = Substitute.For<IOctopusHelper>();

@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Octopus.Client.Exceptions;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Octopus.Interfaces;
 using Environment = ShipItSharp.Core.Deployment.Models.Environment;
@@ -77,7 +78,24 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<Environment> GetEnvironment(string idOrName)
         {
-            return ConvertEnvironment(await _octopusHelper.Client.Repository.Environments.Get(idOrName, CancellationToken.None));
+            if (string.IsNullOrWhiteSpace(idOrName))
+            {
+                return null;
+            }
+
+            if (!IsEnvironmentIdOrHref(idOrName))
+            {
+                return (await GetMatchingEnvironments(idOrName, true)).FirstOrDefault();
+            }
+
+            try
+            {
+                return ConvertEnvironment(await _octopusHelper.Client.Repository.Environments.Get(idOrName, CancellationToken.None));
+            }
+            catch (OctopusResourceNotFoundException)
+            {
+                return null;
+            }
         }
 
         public async Task<IEnumerable<Environment>> GetEnvironments(string[] idOrNames)
@@ -105,6 +123,12 @@ namespace ShipItSharp.Core.Octopus.Repositories
             }
 
             return new Environment { Id = env.Id, Name = env.Name };
+        }
+
+        private static bool IsEnvironmentIdOrHref(string idOrName)
+        {
+            return idOrName.StartsWith("Environments-", StringComparison.OrdinalIgnoreCase) ||
+                   idOrName.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShipItSharp</title>
+  <meta name="description" content="ShipItSharp is a command line tool for managing releases, deployments, and project setup in Octopus Deploy.">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <nav class="topbar" aria-label="Primary">
+        <a class="brand" href="./" aria-label="ShipItSharp home">
+          <img src="assets/logo.svg" alt="" width="459" height="396">
+          <span>ShipItSharp</span>
+        </a>
+        <div class="nav-links">
+          <a href="https://github.com/nullabletype/ShipItSharp">Source</a>
+          <a href="https://github.com/nullabletype/ShipItSharp/releases">Releases</a>
+        </div>
+      </nav>
+
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Octopus Deploy command line tooling</p>
+          <h1 id="title">Ship releases with less manual Octopus work.</h1>
+          <p class="lead">ShipItSharp helps teams coordinate releases of multiple projects, deployments, project profiles, channel cleanup, and variable updates from a practical CLI built around Octopus Deploy.</p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/nullabletype/ShipItSharp/releases">Download latest release</a>
+            <a class="button secondary" href="https://github.com/nullabletype/ShipItSharp">View source on GitHub</a>
+          </div>
+        </div>
+
+        <div class="ship-scene" aria-hidden="true">
+          <div class="sun"></div>
+          <div class="logo-orbit">
+            <img src="assets/logo.svg" alt="">
+          </div>
+          <svg class="waves" viewBox="0 0 760 330" preserveAspectRatio="none" role="img">
+            <path class="wave wave-back" d="M0 150 C90 95 170 205 265 150 S455 95 550 150 670 205 760 150 L760 330 L0 330 Z"></path>
+            <path class="wave wave-mid" d="M0 205 C85 150 175 260 270 205 S455 150 550 205 675 260 760 205 L760 330 L0 330 Z"></path>
+            <path class="wave wave-front" d="M0 255 C95 205 180 310 280 255 S460 205 560 255 670 310 760 255 L760 330 L0 330 Z"></path>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="overview" aria-label="Key functionality">
+      <div class="section-heading">
+        <p class="eyebrow">Key functionality</p>
+        <h2>Purpose-built Octopus deployment helpers.</h2>
+      </div>
+      <div class="feature-grid">
+        <article>
+          <span class="feature-icon">01</span>
+          <h3>Create and promote releases</h3>
+          <p>Create releases, deploy them to environments, or promote existing releases through your Octopus lifecycle.</p>
+        </article>
+        <article>
+          <span class="feature-icon">02</span>
+          <h3>Profile-based deployments</h3>
+          <p>Deploy packages from profile files so repeatable multi-project deployments can be run from the terminal.</p>
+        </article>
+        <article>
+          <span class="feature-icon">03</span>
+          <h3>Project filtering</h3>
+          <p>Filter commands by project group and channel where appropriate to keep large Octopus spaces manageable.</p>
+        </article>
+        <article>
+          <span class="feature-icon">04</span>
+          <h3>Release maintenance</h3>
+          <p>Rename releases across projects, clean up old channels with no packages, and force release variable updates.</p>
+        </article>
+        <article>
+          <span class="feature-icon">05</span>
+          <h3>Automation friendly</h3>
+          <p>Use interactive prompts when working manually, or non-interactive commands when wiring ShipItSharp into scripts.</p>
+        </article>
+        <article>
+          <span class="feature-icon">06</span>
+          <h3>Windows service mode</h3>
+          <p>Run profiled deployments as a Windows service for scheduled or background deployment coordination.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="download" aria-labelledby="download-title">
+      <div>
+        <p class="eyebrow">Alpha release</p>
+        <h2 id="download-title">Download the bundled executable and run from your terminal.</h2>
+        <p>Use <code>--help</code> after any command to see contextual command help.</p>
+      </div>
+      <div class="download-actions">
+        <a class="button primary" href="https://github.com/nullabletype/ShipItSharp/releases">Get releases</a>
+        <a class="button secondary" href="https://github.com/nullabletype/ShipItSharp">Browse source</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

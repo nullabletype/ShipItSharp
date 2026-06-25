@@ -153,14 +153,13 @@ namespace ShipItSharp.Console.ConsoleTools
 
             if (unselectable.Any())
             {
-                var projectList = string.Join(", ", unselectable.Select(index => _rows[index][0]));
-                WriteError(_unselectableText + $" {projectList}");
+                var projectList = string.Join(", ", unselectable.Select(index => _rows[index - 1][0]));
+                WriteError(string.Format(_unselectableText, projectList));
             }
         }
 
         private void WriteError(string text)
         {
-            System.Console.WriteLine(_unselectable);
             System.Console.ForegroundColor = ConsoleColor.Red;
             System.Console.WriteLine(text);
             System.Console.ResetColor();

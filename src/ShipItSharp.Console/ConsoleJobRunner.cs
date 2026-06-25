@@ -59,7 +59,7 @@ namespace ShipItSharp.Console
         {
             if (!File.Exists(pathToProfile))
             {
-                WriteLine("Couldn't find file at " + pathToProfile);
+                WriteLine(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ProfileFileNotFound"), pathToProfile));
                 return;
             }
             try
@@ -139,12 +139,17 @@ namespace ShipItSharp.Console
             }
             catch (Exception e)
             {
-                WriteLine("Couldn't deploy! " + e.Message + e.StackTrace);
+                WriteLine(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "DeploymentFailed"), e.Message));
             }
         }
 
         public void WriteLine(string toWrite)
         {
+            if (TryWriteStatusLine(toWrite))
+            {
+                return;
+            }
+
             System.Console.WriteLine(toWrite);
         }
 
@@ -184,6 +189,52 @@ namespace ShipItSharp.Console
                 }
             }
             return needsDeploy;
+        }
+
+        private bool TryWriteStatusLine(string toWrite)
+        {
+            if (System.Console.IsOutputRedirected)
+            {
+                return false;
+            }
+
+            var doneStatusPrefix = GetStatusPrefix(_languageProvider.GetString(LanguageSection.UiStrings, "StatusDone"));
+            if (toWrite.StartsWith(doneStatusPrefix, StringComparison.Ordinal))
+            {
+                WriteStatusLine(toWrite, doneStatusPrefix, ConsoleColor.Green);
+                return true;
+            }
+
+            var failedStatusPrefix = GetStatusPrefix(_languageProvider.GetString(LanguageSection.UiStrings, "StatusFailed"));
+            if (toWrite.StartsWith(failedStatusPrefix, StringComparison.Ordinal))
+            {
+                WriteStatusLine(toWrite, failedStatusPrefix, ConsoleColor.Red);
+                return true;
+            }
+
+            var runStatusPrefix = GetStatusPrefix(_languageProvider.GetString(LanguageSection.UiStrings, "StatusRun"));
+            if (toWrite.StartsWith(runStatusPrefix, StringComparison.Ordinal))
+            {
+                WriteStatusLine(toWrite, runStatusPrefix, ConsoleColor.Cyan);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void WriteStatusLine(string toWrite, string statusPrefix, ConsoleColor color)
+        {
+            var originalColor = System.Console.ForegroundColor;
+            System.Console.Write(toWrite[..2]);
+            System.Console.ForegroundColor = color;
+            System.Console.Write(statusPrefix[2..]);
+            System.Console.ForegroundColor = originalColor;
+            System.Console.WriteLine(toWrite[statusPrefix.Length..]);
+        }
+
+        private static string GetStatusPrefix(string status)
+        {
+            return $"  {status,-6} ";
         }
     }
 }

@@ -157,7 +157,7 @@
     <value>Environment Id</value>
   </data>
     <data name="EnvironmentName" xml:space="preserve">
-    <value>Name the of the environment to deploy to</value>
+    <value>Name of the environment to deploy to</value>
   </data>
     <data name="FallbackToChannel" xml:space="preserve">
     <value>Fallback to this channel if there are no releases available for the selected channel for a project.</value>
@@ -187,7 +187,7 @@
     <value>Phase number</value>
   </data>
     <data name="ProfileFile" xml:space="preserve">
-    <value>The path to the json profile file you wish to deploy</value>
+    <value>The path to the JSON profile file you wish to deploy</value>
   </data>
     <data name="ProfileFileDirectory" xml:space="preserve">
     <value>The path to the directory containing the profile files you wish to deploy. Profile files must contain auto.profile</value>
@@ -226,7 +226,7 @@
     <value>Runs in test mode (no changes made)</value>
   </data>
     <data name="Url" xml:space="preserve">
-    <value>Url for your octopus install</value>
+    <value>URL for your Octopus Deploy installation</value>
   </data>
     <data name="Variables" xml:space="preserve">
     <value>Add or update variables</value>
@@ -238,6 +238,6 @@
       <value>Move tasks to top of the queue</value>
     </data>
     <data name="MaxPackagesPerProject" xml:space="preserve">
-      <value>Number of packages to check per project before cleaning up Channels</value>
+      <value>Number of packages to check per project before cleaning up channels</value>
     </data>
 </root>

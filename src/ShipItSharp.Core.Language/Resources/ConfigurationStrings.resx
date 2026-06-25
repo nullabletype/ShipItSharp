@@ -127,7 +127,7 @@
     <value>Cache timeout in seconds</value>
   </data>
     <data name="LoadCouldntParseFile" xml:space="preserve">
-    <value>Configuration file was found, but couldn't be deserialised. Please check the syntax in the file</value>
+    <value>Configuration file was found, but it could not be deserialised. Check the file syntax.</value>
   </data>
     <data name="LoadErrorCaption" xml:space="preserve">
     <value>Configuration file could not be loaded</value>
@@ -136,31 +136,31 @@
     <value>No configuration file found. A sample configuration file has been created called "config.json". Please load this and fill in the settings</value>
   </data>
     <data name="LoadNoFileFoundCantCreate" xml:space="preserve">
-    <value>No configuration file found and I couldn't create a sample file for you. Please configure config.json manually</value>
+    <value>No configuration file found, and ShipItSharp could not create a sample file. Configure config.json manually.</value>
   </data>
     <data name="SamepleDefaultEnvironmentName" xml:space="preserve">
     <value>Optional setting for the default branch name</value>
   </data>
     <data name="SampleApiKey" xml:space="preserve">
-    <value>Your Octopus Deploy API key. You can get this fromPackage your profile page.</value>
+    <value>Your Octopus Deploy API key. You can get this from your profile page.</value>
   </data>
     <data name="SampleChannelName" xml:space="preserve">
     <value>Optional setting for the default channel name</value>
   </data>
     <data name="SampleChannelSeedAppName" xml:space="preserve">
-    <value>The project name in Octopus Deploy which has all the channel projectIdOrHrefs you wish to deploy. Used for the drop down</value>
+    <value>The Octopus Deploy project that has the channel project IDs or hrefs you wish to deploy. Used for the drop-down.</value>
   </data>
     <data name="SampleOctopusUrl" xml:space="preserve">
     <value>The base URL of your Octopus Deploy installation</value>
   </data>
     <data name="SampleProjectGroupFilterString" xml:space="preserve">
-    <value>Optional string to match project groups on to filter the project list</value>
+    <value>Optional string used to filter the project list by project group</value>
   </data>
     <data name="ValidationNoDefaultOctoHelper" xml:space="preserve">
-    <value>The default OctoHelper isn't set, Did you call OctoHelper.Init?</value>
+    <value>The default OctoHelper is not set. Did you call OctoHelper.Init?</value>
   </data>
     <data name="ValidationOctopusApiFailure" xml:space="preserve">
-    <value>Couldn't speak to Octopus Deploy. Is your URL and API key set correctly?</value>
+    <value>Could not connect to Octopus Deploy. Check your URL and API key.</value>
   </data>
     <data name="ValidationOctopusApiKey" xml:space="preserve">
     <value>No Octopus Deploy API key specified in the configuration file</value>
@@ -169,9 +169,9 @@
     <value>No Octopus Deploy URL specified in the configuration file</value>
   </data>
     <data name="ValidationSeedProject" xml:space="preserve">
-    <value>No seed project specified. This is needed to pull the available channels fromPackage</value>
+    <value>No seed project specified. This is needed to pull the available channels.</value>
   </data>
     <data name="ValidationSeedProjectNotValid" xml:space="preserve">
-    <value>Couldn't find the seed project specified in the configuration file</value>
+    <value>Could not find the seed project specified in the configuration file</value>
   </data>
 </root>

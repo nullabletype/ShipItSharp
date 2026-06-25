@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,8 @@ namespace ShipItSharp.Console.ConsoleTools
 {
     internal class ConsoleProgressBar : IProgressBar
     {
-        private readonly string[] _clocks = { "\\", "|", "/", "-" };
+        private const int MaxProgressWidth = 28;
+        private readonly string[] _statusFrames = { "|", "/", "-", "\\" };
         private CancellationTokenSource _cancelToken;
         private int _currentItem;
         private string _currentMessage = string.Empty;
@@ -40,14 +42,10 @@ namespace ShipItSharp.Console.ConsoleTools
 
         public void WriteStatusLine(string status)
         {
-            var builder = new StringBuilder(status);
-            while (builder.Length < System.Console.BufferWidth)
+            WriteSingleLine(new[]
             {
-                builder.Append(" ");
-            }
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.Write(status);
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                new ConsoleSegment(status, null)
+            });
         }
 
         public void CleanCurrentLine()
@@ -57,14 +55,7 @@ namespace ShipItSharp.Console.ConsoleTools
                 _cancelToken.Cancel();
             }
 
-            var builder = new StringBuilder("\r");
-            while (builder.Length < System.Console.BufferWidth)
-            {
-                builder.Append(" ");
-            }
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
-            System.Console.Write(builder.ToString());
-            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            ClearLine();
         }
 
         public void StopAnimation()
@@ -77,9 +68,14 @@ namespace ShipItSharp.Console.ConsoleTools
 
         public void WriteProgress(int current, int total, string message)
         {
+            if (total < 1)
+            {
+                total = 1;
+            }
+
             _currentMessage = message;
             _totalItems = total;
-            _currentItem = current;
+            _currentItem = Math.Clamp(current, 0, total);
 
             if (_cancelToken is { IsCancellationRequested: false })
             {
@@ -96,41 +92,17 @@ namespace ShipItSharp.Console.ConsoleTools
             {
                 while (true)
                 {
-                    var builder = new StringBuilder("\r[");
-                    for (var i = 1; i <= _currentItem; i++)
-                    {
-                        builder.Append("█");
-                    }
-
-                    for (var i = _currentItem + 1; i <= _totalItems; i++)
-                    {
-                        builder.Append("·");
-                    }
-
-                    builder.Append("]");
-                    if (!string.IsNullOrEmpty(_currentMessage))
-                    {
-                        builder.Append($" {_clocks[_status]} {_currentMessage}");
-                    }
-
-                    while (builder.Length < System.Console.BufferWidth)
-                    {
-                        builder.Append(" ");
-                    }
-
                     if (token.IsCancellationRequested)
                     {
                         token.ThrowIfCancellationRequested();
                         return;
                     }
 
-                    System.Console.SetCursorPosition(0, System.Console.CursorTop);
-                    System.Console.Write(builder.ToString());
-                    System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                    WriteSingleLine(BuildProgressSegments());
 
                     _status++;
 
-                    if (_status > _clocks.Length - 1)
+                    if (_status > _statusFrames.Length - 1)
                     {
                         _status = 0;
                     }
@@ -138,6 +110,118 @@ namespace ShipItSharp.Console.ConsoleTools
                     Thread.Sleep(500);
                 }
             }, token);
+        }
+
+        private ConsoleSegment[] BuildProgressSegments()
+        {
+            var progressWidth = Math.Min(_totalItems, MaxProgressWidth);
+            var completedWidth = (int)Math.Round((double)_currentItem / _totalItems * progressWidth);
+            completedWidth = Math.Clamp(completedWidth, 0, progressWidth);
+
+            var builder = new StringBuilder();
+            builder.Append(']');
+
+            if (!string.IsNullOrEmpty(_currentMessage))
+            {
+                builder.Append(' ');
+                builder.Append(_statusFrames[_status]);
+                builder.Append(' ');
+                builder.Append(_currentMessage);
+            }
+
+            return new[]
+            {
+                new ConsoleSegment("[", null),
+                new ConsoleSegment(new string('█', completedWidth), ConsoleColor.Green),
+                new ConsoleSegment(new string('~', progressWidth - completedWidth), ConsoleColor.Blue),
+                new ConsoleSegment(builder.ToString(), null)
+            };
+        }
+
+        private static void WriteSingleLine(ConsoleSegment[] segments)
+        {
+            var textLength = 0;
+            foreach (var segment in segments)
+            {
+                textLength += segment.Text.Length;
+            }
+
+            if (!System.Console.IsOutputRedirected)
+            {
+                System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            }
+
+            var originalColor = System.Console.ForegroundColor;
+            foreach (var segment in segments)
+            {
+                if (segment.Color.HasValue && !System.Console.IsOutputRedirected)
+                {
+                    System.Console.ForegroundColor = segment.Color.Value;
+                }
+                else
+                {
+                    System.Console.ForegroundColor = originalColor;
+                }
+
+                System.Console.Write(segment.Text);
+            }
+            System.Console.ForegroundColor = originalColor;
+
+            WritePadding(textLength);
+
+            if (!System.Console.IsOutputRedirected)
+            {
+                System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            }
+            else
+            {
+                System.Console.WriteLine();
+            }
+        }
+
+        private static void ClearLine()
+        {
+            if (System.Console.IsOutputRedirected)
+            {
+                return;
+            }
+
+            var builder = new StringBuilder("\r");
+            while (builder.Length < GetBufferWidth())
+            {
+                builder.Append(" ");
+            }
+            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+            System.Console.Write(builder.ToString());
+            System.Console.SetCursorPosition(0, System.Console.CursorTop);
+        }
+
+        private static void WritePadding(int textLength)
+        {
+            var padding = GetBufferWidth() - textLength;
+            if (padding <= 0)
+            {
+                return;
+            }
+
+            System.Console.Write(new string(' ', padding));
+        }
+
+        private static int GetBufferWidth()
+        {
+            return System.Console.IsOutputRedirected ? 80 : System.Console.BufferWidth;
+        }
+
+        private readonly struct ConsoleSegment
+        {
+            public ConsoleSegment(string text, ConsoleColor? color)
+            {
+                Text = text;
+                Color = color;
+            }
+
+            public string Text { get; }
+            public ConsoleColor? Color { get; }
         }
     }
 }

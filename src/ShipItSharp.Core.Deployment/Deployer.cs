@@ -199,7 +199,7 @@ namespace ShipItSharp.Core.Deployment
         private async Task ProcessEnvironmentDeployment(EnvironmentDeployment deployment, bool suppressMessages,
             IUiLogger uiLogger)
         {
-            uiLogger.WriteLine("Starting deployment!");
+            uiLogger.WriteLine(UiString("ShipItSharpDeployment"));
             var failedProjects = new Dictionary<ProjectDeployment, TaskDetails>();
 
             var taskRegister = new Dictionary<string, TaskDetails>();
@@ -210,18 +210,20 @@ namespace ShipItSharp.Core.Deployment
                 Release result;
                 if (string.IsNullOrEmpty(project.ReleaseId))
                 {
-                    uiLogger.WriteLine("Creating a release for project " + project.ProjectName + "... ");
+                    WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("CreatingReleaseForProject"), project.ProjectName));
                     result = await _helper.Releases.CreateRelease(project, deployment.FallbackToDefaultChannel);
+                    WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("CreatedReleaseForProject"), project.ProjectName, result.Version));
                 }
                 else
                 {
-                    uiLogger.WriteLine("Fetching existing release for project " + project.ProjectName + "... ");
+                    WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("FetchingReleaseForProject"), project.ProjectName));
                     result = await _helper.Releases.GetRelease(project.ReleaseId);
+                    WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("FetchedReleaseForProject"), project.ProjectName, result.Version));
                 }
 
-                uiLogger.WriteLine("Creating deployment task for " + result.Version + " to " + deployment.EnvironmentName);
+                WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("CreatingOctopusTaskForProject"), project.ProjectName, deployment.EnvironmentName));
                 var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id, deployment.Prioritise);
-                uiLogger.WriteLine("Created");
+                WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("CreatedOctopusTask"), deployResult.TaskId));
 
                 var taskDeets = await _helper.Deployments.GetTaskDetails(deployResult.TaskId);
                 //taskDeets = await StartDeployment(uiLogger, taskDeets, !deployment.DeployAsync);
@@ -234,25 +236,26 @@ namespace ShipItSharp.Core.Deployment
                 {
                     if (taskDeets.State == TaskStatus.Failed)
                     {
-                        uiLogger.WriteLine("Failed deploying " + project.ProjectName);
+                        WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("ProjectFailedToDeploy"), project.ProjectName));
                         failedProjects.Add(project, taskDeets);
                     }
-                    uiLogger.WriteLine("Deployed!");
-                    uiLogger.WriteLine("Full Log: " + Environment.NewLine +
+                    else
+                    {
+                        WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, deployment.EnvironmentName));
+                    }
+                    uiLogger.WriteLine(UiString("RawLog") + Environment.NewLine +
                                        await _helper.Deployments.GetTaskRawLog(taskDeets.TaskId));
                 }
             }
 
-
-            // This needs serious improvement.
             if (deployment.DeployAsync)
             {
-                await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister);
+                await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister, deployment.EnvironmentName);
             }
 
             if (failedProjects.Any())
             {
-                uiLogger.WriteLine("Some projects didn't deploy successfully: ");
+                uiLogger.WriteLine(UiString("FailedProjects"));
                 foreach (var failure in failedProjects)
                 {
                     var link = string.Empty;
@@ -263,17 +266,17 @@ namespace ShipItSharp.Core.Deployment
                             link = _configuration.OctopusUrl + failure.Value.Links["Web"];
                         }
                     }
-                    uiLogger.WriteLine(failure.Key.ProjectName + ": " + link);
+                    uiLogger.WriteLine(string.Format(UiString("FailedProjectLink"), failure.Key.ProjectName, link));
                 }
             }
             if (!suppressMessages)
             {
-                uiLogger.WriteLine("Done deploying!" +
-                                   (failedProjects.Any() ? " There were failures though. Check the log." : string.Empty));
+                var shipped = deployment.ProjectDeployments.Count - failedProjects.Count;
+                uiLogger.WriteLine(string.Format(UiString("DeploymentComplete"), shipped, failedProjects.Count));
             }
         }
 
-        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister)
+        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister, string environmentName)
         {
             var done = false;
             var totalCount = taskRegister.Count();
@@ -287,7 +290,7 @@ namespace ShipItSharp.Core.Deployment
                     if (found == null)
                     {
                         uiLogger.CleanCurrentLine();
-                        uiLogger.WriteLine($"Couldn't find {currentTask.Key} in the tasks list?");
+                        WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("OctopusTaskNotFound"), currentTask.Key));
                         taskRegister.Remove(currentTask.Key);
                     }
                     else
@@ -296,7 +299,7 @@ namespace ShipItSharp.Core.Deployment
                         {
                             var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
-                            uiLogger.WriteLine($"{project.ProjectName} deployed successfully");
+                            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, environmentName));
                             taskRegister.Remove(currentTask.Key);
                         }
                         else if (found.State == TaskStatus.Failed)
@@ -304,7 +307,7 @@ namespace ShipItSharp.Core.Deployment
                             var finishedTask = await _helper.Deployments.GetTaskDetails(found.TaskId);
                             var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
-                            uiLogger.WriteLine($"{currentTask.Key} failed to deploy with error: {found.ErrorMessage}");
+                            WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("ProjectFailedWithError"), project.ProjectName, found.ErrorMessage));
                             failedProjects.Add(project, finishedTask);
                             taskRegister.Remove(currentTask.Key);
                         }
@@ -338,21 +341,33 @@ namespace ShipItSharp.Core.Deployment
             return taskDeets;
         }
 
-        private static void WriteStatus(IUiLogger uiLogger, TaskDetails taskDeets)
+        private void WriteStatus(IUiLogger uiLogger, TaskDetails taskDeets)
         {
             if (taskDeets.State != TaskStatus.Queued)
             {
                 if (taskDeets.PercentageComplete < 100)
                 {
-                    uiLogger.WriteLine("Current status: " + taskDeets.State + " Percentage: " +
-                                       taskDeets.PercentageComplete + " estimated time remaining: " +
-                                       taskDeets.TimeLeft);
+                    WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("TaskStatusProgress"),
+                        taskDeets.State,
+                        taskDeets.PercentageComplete,
+                        taskDeets.TimeLeft));
                 }
             }
             else
             {
-                uiLogger.WriteLine("Currently queued... waiting");
+                WriteDeploymentStatus(uiLogger, "StatusRun", UiString("TaskQueuedWaiting"));
             }
+        }
+
+        private void WriteDeploymentStatus(IUiLogger uiLogger, string statusKey, string message)
+        {
+            var status = UiString(statusKey);
+            uiLogger.WriteLine($"  {status,-6} {message}");
+        }
+
+        private string UiString(string key)
+        {
+            return _languageProvider.GetString(LanguageSection.UiStrings, key);
         }
     }
 }

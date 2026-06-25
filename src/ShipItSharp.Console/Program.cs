@@ -136,7 +136,7 @@ namespace ShipItSharp.Console
                 System.Console.WriteLine($"Error: {exception.Message}");
                 System.Console.ForegroundColor = colorBefore;
                 System.Console.WriteLine();
-                System.Console.WriteLine("Command wasn't recognised. Try -? for help if you're stuck.");
+                System.Console.WriteLine(new LanguageProvider().GetString(LanguageSection.UiStrings, "CommandNotRecognised"));
                 System.Console.WriteLine();
                 Environment.Exit(1);
             }
@@ -183,7 +183,7 @@ namespace ShipItSharp.Console
 
         private static void ShowNewVersionMessage(VersionCheckResult checkResult, ILanguageProvider languageProvider)
         {
-            System.Console.WriteLine("-------------------------------------");
+            System.Console.WriteLine();
             System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "NewVersionAvailable"));
             System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "CurrentVersion"), checkResult.Release.CurrentVersion);
             System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "NewVersion"), checkResult.Release.TagName);
@@ -200,10 +200,11 @@ namespace ShipItSharp.Console
             }
             if (!string.IsNullOrEmpty(checkResult.Release.ChangeLog))
             {
+                System.Console.WriteLine();
                 System.Console.WriteLine(languageProvider.GetString(LanguageSection.UiStrings, "ChangeLog"));
                 System.Console.WriteLine(checkResult.Release.ChangeLog);
             }
-            System.Console.WriteLine("-------------------------------------");
+            System.Console.WriteLine();
         }
 
         private static IServiceCollection IoC()

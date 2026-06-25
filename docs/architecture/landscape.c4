@@ -1,0 +1,23 @@
+model {
+  operator = person 'Release operator' {
+    description '''
+      Person running ShipItSharp from a terminal to inspect Octopus state,
+      create releases, deploy or promote projects, and maintain environments.
+    '''
+  }
+
+  serviceOperator = person 'Windows service operator' {
+    description '''
+      Operator who configures profile-directory execution for repeated,
+      unattended profiled deployments on Windows.
+    '''
+  }
+
+  shipitsharp = system 'ShipItSharp' {
+    description '''
+      .NET command-line deployment coordinator for managing multi-project
+      Octopus Deploy release, promotion, environment, channel, and variable
+      workflows.
+    '''
+  }
+}

@@ -1,0 +1,12 @@
+views {
+  view changelog-and-version-components {
+    title 'C3 - Changelog and version checking components'
+    include shipitsharp.core.versionChecker
+    include shipitsharp.changelogs.*
+    include shipitsharp.versionProviders.*
+    include github
+    include gitlab
+    include teamcity
+    include * -> *
+  }
+}

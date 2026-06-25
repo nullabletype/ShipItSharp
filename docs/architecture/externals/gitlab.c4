@@ -1,0 +1,8 @@
+model {
+  gitlab = system 'GitLab Releases' {
+    description '''
+      Alternative release source implemented by the version-checking provider
+      package.
+    '''
+  }
+}

@@ -1,0 +1,99 @@
+views {
+  view system-context {
+    title 'C1 - System context'
+    include operator
+    include serviceOperator
+    include shipitsharp
+    include octopus
+    include github
+    include gitlab
+    include teamcity
+    include filesystem
+    include operator -> shipitsharp
+    include serviceOperator -> shipitsharp
+    include shipitsharp -> octopus
+    include shipitsharp -> github
+    include shipitsharp -> gitlab
+    include shipitsharp -> teamcity
+    include shipitsharp -> filesystem
+  }
+
+  view container-overview of shipitsharp {
+    title 'C2 - ShipItSharp containers'
+    include *
+    include -> *
+  }
+
+  view runtime-dependencies {
+    title 'Cross-cutting - Runtime dependencies'
+    include shipitsharp.cli
+    include shipitsharp.core
+    include shipitsharp.deployment
+    include shipitsharp.configuration
+    include shipitsharp.octopusAdapter
+    include shipitsharp.models
+    include shipitsharp.utilities
+    include shipitsharp.language
+    include shipitsharp.logging
+    include octopus
+    include filesystem
+    include * -> *
+  }
+
+  view integrations {
+    title 'Cross-cutting - External integrations'
+    include shipitsharp.cli
+    include shipitsharp.core
+    include shipitsharp.deployment
+    include shipitsharp.configuration
+    include shipitsharp.octopusAdapter
+    include shipitsharp.changelogs
+    include shipitsharp.versionProviders
+    include octopus
+    include github
+    include gitlab
+    include teamcity
+    include filesystem
+    include * -> *
+  }
+
+  view deployment-workflow {
+    title 'Workflow - Deploy command'
+    include operator
+    include filesystem
+    include octopus
+    include shipitsharp.cli.program
+    include shipitsharp.cli.commandFramework
+    include shipitsharp.cli.topLevelCommands
+    include shipitsharp.cli.consoleInteraction
+    include shipitsharp.cli.progressBar
+    include shipitsharp.core.deployRunner
+    include shipitsharp.core.jobConfigs
+    include shipitsharp.deployment.deployer
+    include shipitsharp.deployment.deploymentValidator
+    include shipitsharp.deployment.variableCollector
+    include shipitsharp.deployment.releasePlanner
+    include shipitsharp.deployment.asyncMonitor
+    include shipitsharp.octopusAdapter.projectRepository
+    include shipitsharp.octopusAdapter.channelRepository
+    include shipitsharp.octopusAdapter.lifecycleRepository
+    include shipitsharp.octopusAdapter.releaseRepository
+    include shipitsharp.octopusAdapter.deploymentRepository
+    include shipitsharp.utilities.serialiser
+    include * -> *
+  }
+
+  view environment-admin-workflow {
+    title 'Workflow - Environment administration'
+    include operator
+    include octopus
+    include shipitsharp.cli.topLevelCommands
+    include shipitsharp.cli.subCommands
+    include shipitsharp.core.environmentRunner
+    include shipitsharp.core.environmentMaintenanceRunners
+    include shipitsharp.octopusAdapter.environmentRepository
+    include shipitsharp.octopusAdapter.lifecycleRepository
+    include shipitsharp.octopusAdapter.teamRepository
+    include * -> *
+  }
+}

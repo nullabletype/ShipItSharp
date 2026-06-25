@@ -1,0 +1,19 @@
+model {
+  extend shipitsharp {
+    deployment = container 'ShipItSharp.Core.Deployment' {
+      technology '.NET class library'
+      description '''
+        Deployment execution engine. It validates lifecycle promotion safety,
+        fills required variables, creates releases when needed, starts Octopus
+        deployment tasks, polls asynchronous task state, and reports failures.
+      '''
+
+      deployer = component 'Deployer'
+      deploymentValidator = component 'Deployment validation'
+      variableCollector = component 'Required variable collector'
+      releasePlanner = component 'Release/deployment planner'
+      asyncMonitor = component 'Async task monitor'
+      uiLoggerPort = component 'UI logger port'
+    }
+  }
+}

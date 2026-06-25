@@ -1,0 +1,16 @@
+model {
+  extend shipitsharp {
+    changelogs = container 'ShipItSharp.Core.ChangeLogs' {
+      technology '.NET class library'
+      description '''
+        Changelog integration layer. The current TeamCity provider reads build,
+        change, project, VCS root, and issue data and maps it into changelog
+        collections.
+      '''
+
+      changelogProviderPort = component 'Changelog provider port'
+      teamCityProvider = component 'TeamCity provider'
+      changelogModels = component 'Changelog models'
+    }
+  }
+}

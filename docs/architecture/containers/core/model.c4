@@ -1,0 +1,25 @@
+model {
+  extend shipitsharp {
+    core = container 'ShipItSharp.Core' {
+      technology '.NET class library'
+      description '''
+        Application workflow layer. It receives parsed command configs, reads
+        Octopus state, prompts when needed, builds deployment models, and
+        coordinates deployment, promotion, environment, channel, release, and
+        variable workflows.
+      '''
+
+      jobConfigs = component 'Job configuration models'
+      deployRunner = component 'Deploy runner'
+      deploySpecificRunner = component 'Deploy specific runner'
+      promotionRunner = component 'Promotion runner'
+      profileDirectoryRunner = component 'Profile directory runner'
+      environmentRunner = component 'Environment runner'
+      environmentMaintenanceRunners = component 'Environment maintenance runners'
+      channelRunner = component 'Channel cleanup runner'
+      releaseRunner = component 'Release maintenance runners'
+      variableRunner = component 'Variable profile runner'
+      versionChecker = component 'Version checker'
+    }
+  }
+}

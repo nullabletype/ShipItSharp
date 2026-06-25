@@ -1,0 +1,22 @@
+model {
+  extend shipitsharp {
+    cli = container 'ShipItSharp.Console' {
+      technology '.NET console app, McMaster command-line hosting'
+      description '''
+        Executable host named ShipIt. It sets the working directory, loads
+        configuration, builds dependency injection, initializes Octopus access,
+        checks for new ShipItSharp releases, registers commands, and renders
+        terminal output and prompts.
+      '''
+
+      program = component 'Program'
+      commandFramework = component 'Command framework'
+      topLevelCommands = component 'Top-level commands'
+      subCommands = component 'Deploy/environment subcommands'
+      consoleInteraction = component 'Console interaction'
+      consoleJobRunner = component 'Console job runner'
+      progressBar = component 'Console progress bar'
+      logoProvider = component 'Logo provider'
+    }
+  }
+}

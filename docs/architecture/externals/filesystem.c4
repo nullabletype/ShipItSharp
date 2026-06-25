@@ -1,0 +1,8 @@
+model {
+  filesystem = system 'Local file system' {
+    description '''
+      Stores config.json plus generated or consumed deployment profiles,
+      variable profiles, and profile directories.
+    '''
+  }
+}

@@ -1,0 +1,8 @@
+model {
+  teamcity = system 'TeamCity' {
+    description '''
+      External CI/change source used by the changelog provider to collect
+      build and VCS changes.
+    '''
+  }
+}

@@ -1,0 +1,7 @@
+views {
+  view cli-components of shipitsharp.cli {
+    title 'C3 - CLI host components'
+    include *
+    include -> *
+  }
+}

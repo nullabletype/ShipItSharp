@@ -1,0 +1,52 @@
+model {
+  extend shipitsharp {
+    models = container 'ShipItSharp.Core.Deployment.Models' {
+      technology '.NET class library'
+      description '''
+        Shared DTO/model package for projects, packages, releases, environments,
+        variables, lifecycles, deployments, task stubs, and task details.
+      '''
+
+      projectModels = component 'Project and package models'
+      deploymentModels = component 'Deployment models'
+      environmentModels = component 'Environment and lifecycle models'
+      taskModels = component 'Task models'
+      variableModels = component 'Variable models'
+    }
+
+    utilities = container 'ShipItSharp.Core.Utilities' {
+      technology '.NET class library'
+      description '''
+        Cross-cutting utilities for JSON serialization and web requests.
+      '''
+
+      serialiser = component 'Standard serialiser'
+      webRequestHelper = component 'Web request helper'
+    }
+
+    logging = container 'ShipItSharp.Core.Logging' {
+      technology '.NET class library'
+      description '''
+        Logging abstraction and implementation used by startup, configuration,
+        and supporting services.
+      '''
+
+      loggingProvider = component 'Logging provider'
+      logger = component 'Logger abstraction'
+      octoLogger = component 'OctoLogger'
+    }
+
+    language = container 'ShipItSharp.Core.Language' {
+      technology '.NET class library, resx resources'
+      description '''
+        Localized strings and language-provider access for command options,
+        configuration errors, UI messages, and deployment messages.
+      '''
+
+      languageProvider = component 'Language provider'
+      optionStrings = component 'Option strings'
+      uiStrings = component 'UI strings'
+      configurationStrings = component 'Configuration strings'
+    }
+  }
+}

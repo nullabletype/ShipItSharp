@@ -1,0 +1,15 @@
+model {
+  extend shipitsharp {
+    versionProviders = container 'ShipItSharp.Core.VersionChecking.Providers' {
+      technology '.NET class library'
+      description '''
+        External release-provider implementations for GitHub and GitLab,
+        including markdown changelog parsing and JSON/API mapping.
+      '''
+
+      githubProvider = component 'GitHub version provider'
+      gitlabProvider = component 'GitLab version provider'
+      releaseParser = component 'Release/changelog parser'
+    }
+  }
+}

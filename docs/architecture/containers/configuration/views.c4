@@ -1,0 +1,7 @@
+views {
+  view configuration-components of shipitsharp.configuration {
+    title 'C3 - Configuration components'
+    include *
+    include -> *
+  }
+}

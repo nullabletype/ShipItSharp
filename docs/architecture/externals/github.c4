@@ -1,0 +1,8 @@
+model {
+  github = system 'GitHub Releases' {
+    description '''
+      External release source used by the version checker to detect newer
+      ShipItSharp versions and download assets.
+    '''
+  }
+}

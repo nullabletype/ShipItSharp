@@ -1,0 +1,7 @@
+views {
+  view octopus-adapter-components of shipitsharp.octopusAdapter {
+    title 'C3 - Octopus adapter components'
+    include *
+    include -> *
+  }
+}

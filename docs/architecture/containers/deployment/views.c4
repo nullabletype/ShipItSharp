@@ -1,0 +1,7 @@
+views {
+  view deployment-engine-components of shipitsharp.deployment {
+    title 'C3 - Deployment engine components'
+    include *
+    include -> *
+  }
+}

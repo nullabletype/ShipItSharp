@@ -1,0 +1,7 @@
+views {
+  view core-workflow-components of shipitsharp.core {
+    title 'C3 - Core workflow components'
+    include *
+    include -> *
+  }
+}

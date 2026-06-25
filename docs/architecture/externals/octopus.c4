@@ -1,0 +1,9 @@
+model {
+  octopus = system 'Octopus Deploy' {
+    description '''
+      External Octopus Deploy server accessed through Octopus.Client.
+      It owns projects, project groups, channels, releases, packages,
+      variables, environments, lifecycles, teams, deployments, and task logs.
+    '''
+  }
+}

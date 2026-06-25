@@ -1,0 +1,25 @@
+model {
+  extend shipitsharp {
+    octopusAdapter = container 'ShipItSharp.Core.Octopus' {
+      technology '.NET class library, Octopus.Client'
+      description '''
+        Adapter around Octopus.Client. OctopusHelper owns the async client,
+        repository facades, and cache provider; repositories translate Octopus
+        resources into ShipItSharp deployment models.
+      '''
+
+      octopusHelper = component 'OctopusHelper'
+      octopusClient = component 'Octopus async client'
+      cache = component 'Cache provider'
+      projectRepository = component 'Project repository'
+      packageRepository = component 'Package repository'
+      releaseRepository = component 'Release repository'
+      deploymentRepository = component 'Deployment repository'
+      environmentRepository = component 'Environment repository'
+      channelRepository = component 'Channel repository'
+      lifecycleRepository = component 'Lifecycle repository'
+      teamRepository = component 'Team repository'
+      variableRepository = component 'Variable repository'
+    }
+  }
+}

@@ -62,7 +62,11 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var profilePath = GetOption(DeployWithProfileDirectoryOptionNames.Directory).Value();
             System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "UsingProfileDirAtPath") + profilePath);
 
-            TryGetIntValueFromOption(DeployWithProfileDirectoryOptionNames.Monitor, out var waitTime);
+            int? waitTime = null;
+            if (TryGetIntValueFromOption(DeployWithProfileDirectoryOptionNames.Monitor, out var configuredWaitTime))
+            {
+                waitTime = configuredWaitTime;
+            }
             var foreRedeploy = GetOption(DeployWithProfileDirectoryOptionNames.ForceRedeploy).HasValue();
 
             var config = DeployWithProfileDirectoryConfig.Create(LanguageProvider, profilePath, waitTime, foreRedeploy);

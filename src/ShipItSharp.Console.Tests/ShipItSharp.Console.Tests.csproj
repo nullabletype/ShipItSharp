@@ -10,6 +10,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <PackageReference Include="Octopus.Client" Version="21.6.2652" />
   </ItemGroup>
 
   <ItemGroup>

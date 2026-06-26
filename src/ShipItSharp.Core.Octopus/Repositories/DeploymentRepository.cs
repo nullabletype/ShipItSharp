@@ -42,7 +42,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             _octopusHelper = octopusHelper;
         }
 
-        public async Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false)
+        public async Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false, string machineId = null)
         {
             var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
             var deployment = new DeploymentResource
@@ -57,6 +57,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 ProjectId = project.ProjectId,
                 ReleaseId = releaseId
             };
+            ApplySpecificMachine(deployment, machineId);
             if (project.RequiredVariables != null)
             {
                 foreach (var variable in project.RequiredVariables)
@@ -175,6 +176,17 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 LastModifiedOn = dep.LastModifiedOn,
                 Created = dep.Created
             };
+        }
+
+        internal static void ApplySpecificMachine(DeploymentResource deployment, string machineId)
+        {
+            if (string.IsNullOrWhiteSpace(machineId))
+            {
+                return;
+            }
+
+            deployment.SpecificMachineIds ??= new ReferenceCollection();
+            deployment.SpecificMachineIds.Add(machineId);
         }
 
         internal async Task<DeploymentProcessResource> GetDeploymentProcess(string deploymentProcessId)

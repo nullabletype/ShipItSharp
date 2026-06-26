@@ -56,6 +56,7 @@ namespace ShipItSharp.Console.Commands
             AddToRegister(PromoteOptionNames.Environment, command.Option("-e|--environment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue));
             AddToRegister(PromoteOptionNames.SourceEnvironment, command.Option("-s|--sourcenvironment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SourceEnvironment"), CommandOptionType.SingleValue));
             AddToRegister(PromoteOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
+            AddToRegister(PromoteOptionNames.Machine, command.Option("-m|--machine", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Machine"), CommandOptionType.SingleValue));
             AddToRegister(PromoteOptionNames.Prioritise, command.Option("-p|--prioritise", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Prioritise"), CommandOptionType.NoValue));
             AddToRegister(PromoteOptionNames.UpdateVariables, command.Option("-v|--updatevariables", LanguageProvider.GetString(LanguageSection.OptionsStrings, "UpdateVariables"), CommandOptionType.NoValue));
         }
@@ -67,6 +68,7 @@ namespace ShipItSharp.Console.Commands
             var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, LanguageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
             var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
             var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
+            var machineName = GetStringValueFromOption(PromoteOptionNames.Machine);
             var prioritise = GetBoolValueFromOption(PromoteOptionNames.Prioritise);
             var updateVariables = GetBoolValueFromOption(PromoteOptionNames.UpdateVariables);
             
@@ -79,7 +81,13 @@ namespace ShipItSharp.Console.Commands
                 return -2;
             }
 
-            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, InInteractiveMode, prioritise: prioritise, updateVariables: updateVariables);
+            var machine = await FetchMachineFromUserInput(machineName, targetEnvironment);
+            if (!string.IsNullOrEmpty(machineName) && machine == null)
+            {
+                return -2;
+            }
+
+            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, InInteractiveMode, prioritise: prioritise, updateVariables: updateVariables, machine: machine);
 
             if (configResult.IsFailure)
             {
@@ -96,6 +104,7 @@ namespace ShipItSharp.Console.Commands
             public const string GroupFilter = "groupfilter";
             public const string Prioritise = "prioritise";
             public const string UpdateVariables = "updatevariables";
+            public const string Machine = "machine";
         }
     }
 

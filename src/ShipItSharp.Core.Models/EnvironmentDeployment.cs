@@ -36,6 +36,8 @@ namespace ShipItSharp.Core.Deployment.Models
 
         public string EnvironmentId { get; set; }
         public string EnvironmentName { get; set; }
+        public string MachineId { get; set; }
+        public string MachineName { get; set; }
         public List<ProjectDeployment> ProjectDeployments { get; set; }
         public string ChannelName { get; set; }
         public bool DeployAsync { get; set; }

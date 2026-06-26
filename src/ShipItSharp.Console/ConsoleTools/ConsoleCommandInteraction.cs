@@ -43,7 +43,7 @@ namespace ShipItSharp.Console.ConsoleTools
         public IEnumerable<int> SelectDeployProjects(DeployConfig config, IList<Project> projects)
         {
             var runner = new InteractiveRunner(
-                string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingTo"), config.Channel, config.Environment.Name),
+                string.Format(GetTargetAwareString("DeployingTo", "DeployingToMachine", config.MachineName), config.Channel, config.Environment.Name, config.MachineName),
                 _languageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"),
                 _languageProvider,
                 _languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"),
@@ -88,7 +88,7 @@ namespace ShipItSharp.Console.ConsoleTools
         public IEnumerable<int> SelectPromotionProjects(PromotionConfig config, IList<Project> currentProjects, IList<Project> targetProjects)
         {
             var runner = new InteractiveRunner(
-                string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "PromotingTo"), config.SourceEnvironment.Name, config.DestinationEnvironment.Name),
+                string.Format(GetTargetAwareString("PromotingTo", "PromotingToMachine", config.MachineName), config.SourceEnvironment.Name, config.DestinationEnvironment.Name, config.MachineName),
                 _languageProvider.GetString(LanguageSection.UiStrings, "PackageNotSelectable"),
                 _languageProvider,
                 _languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"),
@@ -109,7 +109,7 @@ namespace ShipItSharp.Console.ConsoleTools
         public IEnumerable<int> SelectDeploySpecificProjects(DeploySpecificConfig config, IList<Project> currentProjects, IList<Release> targetReleases)
         {
             var runner = new InteractiveRunner(
-                string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "DeployingSpecificRelease"), config.ReleaseName, config.DestinationEnvironment.Name),
+                string.Format(GetTargetAwareString("DeployingSpecificRelease", "DeployingSpecificReleaseToMachine", config.MachineName), config.ReleaseName, config.DestinationEnvironment.Name, config.MachineName),
                 _languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNotSelectable"),
                 _languageProvider,
                 _languageProvider.GetString(LanguageSection.UiStrings, "ProjectName"),
@@ -146,6 +146,13 @@ namespace ShipItSharp.Console.ConsoleTools
         public bool Confirm(string prompt, bool defaultValue)
         {
             return McMaster.Extensions.CommandLineUtils.Prompt.GetYesNo(prompt, defaultValue);
+        }
+
+        private string GetTargetAwareString(string environmentOnlyKey, string machineKey, string machineName)
+        {
+            return string.IsNullOrEmpty(machineName)
+                ? _languageProvider.GetString(LanguageSection.UiStrings, environmentOnlyKey)
+                : _languageProvider.GetString(LanguageSection.UiStrings, machineKey);
         }
     }
 }

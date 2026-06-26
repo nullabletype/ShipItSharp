@@ -38,8 +38,10 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public string DefaultFallbackChannel { get; private set; }
         public bool FallbackToDefaultChannel => DefaultFallbackChannel != null;
         public bool Prioritise { get; set; }
+        public string MachineId { get; private set; }
+        public string MachineName { get; private set; }
 
-        public static Result<DeploySpecificConfig> Create(Environment destEnv, string release, string filter, bool runningInteractively, string fallbackToDefaultChannel, bool prioritise = false)
+        public static Result<DeploySpecificConfig> Create(Environment destEnv, string release, string filter, bool runningInteractively, string fallbackToDefaultChannel, bool prioritise = false, Machine machine = null)
         {
             if (destEnv == null || string.IsNullOrEmpty(destEnv.Id))
             {
@@ -58,7 +60,9 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 GroupFilter = filter,
                 RunningInteractively = runningInteractively,
                 DefaultFallbackChannel = fallbackToDefaultChannel,
-                Prioritise = prioritise
+                Prioritise = prioritise,
+                MachineId = machine?.Id,
+                MachineName = machine?.Name
             });
         }
     }

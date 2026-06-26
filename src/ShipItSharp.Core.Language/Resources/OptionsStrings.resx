@@ -177,6 +177,9 @@
     <data name="LifecycleId" xml:space="preserve">
     <value>Lifecycle Id</value>
   </data>
+    <data name="Machine" xml:space="preserve">
+    <value>Deployment target machine Id or name</value>
+  </data>
     <data name="MonitorForPackages" xml:space="preserve">
     <value>Stay running monitoring for package updates, pausing for the specified time in seconds</value>
   </data>

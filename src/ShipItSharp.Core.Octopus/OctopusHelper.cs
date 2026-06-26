@@ -36,6 +36,7 @@ namespace ShipItSharp.Core.Octopus
         private readonly ChannelRepository _channelsInternal;
         private readonly EnvironmentRepository _environmentsInternal;
         private readonly LifeCycleRepository _lifeCyclesInternal;
+        private readonly MachineRepository _machinesInternal;
         private readonly TeamsRepository _teamsInternal;
         internal readonly IOctopusAsyncClient Client;
         internal readonly DeploymentRepository DeploymentsInternal;
@@ -57,6 +58,7 @@ namespace ShipItSharp.Core.Octopus
 
             _teamsInternal = new TeamsRepository(this);
             _lifeCyclesInternal = new LifeCycleRepository(this);
+            _machinesInternal = new MachineRepository(this);
             DeploymentsInternal = new DeploymentRepository(this);
             ReleasesInternal = new ReleaseRepository(this);
             _environmentsInternal = new EnvironmentRepository(this);
@@ -77,6 +79,7 @@ namespace ShipItSharp.Core.Octopus
         public IDeploymentRepository Deployments => DeploymentsInternal;
         public ILifeCycleRepository LifeCycles => _lifeCyclesInternal;
         public ITeamsRepository Teams => _teamsInternal;
+        public IMachineRepository Machines => _machinesInternal;
 
         public void SetCacheImplementation(ICacheObjects memoryCacheImp, int cacheTimeoutToSet)
         {

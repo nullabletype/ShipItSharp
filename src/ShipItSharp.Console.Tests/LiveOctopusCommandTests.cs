@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Octopus.Client;
+using Octopus.Client.Model.Endpoints;
 using Octopus.Client.Model;
 using System.Collections.Concurrent;
 using System.Net;
@@ -43,6 +44,7 @@ public class LiveOctopusCommandTests
     private ProjectResource _sampleProject;
     private ChannelResource _sampleChannel;
     private PackageSelection _samplePackage;
+    private MachineResource _sampleMachine;
     private TeamResource _team;
 
     [OneTimeSetUp]
@@ -64,6 +66,8 @@ public class LiveOctopusCommandTests
         await DeleteStaleFixtureProjectsAndGroups();
         await DeleteStaleFixtureEnvironments();
         await LoadSampleProjectFixture();
+        await DeleteStaleFixtureMachines();
+        _sampleMachine = await CreateSampleMachine(_sourceEnvironment);
         await DeleteStaleFixtureChannels();
         _team = (await _client.Repository.Teams.FindAll(CancellationToken.None)).FirstOrDefault();
     }
@@ -77,6 +81,7 @@ public class LiveOctopusCommandTests
         if (_client == null) return;
 
         await DeleteStaleFixtureChannels();
+        await DeleteStaleFixtureMachines();
         await DeleteStaleFixtureProjectsAndGroups();
         await DeleteStaleFixtureEnvironments();
     }
@@ -91,6 +96,7 @@ public class LiveOctopusCommandTests
         Assert.That(environments.Select(env => env.Id), Does.Contain(_promotionEnvironment.Id));
         Assert.That(_sampleProject.Name, Does.StartWith(FixturePrefix));
         Assert.That(_samplePackage.Version, Is.Not.Empty);
+        Assert.That(_sampleMachine.EnvironmentIds, Does.Contain(_sourceEnvironment.Id));
     }
 
     [Test]
@@ -149,12 +155,14 @@ public class LiveOctopusCommandTests
             "-e", _sourceEnvironment.Name,
             "-c", _sampleChannel.Name,
             "-g", _sampleProjectGroup.Name,
+            "-m", _sampleMachine.Name,
             "-s", profilePath);
 
         AssertCommandSucceeded(result);
         Assert.That(File.Exists(profilePath), Is.True);
         var profile = await File.ReadAllTextAsync(profilePath);
         Assert.That(profile, Does.Contain(_sourceEnvironment.Name));
+        Assert.That(profile, Does.Contain(_sampleMachine.Id));
         Assert.That(profile, Does.Contain("ProjectDeployments"));
     }
 
@@ -352,6 +360,36 @@ public class LiveOctopusCommandTests
         {
             await DeleteChannelIfExists(channel);
         }
+    }
+
+    private async Task DeleteStaleFixtureMachines()
+    {
+        var machines = await _client.Repository.Machines.FindAll(CancellationToken.None);
+        foreach (var machine in machines.Where(machine => machine.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
+        {
+            await _client.Repository.Machines.Delete(machine, CancellationToken.None);
+        }
+    }
+
+    private async Task<MachineResource> CreateSampleMachine(EnvironmentResource environment)
+    {
+        var machine = new MachineResource
+        {
+            Name = $"{FixturePrefix}{RunId}-Machine",
+            Endpoint = new OfflineDropEndpointResource
+            {
+                ApplicationsDirectory = "/tmp/shipitsharp-live-tests/apps",
+                OctopusWorkingDirectory = "/tmp/shipitsharp-live-tests/work",
+                Destination = new OfflineDropDestinationResource
+                {
+                    DestinationType = OfflineDropDestinationType.Artifact
+                }
+            }
+        };
+        machine.EnvironmentIds.Add(environment.Id);
+        machine.Roles.Add("shipitsharp-live-tests");
+
+        return await _client.Repository.Machines.Create(machine, CancellationToken.None);
     }
 
     private async Task<ChannelResource> CreateSampleProjectChannel(string name, string minimumVersion)

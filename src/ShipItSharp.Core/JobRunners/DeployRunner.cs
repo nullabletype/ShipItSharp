@@ -222,7 +222,9 @@ namespace ShipItSharp.Core.JobRunners
                 ChannelName = config.Channel,
                 DeployAsync = true,
                 EnvironmentId = config.Environment.Id,
-                EnvironmentName = config.Environment.Name
+                EnvironmentName = config.Environment.Name,
+                MachineId = config.MachineId,
+                MachineName = config.MachineName
             };
 
             var count = 0;

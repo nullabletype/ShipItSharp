@@ -39,13 +39,16 @@ public class JobConfigTests
             savePath,
             runningInteractively: true,
             forceRedeploy: true,
-            prioritise: true);
+            prioritise: true,
+            machine: new Machine { Id = "Machines-1", Name = "web-01" });
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value.FallbackToDefaultChannel, Is.True);
         Assert.That(result.Value.ForceRedeploy, Is.True);
         Assert.That(result.Value.Prioritise, Is.True);
         Assert.That(result.Value.GroupFilter, Is.EqualTo("Payments"));
+        Assert.That(result.Value.MachineId, Is.EqualTo("Machines-1"));
+        Assert.That(result.Value.MachineName, Is.EqualTo("web-01"));
     }
 
     [Test]
@@ -57,13 +60,16 @@ public class JobConfigTests
             "Payments",
             runningInteractively: true,
             prioritise: true,
-            updateVariables: true);
+            updateVariables: true,
+            machine: new Machine { Id = "Machines-2", Name = "web-02" });
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value.GroupFilter, Is.EqualTo("Payments"));
         Assert.That(result.Value.RunningInteractively, Is.True);
         Assert.That(result.Value.Prioritise, Is.True);
         Assert.That(result.Value.UpdateVariables, Is.True);
+        Assert.That(result.Value.MachineId, Is.EqualTo("Machines-2"));
+        Assert.That(result.Value.MachineName, Is.EqualTo("web-02"));
     }
 
     [Test]

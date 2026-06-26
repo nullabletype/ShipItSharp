@@ -48,6 +48,22 @@ public class PromotionRunnerTests
     }
 
     [Test]
+    public async Task Run_AddsMachineToDeployment_WhenMachineIsConfigured()
+    {
+        var context = CreateContext();
+        var config = CreateConfig(updateVariables: false, new Machine { Id = "Machines-1", Name = "web-01" });
+
+        var result = await context.Runner.Run(config, context.ProgressBar, context.Interaction);
+
+        Assert.That(result, Is.EqualTo(0));
+        await context.Deployer.Received(1).StartJob(
+            Arg.Is<EnvironmentDeployment>(deployment =>
+                deployment.MachineId == "Machines-1" &&
+                deployment.MachineName == "web-01"),
+            context.UiLogger);
+    }
+
+    [Test]
     public async Task Run_DoesNotStartDeployment_WhenReleaseVariableUpdateFails()
     {
         var context = CreateContext(updateVariablesResult: false);
@@ -60,14 +76,15 @@ public class PromotionRunnerTests
         await context.Deployer.DidNotReceiveWithAnyArgs().StartJob(default, default);
     }
 
-    private static PromotionConfig CreateConfig(bool updateVariables)
+    private static PromotionConfig CreateConfig(bool updateVariables, Machine machine = null)
     {
         return PromotionConfig.Create(
             new Environment { Id = "Environments-2", Name = "Test" },
             new Environment { Id = "Environments-1", Name = "Dev" },
             null,
             runningInteractively: false,
-            updateVariables: updateVariables).Value;
+            updateVariables: updateVariables,
+            machine: machine).Value;
     }
 
     private static TestContext CreateContext(bool updateVariablesResult = true)

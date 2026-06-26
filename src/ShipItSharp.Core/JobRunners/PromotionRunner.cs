@@ -129,7 +129,9 @@ namespace ShipItSharp.Core.JobRunners
                 ChannelName = string.Empty,
                 DeployAsync = true,
                 EnvironmentId = config.DestinationEnvironment.Id,
-                EnvironmentName = config.DestinationEnvironment.Name
+                EnvironmentName = config.DestinationEnvironment.Name,
+                MachineId = config.MachineId,
+                MachineName = config.MachineName
             };
 
             foreach (var index in indexes)

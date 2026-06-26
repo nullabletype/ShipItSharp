@@ -216,6 +216,22 @@ namespace ShipItSharp.Console.Commands
             return matchingEnvironments.First();
         }
 
+        protected async Task<Machine> FetchMachineFromUserInput(string machineName, Core.Deployment.Models.Environment environment)
+        {
+            if (string.IsNullOrWhiteSpace(machineName))
+            {
+                return null;
+            }
+
+            var machine = await OctoHelper.Machines.GetMachine(machineName, environment.Id);
+            if (machine == null)
+            {
+                System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "NoMatchingMachine"));
+            }
+
+            return machine;
+        }
+
         protected void FillRequiredVariables(List<ProjectDeployment> projects)
         {
             foreach (var project in projects)

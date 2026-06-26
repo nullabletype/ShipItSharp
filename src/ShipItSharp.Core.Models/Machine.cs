@@ -20,22 +20,11 @@
 // */
 #endregion
 
-
-namespace ShipItSharp.Core.Octopus.Interfaces
+namespace ShipItSharp.Core.Deployment.Models
 {
-    public interface IOctopusHelper
+    public class Machine
     {
-        IPackageRepository Packages { get; }
-        IProjectRepository Projects { get; }
-        IVariableRepository Variables { get; }
-        IChannelRepository Channels { get; }
-        IEnvironmentRepository Environments { get; }
-        IReleaseRepository Releases { get; }
-        IDeploymentRepository Deployments { get; }
-        ILifeCycleRepository LifeCycles { get; }
-        ITeamsRepository Teams { get; }
-        IMachineRepository Machines { get; }
-
-        void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
+        public string Id { get; set; }
+        public string Name { get; set; }
     }
 }

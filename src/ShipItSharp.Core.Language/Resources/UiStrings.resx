@@ -150,6 +150,9 @@
     <data name="DeployingTo" xml:space="preserve">
     <value>Deploying channel {0} to {1}. Please select the projects you wish to deploy.</value>
   </data>
+    <data name="DeployingToMachine" xml:space="preserve">
+    <value>Deploying channel {0} to {1} on machine {2}. Please select the projects you wish to deploy.</value>
+  </data>
     <data name="DeployingUsingConfig" xml:space="preserve">
     <value>Deploying using config {0}</value>
   </data>
@@ -246,6 +249,9 @@
     <data name="NoMatchingEnvironments" xml:space="preserve">
     <value>No environments match your criteria.</value>
   </data>
+    <data name="NoMatchingMachine" xml:space="preserve">
+    <value>No matching machine in the selected environment.</value>
+  </data>
     <data name="NothingSelected" xml:space="preserve">
     <value>Nothing selected.</value>
   </data>
@@ -281,6 +287,9 @@
   </data>
     <data name="PromotingTo" xml:space="preserve">
     <value>Promoting from {0} to {1}. Please select the projects you wish to promote.</value>
+  </data>
+    <data name="PromotingToMachine" xml:space="preserve">
+    <value>Promoting from {0} to {1} on machine {2}. Please select the projects you wish to promote.</value>
   </data>
     <data name="ReleaseNamePrompt" xml:space="preserve">
     <value>Release version. Leave blank to generate the next sequential version.</value>
@@ -354,6 +363,9 @@
     <data name="DeployingSpecificRelease" xml:space="preserve">
     <value>Deploying release {0} to {1}. Please select the projects you wish to deploy.</value>
   </data>
+    <data name="DeployingSpecificReleaseToMachine" xml:space="preserve">
+    <value>Deploying release {0} to {1} on machine {2}. Please select the projects you wish to deploy.</value>
+  </data>
     <data name="ReleaseName" xml:space="preserve">
     <value>What is the name (version) of the release you want to deploy?</value>
   </data>
@@ -399,8 +411,23 @@
     <data name="DeploymentComplete" xml:space="preserve">
       <value>Deployment complete. {0} shipped, {1} failed.</value>
     </data>
+    <data name="DeploymentElapsedTime" xml:space="preserve">
+      <value>Time taken: {0}</value>
+    </data>
     <data name="DeploymentFailed" xml:space="preserve">
       <value>Deployment failed: {0}</value>
+    </data>
+    <data name="DeploymentSummary" xml:space="preserve">
+      <value>Deployment finished:</value>
+    </data>
+    <data name="DeploymentSummaryCompleted" xml:space="preserve">
+      <value>Completed: {0}</value>
+    </data>
+    <data name="DeploymentSummaryFailed" xml:space="preserve">
+      <value>Failed: {0}</value>
+    </data>
+    <data name="DeploymentSummaryTotal" xml:space="preserve">
+      <value>Total: {0}</value>
     </data>
     <data name="FailedProjects" xml:space="preserve">
       <value>Failed projects:</value>
@@ -434,6 +461,9 @@
     </data>
     <data name="ShipItSharpDeployment" xml:space="preserve">
       <value>ShipItSharp deployment</value>
+    </data>
+    <data name="ShipItSharpDeploymentToTarget" xml:space="preserve">
+      <value>ShipItSharp deployment to {0}</value>
     </data>
     <data name="StatusDone" xml:space="preserve">
       <value>done</value>

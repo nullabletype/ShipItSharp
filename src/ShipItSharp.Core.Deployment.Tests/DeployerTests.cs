@@ -5,6 +5,7 @@ using NUnit.Framework;
 using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 using EnvironmentModel = ShipItSharp.Core.Deployment.Models.Environment;
 using LifeCycleModel = ShipItSharp.Core.Deployment.Models.LifeCycle;
@@ -25,7 +26,7 @@ public class DeployerTests
                 new Phase { OptionalDeploymentTargetEnvironmentIds = new List<string> { "Environments-1" } }
             }
         });
-        var deployer = CreateDeployer(helper);
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
 
         var result = await deployer.CheckDeployment(CreateDeployment("Environments-1"));
 
@@ -46,7 +47,7 @@ public class DeployerTests
         });
         helper.Deployments.GetDeployments("Releases-1")
             .Returns(new[] { new Deployment.Models.Deployment { EnvironmentId = "Environments-1" } });
-        var deployer = CreateDeployer(helper);
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
 
         var result = await deployer.CheckDeployment(CreateDeployment("Environments-2"));
 
@@ -66,7 +67,7 @@ public class DeployerTests
         });
         helper.Deployments.GetDeployments("Releases-1")
             .Returns(System.Array.Empty<Deployment.Models.Deployment>());
-        var deployer = CreateDeployer(helper);
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
 
         var result = await deployer.CheckDeployment(CreateDeployment("Environments-2"));
 
@@ -111,25 +112,37 @@ public class DeployerTests
         };
         releases.CreateRelease(project, false)
             .Returns(new Release { Id = "Releases-1", Version = "1.2.i" });
-        deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false)
+        deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, "Machines-1")
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
         deployments.GetTaskDetails("ServerTasks-1")
             .Returns(new TaskDetails { TaskId = "ServerTasks-1", State = TaskStatus.Done });
         deployments.GetTaskRawLog("ServerTasks-1").Returns("raw log");
-        var deployer = CreateDeployer(helper);
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
         var job = new EnvironmentDeployment
         {
             EnvironmentId = "Environments-1",
             EnvironmentName = "Prod",
+            MachineId = "Machines-1",
+            MachineName = "web-01",
             DeployAsync = false,
             ProjectDeployments = new List<ProjectDeployment> { project }
         };
 
-        await deployer.StartJob(job, Substitute.For<IUiLogger>());
+        var uiLogger = Substitute.For<IUiLogger>();
+
+        await deployer.StartJob(job, uiLogger);
 
         await releases.Received(1).CreateRelease(project, false);
-        await deployments.Received(1).CreateDeploymentTask(project, "Environments-1", "Releases-1", false);
+        await deployments.Received(1).CreateDeploymentTask(project, "Environments-1", "Releases-1", false, "Machines-1");
         await deployments.Received(1).GetTaskRawLog("ServerTasks-1");
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("ShipItSharp deployment to Prod on machine web-01")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Creating Octopus task") && line.Contains("Prod on machine web-01")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Payments deployed to Prod on machine web-01")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Deployment summary")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("done") && line.Contains("Completed: 1")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("done") && line.Contains("Failed: 0")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("run") && line.Contains("Total: 1")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("run") && line.Contains("Time taken:")));
     }
 
     private static IOctopusHelper CreateHelperWithLifecycle(LifeCycleModel lifecycle)
@@ -161,10 +174,37 @@ public class DeployerTests
         };
     }
 
-    private static Deployer CreateDeployer(IOctopusHelper helper)
+    private static Deployer CreateDeployer(IOctopusHelper helper, ILanguageProvider languageProvider = null)
     {
         var configuration = Substitute.For<IConfiguration>();
         configuration.OctopusUrl.Returns("https://octopus.example");
-        return new Deployer(helper, configuration, TestLanguageProvider.Create());
+        return new Deployer(helper, configuration, languageProvider ?? TestLanguageProvider.Create());
+    }
+
+    private static ILanguageProvider CreateDeploymentOutputLanguageProvider()
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["ShipItSharpDeploymentToTarget"] = "ShipItSharp deployment to {0}",
+            ["StatusRun"] = "run",
+            ["StatusDone"] = "done",
+            ["CreatingReleaseForProject"] = "Creating release for {0}",
+            ["CreatedReleaseForProject"] = "Created release {0} {1}",
+            ["CreatingOctopusTaskForProject"] = "Creating Octopus task for {0} to {1}",
+            ["CreatedOctopusTask"] = "Created Octopus task {0}",
+            ["ProjectDeployedToEnvironment"] = "{0} deployed to {1}",
+            ["RawLog"] = "Raw log:",
+            ["DeploymentComplete"] = "Deployment complete. {0} shipped, {1} failed.",
+            ["DeploymentSummary"] = "Deployment summary",
+            ["DeploymentSummaryCompleted"] = "Completed: {0}",
+            ["DeploymentSummaryFailed"] = "Failed: {0}",
+            ["DeploymentSummaryTotal"] = "Total: {0}",
+            ["DeploymentElapsedTime"] = "Time taken: {0}"
+        };
+
+        var language = Substitute.For<ILanguageProvider>();
+        language.GetString(Arg.Any<LanguageSection>(), Arg.Any<string>())
+            .Returns(call => values.GetValueOrDefault(call.ArgAt<string>(1), call.ArgAt<string>(1)));
+        return language;
     }
 }

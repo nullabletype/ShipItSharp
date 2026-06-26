@@ -60,6 +60,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             AddToRegister(DeployOptionNames.DefaultFallback, command.Option("-d|--fallbacktodefault", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToDefault"), CommandOptionType.NoValue));
             AddToRegister(DeployOptionNames.ReleaseName, command.Option("-r|--releasename", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ReleaseVersion"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.FallbackToChannel, command.Option("-f|--fallbacktochannel", LanguageProvider.GetString(LanguageSection.OptionsStrings, "FallbackToChannel"), CommandOptionType.SingleValue));
+            AddToRegister(DeployOptionNames.Machine, command.Option("-m|--machine", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Machine"), CommandOptionType.SingleValue));
             AddToRegister(DeployOptionNames.Prioritise, command.Option("-p|--prioritise", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Prioritise"), CommandOptionType.NoValue));
         }
 
@@ -70,6 +71,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var releaseName = GetStringFromUser(DeployOptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseName"));
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
             var fallbackToChannel = GetStringFromUser(DeployOptionNames.FallbackToChannel, LanguageProvider.GetString(LanguageSection.UiStrings, "FallbackToChannel"));
+            var machineName = GetStringValueFromOption(DeployOptionNames.Machine);
             var prioritise = GetBoolValueFromOption(DeployOptionNames.Prioritise);
             
             _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
@@ -92,7 +94,13 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 fallbackChannel = fallbackToChannel;
             }
 
-            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, InInteractiveMode, fallbackChannel, prioritise: prioritise);
+            var machine = await FetchMachineFromUserInput(machineName, targetEnvironment);
+            if (!string.IsNullOrEmpty(machineName) && machine == null)
+            {
+                return -2;
+            }
+
+            var configResult = DeploySpecificConfig.Create(targetEnvironment, releaseName, groupRestriction, InInteractiveMode, fallbackChannel, prioritise: prioritise, machine: machine);
 
             if (configResult.IsFailure)
             {
@@ -110,6 +118,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             public const string ReleaseName = "releasename";
             public const string FallbackToChannel = "fallbacktochannel";
             public const string Prioritise = "prioritise";
+            public const string Machine = "machine";
         }
     }
 }

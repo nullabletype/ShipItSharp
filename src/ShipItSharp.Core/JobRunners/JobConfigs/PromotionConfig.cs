@@ -36,8 +36,10 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
         public bool RunningInteractively { get; set; }
         public bool Prioritise { get; set; }
         public bool UpdateVariables { get; set; }
+        public string MachineId { get; private set; }
+        public string MachineName { get; private set; }
 
-        public static Result<PromotionConfig> Create(Environment destEnv, Environment srcEnv, string filter, bool runningInteractively, bool prioritise = false, bool updateVariables = false)
+        public static Result<PromotionConfig> Create(Environment destEnv, Environment srcEnv, string filter, bool runningInteractively, bool prioritise = false, bool updateVariables = false, Machine machine = null)
         {
             if (destEnv == null || string.IsNullOrEmpty(destEnv.Id))
             {
@@ -56,7 +58,9 @@ namespace ShipItSharp.Core.JobRunners.JobConfigs
                 GroupFilter = filter,
                 RunningInteractively = runningInteractively,
                 Prioritise = prioritise,
-                UpdateVariables = updateVariables
+                UpdateVariables = updateVariables,
+                MachineId = machine?.Id,
+                MachineName = machine?.Name
             });
         }
     }

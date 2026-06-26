@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Configuration.Interfaces;
@@ -199,7 +200,9 @@ namespace ShipItSharp.Core.Deployment
         private async Task ProcessEnvironmentDeployment(EnvironmentDeployment deployment, bool suppressMessages,
             IUiLogger uiLogger)
         {
-            uiLogger.WriteLine(UiString("ShipItSharpDeployment"));
+            var stopwatch = Stopwatch.StartNew();
+            var targetName = GetDeploymentTargetName(deployment);
+            uiLogger.WriteLine(string.Format(UiString("ShipItSharpDeploymentToTarget"), targetName));
             var failedProjects = new Dictionary<ProjectDeployment, TaskDetails>();
 
             var taskRegister = new Dictionary<string, TaskDetails>();
@@ -221,8 +224,8 @@ namespace ShipItSharp.Core.Deployment
                     WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("FetchedReleaseForProject"), project.ProjectName, result.Version));
                 }
 
-                WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("CreatingOctopusTaskForProject"), project.ProjectName, deployment.EnvironmentName));
-                var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id, deployment.Prioritise);
+                WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("CreatingOctopusTaskForProject"), project.ProjectName, targetName));
+                var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id, deployment.Prioritise, deployment.MachineId);
                 WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("CreatedOctopusTask"), deployResult.TaskId));
 
                 var taskDeets = await _helper.Deployments.GetTaskDetails(deployResult.TaskId);
@@ -241,7 +244,7 @@ namespace ShipItSharp.Core.Deployment
                     }
                     else
                     {
-                        WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, deployment.EnvironmentName));
+                        WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, targetName));
                     }
                     uiLogger.WriteLine(UiString("RawLog") + Environment.NewLine +
                                        await _helper.Deployments.GetTaskRawLog(taskDeets.TaskId));
@@ -250,7 +253,7 @@ namespace ShipItSharp.Core.Deployment
 
             if (deployment.DeployAsync)
             {
-                await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister, deployment.EnvironmentName);
+                await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister, targetName);
             }
 
             if (failedProjects.Any())
@@ -272,11 +275,11 @@ namespace ShipItSharp.Core.Deployment
             if (!suppressMessages)
             {
                 var shipped = deployment.ProjectDeployments.Count - failedProjects.Count;
-                uiLogger.WriteLine(string.Format(UiString("DeploymentComplete"), shipped, failedProjects.Count));
+                WriteDeploymentSummary(uiLogger, shipped, failedProjects.Count, stopwatch.Elapsed);
             }
         }
 
-        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister, string environmentName)
+        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister, string targetName)
         {
             var done = false;
             var totalCount = taskRegister.Count();
@@ -299,7 +302,7 @@ namespace ShipItSharp.Core.Deployment
                         {
                             var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
-                            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, environmentName));
+                            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, targetName));
                             taskRegister.Remove(currentTask.Key);
                         }
                         else if (found.State == TaskStatus.Failed)
@@ -325,6 +328,25 @@ namespace ShipItSharp.Core.Deployment
             }
             uiLogger.StopAnimation();
             uiLogger.CleanCurrentLine();
+        }
+
+        private static string GetDeploymentTargetName(EnvironmentDeployment deployment)
+        {
+            if (string.IsNullOrWhiteSpace(deployment.MachineName))
+            {
+                return deployment.EnvironmentName;
+            }
+
+            return $"{deployment.EnvironmentName} on machine {deployment.MachineName}";
+        }
+
+        private void WriteDeploymentSummary(IUiLogger uiLogger, int completed, int failed, TimeSpan elapsed)
+        {
+            uiLogger.WriteLine(UiString("DeploymentSummary"));
+            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("DeploymentSummaryCompleted"), completed));
+            WriteDeploymentStatus(uiLogger, failed == 0 ? "StatusDone" : "StatusFailed", string.Format(UiString("DeploymentSummaryFailed"), failed));
+            WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("DeploymentSummaryTotal"), completed + failed));
+            WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("DeploymentElapsedTime"), elapsed.ToString(@"hh\:mm\:ss")));
         }
 
         private async Task<TaskDetails> StartDeployment(IUiLogger uiLogger, TaskDetails taskDeets, bool doWait)

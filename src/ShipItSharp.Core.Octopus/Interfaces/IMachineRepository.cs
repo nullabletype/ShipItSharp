@@ -20,22 +20,13 @@
 // */
 #endregion
 
+using System.Threading.Tasks;
+using ShipItSharp.Core.Deployment.Models;
 
 namespace ShipItSharp.Core.Octopus.Interfaces
 {
-    public interface IOctopusHelper
+    public interface IMachineRepository
     {
-        IPackageRepository Packages { get; }
-        IProjectRepository Projects { get; }
-        IVariableRepository Variables { get; }
-        IChannelRepository Channels { get; }
-        IEnvironmentRepository Environments { get; }
-        IReleaseRepository Releases { get; }
-        IDeploymentRepository Deployments { get; }
-        ILifeCycleRepository LifeCycles { get; }
-        ITeamsRepository Teams { get; }
-        IMachineRepository Machines { get; }
-
-        void SetCacheImplementation(ICacheObjects cache, int cacheTimeout);
+        Task<Machine> GetMachine(string idOrName, string environmentId);
     }
 }

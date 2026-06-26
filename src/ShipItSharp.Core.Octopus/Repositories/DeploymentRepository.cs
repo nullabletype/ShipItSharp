@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
+using Environment = System.Environment;
 using TaskStatus = ShipItSharp.Core.Deployment.Models.TaskStatus;
 
 namespace ShipItSharp.Core.Octopus.Repositories
@@ -55,7 +56,8 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 LastModifiedOn = DateTimeOffset.UtcNow,
                 Name = project.ProjectName + ":" + project.Packages?.First().PackageName,
                 ProjectId = project.ProjectId,
-                ReleaseId = releaseId
+                ReleaseId = releaseId,
+                Priority = toTopOfQueue ? DeploymentPriority.On : DeploymentPriority.LifecycleDefault
             };
             ApplySpecificMachine(deployment, machineId);
             if (project.RequiredVariables != null)
@@ -65,27 +67,28 @@ namespace ShipItSharp.Core.Octopus.Repositories
                     deployment.FormValues.Add(variable.Id, variable.Value);
                 }
             }
-            var deployResult = await _octopusHelper.Client.Repository.Deployments.Create(deployment, CancellationToken.None);
-
-            if (toTopOfQueue)
+            DeploymentResource deployResult = null;
+            try
             {
-                var task = await _octopusHelper.Client.Repository.Tasks.Get(deployResult.TaskId, CancellationToken.None);
-                if (task != null)
-                {
-                    await _octopusHelper.Client.Repository.Tasks.Prioritize(task, CancellationToken.None);
-                }
+
+                deployResult = await _octopusHelper.Client.Repository.Deployments.Create(deployment, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{ex.Message}");
+                Console.ResetColor();
+                Environment.Exit(-1);
             }
             
             return new Deployment.Models.Deployment
             {
-                TaskId = deployResult.TaskId
+                TaskId = deployResult?.TaskId
             };
         }
 
         public async Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take)
         {
-            //var taskDeets = await client.Repository.Tasks.FindAll(pathParameters: new { skip, take, name = "Deploy" });
-
             var taskDeets = await _octopusHelper.Client.Get<ResourceCollection<TaskResource>>((await _octopusHelper.Client.Repository.LoadRootDocument(CancellationToken.None)).Links["Tasks"], new { skip, take, name = "Deploy" }, CancellationToken.None);
 
             var tasks = new List<TaskStub>();

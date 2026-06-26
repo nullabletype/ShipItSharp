@@ -87,11 +87,33 @@ namespace ShipItSharp.Core.JobRunners
                 return -1;
             }
 
+            if (config.UpdateVariables && !await UpdateReleaseVariables(deployment))
+            {
+                return -1;
+            }
+
             _deployer.FillRequiredVariables(deployment.ProjectDeployments, interaction.Prompt, config.RunningInteractively);
 
             await _deployer.StartJob(deployment, _uiLogger);
 
             return 0;
+        }
+
+        private async Task<bool> UpdateReleaseVariables(EnvironmentDeployment deployment)
+        {
+            foreach (var project in deployment.ProjectDeployments)
+            {
+                Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "Processing"), project.ProjectName);
+                var result = await _helper.Releases.UpdateReleaseVariables(project.ReleaseId);
+                Console.WriteLine(result ? _languageProvider.GetString(LanguageSection.UiStrings, "Done") : _languageProvider.GetString(LanguageSection.UiStrings, "Failed"), project.ProjectName);
+
+                if (!result)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private EnvironmentDeployment GenerateEnvironmentDeployment(PromotionConfig config, IEnumerable<int> indexes, List<Project> projects, List<Project> targetProjects)

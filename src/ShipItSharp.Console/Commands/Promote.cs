@@ -57,6 +57,7 @@ namespace ShipItSharp.Console.Commands
             AddToRegister(PromoteOptionNames.SourceEnvironment, command.Option("-s|--sourcenvironment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SourceEnvironment"), CommandOptionType.SingleValue));
             AddToRegister(PromoteOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
             AddToRegister(PromoteOptionNames.Prioritise, command.Option("-p|--prioritise", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Prioritise"), CommandOptionType.NoValue));
+            AddToRegister(PromoteOptionNames.UpdateVariables, command.Option("-v|--updatevariables", LanguageProvider.GetString(LanguageSection.OptionsStrings, "UpdateVariables"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)
@@ -67,6 +68,7 @@ namespace ShipItSharp.Console.Commands
             var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
             var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
             var prioritise = GetBoolValueFromOption(PromoteOptionNames.Prioritise);
+            var updateVariables = GetBoolValueFromOption(PromoteOptionNames.UpdateVariables);
             
             _progressBar.WriteStatusLine(LanguageProvider.GetString(LanguageSection.UiStrings, "CheckingOptions"));
             var environment = await FetchEnvironmentFromUserInput(environmentName);
@@ -77,7 +79,7 @@ namespace ShipItSharp.Console.Commands
                 return -2;
             }
 
-            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, InInteractiveMode, prioritise:prioritise);
+            var configResult = PromotionConfig.Create(targetEnvironment, environment, groupRestriction, InInteractiveMode, prioritise: prioritise, updateVariables: updateVariables);
 
             if (configResult.IsFailure)
             {
@@ -93,6 +95,7 @@ namespace ShipItSharp.Console.Commands
             public const string Environment = "environment";
             public const string GroupFilter = "groupfilter";
             public const string Prioritise = "prioritise";
+            public const string UpdateVariables = "updatevariables";
         }
     }
 

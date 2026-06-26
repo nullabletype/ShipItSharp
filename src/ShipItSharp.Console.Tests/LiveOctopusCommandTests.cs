@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -38,6 +39,7 @@ public class LiveOctopusCommandTests
     private EnvironmentResource _promotionEnvironment;
     private LifecycleResource _lifecycle;
     private ProjectGroupResource _sampleProjectGroup;
+    private ProjectResource _templateProject;
     private ProjectResource _sampleProject;
     private ChannelResource _sampleChannel;
     private PackageSelection _samplePackage;
@@ -54,28 +56,28 @@ public class LiveOctopusCommandTests
             Assert.Ignore($"Set {UrlEnvironmentVariable} and {ApiKeyEnvironmentVariable} to run live Octopus command tests.");
         }
 
-        WriteRuntimeConfig();
-
         var endpoint = new OctopusServerEndpoint(_url, _apiKey);
         _client = await OctopusAsyncClient.Create(endpoint);
         var currentUser = await _client.Repository.Users.GetCurrent();
         Assert.That(currentUser, Is.Not.Null, "The supplied Octopus API key must be valid.");
 
+        await DeleteStaleFixtureProjectsAndGroups();
         await DeleteStaleFixtureEnvironments();
         await LoadSampleProjectFixture();
+        await DeleteStaleFixtureChannels();
         _team = (await _client.Repository.Teams.FindAll(CancellationToken.None)).FirstOrDefault();
     }
 
     [OneTimeTearDown]
     public async Task OneTimeTearDown()
     {
-        DeleteRuntimeConfig();
-
         // Trigger HTML compilation right here:
         await WriteHtmlExecutionReport();
 
         if (_client == null) return;
 
+        await DeleteStaleFixtureChannels();
+        await DeleteStaleFixtureProjectsAndGroups();
         await DeleteStaleFixtureEnvironments();
     }
 
@@ -87,7 +89,7 @@ public class LiveOctopusCommandTests
         Assert.That(environments.Select(env => env.Id), Does.Contain(_sourceEnvironment.Id));
         Assert.That(environments.Select(env => env.Id), Does.Contain(_destinationEnvironment.Id));
         Assert.That(environments.Select(env => env.Id), Does.Contain(_promotionEnvironment.Id));
-        Assert.That(_sampleProject.Name, Is.EqualTo(SampleProjectName));
+        Assert.That(_sampleProject.Name, Does.StartWith(FixturePrefix));
         Assert.That(_samplePackage.Version, Is.Not.Empty);
     }
 
@@ -144,7 +146,7 @@ public class LiveOctopusCommandTests
         var result = await RunShipIt(
             "deploy",
             "-n",
-            "-e", _destinationEnvironment.Name,
+            "-e", _sourceEnvironment.Name,
             "-c", _sampleChannel.Name,
             "-g", _sampleProjectGroup.Name,
             "-s", profilePath);
@@ -152,7 +154,7 @@ public class LiveOctopusCommandTests
         AssertCommandSucceeded(result);
         Assert.That(File.Exists(profilePath), Is.True);
         var profile = await File.ReadAllTextAsync(profilePath);
-        Assert.That(profile, Does.Contain(_destinationEnvironment.Name));
+        Assert.That(profile, Does.Contain(_sourceEnvironment.Name));
         Assert.That(profile, Does.Contain("ProjectDeployments"));
     }
 
@@ -195,14 +197,15 @@ public class LiveOctopusCommandTests
             "-n",
             "-s", _destinationEnvironment.Name,
             "-e", _promotionEnvironment.Name,
-            "-g", _sampleProjectGroup.Name);
+            "-g", _sampleProjectGroup.Name,
+            "--updatevariables");
         AssertCommandSucceeded(promote);
         AssertDeploymentOutput(promote, _promotionEnvironment, sourceReleaseVersion);
         await AssertDeploymentExists(_promotionEnvironment, sourceRelease);
 
         var updateVariables = await RunShipIt("release", "updatevariables", "-e", _sourceEnvironment.Name, "-g", _sampleProjectGroup.Name, "-s");
         AssertCommandSucceeded(updateVariables);
-        Assert.That(updateVariables.Output, Does.Contain(SampleProjectName));
+        Assert.That(updateVariables.Output, Does.Contain(_sampleProject.Name));
 
         var rename = await RunShipIt(
             "release",
@@ -212,7 +215,7 @@ public class LiveOctopusCommandTests
             "-r", renamedReleaseVersion,
             "-g", _sampleProjectGroup.Name);
         AssertCommandSucceeded(rename);
-        Assert.That(rename.Output, Does.Contain(SampleProjectName));
+        Assert.That(rename.Output, Does.Contain(_sampleProject.Name));
         Assert.That((await GetSampleRelease(renamedReleaseVersion)).Version, Is.EqualTo(renamedReleaseVersion));
     }
 
@@ -234,18 +237,47 @@ public class LiveOctopusCommandTests
     }
 
     [Test]
-    public async Task ChannelCommand_CanRunCleanupInTestModeAgainstLiveInstance()
+    public async Task ChannelCommand_CleanupRemovesOnlyChannelsWithoutMatchingPackagesAgainstLiveInstance()
     {
         AssertCommandSucceeded(await RunShipIt("channel"));
 
-        var result = await RunShipIt(
-            "channel",
-            "cleanup",
-            "-g", MissingGroupFilter,
-            "-t",
-            "--maxpackagesperproject:1");
+        var activeChannelName = $"{FixturePrefix}{RunId}-Active";
+        var staleChannelName = $"{FixturePrefix}{RunId}-Stale";
+        var activeChannel = await CreateSampleProjectChannel(activeChannelName, _samplePackage.Version);
+        var staleChannel = await CreateSampleProjectChannel(staleChannelName, "9999.0.0");
 
-        AssertCommandSucceeded(result);
+        try
+        {
+            var testMode = await RunShipIt(
+                "channel",
+                "cleanup",
+                "-g", _sampleProjectGroup.Name,
+                "-t",
+                "--maxpackagesperproject:1");
+
+            AssertCommandSucceeded(testMode);
+            Assert.That(testMode.Output, Does.Contain(staleChannelName));
+            Assert.That(testMode.Output, Does.Not.Contain(activeChannelName));
+            Assert.That(await GetSampleProjectChannel(activeChannelName), Is.Not.Null);
+            Assert.That(await GetSampleProjectChannel(staleChannelName), Is.Not.Null);
+
+            var cleanup = await RunShipIt(
+                "channel",
+                "cleanup",
+                "-g", _sampleProjectGroup.Name,
+                "--maxpackagesperproject:1");
+
+            AssertCommandSucceeded(cleanup);
+            Assert.That(cleanup.Output, Does.Contain(staleChannelName));
+            Assert.That(cleanup.Output, Does.Not.Contain(activeChannelName));
+            Assert.That(await GetSampleProjectChannel(activeChannelName), Is.Not.Null);
+            Assert.That(await GetSampleProjectChannel(staleChannelName), Is.Null);
+        }
+        finally
+        {
+            await DeleteChannelIfExists(activeChannel);
+            await DeleteChannelIfExists(staleChannel);
+        }
     }
 
     private async Task<EnvironmentResource> EnsureEnvironment(string name)
@@ -298,38 +330,131 @@ public class LiveOctopusCommandTests
         }
     }
 
+    private async Task DeleteStaleFixtureProjectsAndGroups()
+    {
+        var projects = await _client.Repository.Projects.GetAll(CancellationToken.None);
+        foreach (var project in projects.Where(project => project.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
+        {
+            await _client.Repository.Projects.Delete(project, CancellationToken.None);
+        }
+
+        var projectGroups = await _client.Repository.ProjectGroups.GetAll(CancellationToken.None);
+        foreach (var projectGroup in projectGroups.Where(group => group.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
+        {
+            await _client.Repository.ProjectGroups.Delete(projectGroup, CancellationToken.None);
+        }
+    }
+
+    private async Task DeleteStaleFixtureChannels()
+    {
+        var channels = await GetSampleProjectChannels();
+        foreach (var channel in channels.Where(channel => channel.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
+        {
+            await DeleteChannelIfExists(channel);
+        }
+    }
+
+    private async Task<ChannelResource> CreateSampleProjectChannel(string name, string minimumVersion)
+    {
+        var channel = new ChannelResource
+        {
+            Name = name,
+            ProjectId = _sampleProject.Id,
+            LifecycleId = _sampleProject.LifecycleId,
+            Description = "Created by ShipItSharp live command tests"
+        };
+
+        var deploymentProcess = await _client.Repository.DeploymentProcesses.Get(_sampleProject.DeploymentProcessId, CancellationToken.None);
+        var actions = deploymentProcess.Steps.SelectMany(step => step.Actions).ToArray();
+        channel.AddRule($"[{minimumVersion},)", null, actions);
+
+        return await _client.Repository.Channels.Create(channel, CancellationToken.None);
+    }
+
+    private async Task<ChannelResource> GetSampleProjectChannel(string name)
+    {
+        return (await GetSampleProjectChannels()).FirstOrDefault(channel => channel.Name == name);
+    }
+
+    private async Task<List<ChannelResource>> GetSampleProjectChannels()
+    {
+        var channels = await _client.List<ChannelResource>(
+            _sampleProject.Link("Channels"),
+            new { take = 9999 },
+            CancellationToken.None);
+
+        return channels.Items.ToList();
+    }
+
+    private async Task DeleteChannelIfExists(ChannelResource channel)
+    {
+        if (channel == null)
+        {
+            return;
+        }
+
+        var current = await GetSampleProjectChannel(channel.Name);
+        if (current == null)
+        {
+            return;
+        }
+
+        await _client.Repository.Channels.Delete(current, CancellationToken.None);
+    }
+
     private async Task LoadSampleProjectFixture()
     {
-        _sampleProject = await _client.Repository.Projects.FindOne(project => project.Name == SampleProjectName, CancellationToken.None);
-        Assert.That(_sampleProject, Is.Not.Null, $"Expected Octopus project '{SampleProjectName}' to exist.");
+        _templateProject = await _client.Repository.Projects.FindOne(project => project.Name == SampleProjectName, CancellationToken.None);
+        Assert.That(_templateProject, Is.Not.Null, $"Expected Octopus project '{SampleProjectName}' to exist.");
 
-        _sampleProjectGroup = await _client.Repository.ProjectGroups.Get(_sampleProject.ProjectGroupId, CancellationToken.None);
-        var projectsInGroup = (await _client.Repository.Projects.GetAll(CancellationToken.None))
-            .Where(project => project.ProjectGroupId == _sampleProjectGroup.Id)
-            .ToList();
-        Assert.That(projectsInGroup.Select(project => project.Name), Is.EquivalentTo(new[]
+        _sampleProjectGroup = await _client.Repository.ProjectGroups.Create(
+            new ProjectGroupResource
             {
-                SampleProjectName
-            }),
-            $"Project group '{_sampleProjectGroup.Name}' must contain only '{SampleProjectName}' for safe group-filtered live command tests.");
+                Name = $"{FixturePrefix}{RunId}-ProjectGroup"
+            },
+            CancellationToken.None);
+
+        _sampleProject = await _client.Repository.Projects.Create(
+            new ProjectResource
+            {
+                Name = $"{FixturePrefix}{RunId}-SampleProject",
+                ProjectGroupId = _sampleProjectGroup.Id,
+                LifecycleId = _templateProject.LifecycleId,
+                ClonedFromProjectId = _templateProject.Id
+            },
+            CancellationToken.None);
+
+        await CopyTemplateDeploymentProcessToFixtureProject();
 
         _lifecycle = await _client.Repository.Lifecycles.Get(_sampleProject.LifecycleId, CancellationToken.None);
-        Assert.That(_lifecycle.Phases, Is.Not.Empty, $"Project '{SampleProjectName}' lifecycle must contain at least one phase.");
+        Assert.That(_lifecycle.Phases, Is.Not.Empty, $"Project '{_sampleProject.Name}' lifecycle must contain at least one phase.");
 
         var lifecycleEnvironmentIds = _lifecycle.Phases
             .SelectMany(phase => phase.OptionalDeploymentTargets.Concat(phase.AutomaticDeploymentTargets))
             .Distinct()
             .ToList();
         Assert.That(lifecycleEnvironmentIds.Count, Is.GreaterThanOrEqualTo(3),
-            $"Project '{SampleProjectName}' lifecycle must have at least three existing environments for deploy, deploy-specific, and promote live tests.");
+            $"Project '{_sampleProject.Name}' lifecycle must have at least three existing environments for deploy, deploy-specific, and promote live tests.");
         _sourceEnvironment = await _client.Repository.Environments.Get(lifecycleEnvironmentIds[0], CancellationToken.None);
         _destinationEnvironment = await _client.Repository.Environments.Get(lifecycleEnvironmentIds[1], CancellationToken.None);
         _promotionEnvironment = await _client.Repository.Environments.Get(lifecycleEnvironmentIds[2], CancellationToken.None);
 
         _sampleChannel = await _client.Repository.Channels.FindByName(_sampleProject, "Default");
-        Assert.That(_sampleChannel, Is.Not.Null, $"Project '{SampleProjectName}' must have a Default channel.");
+        Assert.That(_sampleChannel, Is.Not.Null, $"Project '{_sampleProject.Name}' must have a Default channel.");
 
         _samplePackage = await FindLatestSamplePackage();
+    }
+
+    private async Task CopyTemplateDeploymentProcessToFixtureProject()
+    {
+        var templateProcess = await _client.Repository.DeploymentProcesses.Get(_templateProject.DeploymentProcessId, CancellationToken.None);
+        var fixtureProcess = await _client.Repository.DeploymentProcesses.Get(_sampleProject.DeploymentProcessId, CancellationToken.None);
+        fixtureProcess.Steps.Clear();
+        foreach (var step in templateProcess.Steps)
+        {
+            fixtureProcess.Steps.Add(step);
+        }
+        await _client.Repository.DeploymentProcesses.Modify(fixtureProcess, CancellationToken.None);
     }
 
     private async Task<PackageSelection> FindLatestSamplePackage()
@@ -370,7 +495,7 @@ public class LiveOctopusCommandTests
             }
         }
 
-        Assert.Fail($"Project '{SampleProjectName}' must have at least one package in the built-in feed.");
+        Assert.Fail($"Project '{_sampleProject.Name}' must have at least one package in the built-in feed.");
         return null;
     }
 
@@ -391,40 +516,6 @@ public class LiveOctopusCommandTests
                 await _client.Repository.Lifecycles.Modify(lifecycle, CancellationToken.None);
             }
         }
-    }
-
-    private static void WriteRuntimeConfig()
-    {
-        var config = new
-        {
-            ProjectGroupFilterString = "",
-            ApiKey = Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariable),
-            OctopusUrl = Environment.GetEnvironmentVariable(UrlEnvironmentVariable),
-            ChangeProviderConfiguration = new
-            {
-                Type = "GitHub",
-                Url = ""
-            },
-            EnableTrace = false,
-            CacheTimeoutInSeconds = 1,
-            DefaultChannel = "Default"
-        };
-
-        File.WriteAllText(GetRuntimeConfigPath(), JsonConvert.SerializeObject(config, Formatting.Indented));
-    }
-
-    private static void DeleteRuntimeConfig()
-    {
-        var configPath = GetRuntimeConfigPath();
-        if (File.Exists(configPath))
-        {
-            File.Delete(configPath);
-        }
-    }
-
-    private static string GetRuntimeConfigPath()
-    {
-        return Path.Combine(TestContext.CurrentContext.TestDirectory, "config.json");
     }
 
     private async Task WriteSampleDeploymentProfile(string path, EnvironmentResource environment, string releaseVersion)
@@ -489,9 +580,9 @@ public class LiveOctopusCommandTests
         Assert.That(deployment, Is.Not.Null, $"Expected release {release.Version} to be deployed to {environment.Name}.");
     }
 
-    private static void AssertDeploymentOutput(CommandResult result, EnvironmentResource environment, string releaseVersion)
+    private void AssertDeploymentOutput(CommandResult result, EnvironmentResource environment, string releaseVersion)
     {
-        Assert.That(result.Output, Does.Contain(SampleProjectName));
+        Assert.That(result.Output, Does.Contain(_sampleProject.Name));
         Assert.That(result.Output, Does.Contain(environment.Name));
         Assert.That(result.Output, Does.Contain(releaseVersion));
         Assert.That(result.Output, Does.Contain("done"));

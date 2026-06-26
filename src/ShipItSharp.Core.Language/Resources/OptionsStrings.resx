@@ -237,6 +237,9 @@
     <data name="Prioritise" xml:space="preserve">
       <value>Move tasks to top of the queue</value>
     </data>
+    <data name="UpdateVariables" xml:space="preserve">
+      <value>Update release variables before promotion</value>
+    </data>
     <data name="MaxPackagesPerProject" xml:space="preserve">
       <value>Number of packages to check per project before cleaning up channels</value>
     </data>

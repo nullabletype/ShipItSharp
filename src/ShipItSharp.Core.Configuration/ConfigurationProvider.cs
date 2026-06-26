@@ -36,6 +36,11 @@ namespace ShipItSharp.Core.Configuration
 
         public static async Task<ConfigurationLoadResult> LoadConfiguration(ConfigurationProviderTypes type, ILanguageProvider languageProvider, IConfigurationConnectivityValidator connectivityValidator)
         {
+            if (EnvironmentConfigurationProvider.HasEnvironmentConfiguration())
+            {
+                return await new EnvironmentConfigurationProvider(languageProvider, connectivityValidator).LoadConfiguration();
+            }
+
             if (type == ConfigurationProviderTypes.Json)
             {
                 return await new JsonConfigurationProvider(languageProvider, connectivityValidator).LoadConfiguration();

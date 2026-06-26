@@ -49,6 +49,24 @@ public class JobConfigTests
     }
 
     [Test]
+    public void PromotionConfig_Create_PreservesPromotionOptions()
+    {
+        var result = PromotionConfig.Create(
+            new EnvironmentModel { Id = "Environments-1", Name = "Test" },
+            new EnvironmentModel { Id = "Environments-2", Name = "Dev" },
+            "Payments",
+            runningInteractively: true,
+            prioritise: true,
+            updateVariables: true);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.GroupFilter, Is.EqualTo("Payments"));
+        Assert.That(result.Value.RunningInteractively, Is.True);
+        Assert.That(result.Value.Prioritise, Is.True);
+        Assert.That(result.Value.UpdateVariables, Is.True);
+    }
+
+    [Test]
     public void DeploySpecificConfig_Create_RequiresReleaseName()
     {
         var result = DeploySpecificConfig.Create(new EnvironmentModel { Id = "Environments-1" }, "", null, false, null);

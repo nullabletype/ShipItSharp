@@ -265,6 +265,15 @@ namespace ShipItSharp.Core.Language.Resources {
                 return ResourceManager.GetString("Prioritise", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Update release variables before promotion.
+        /// </summary>
+        internal static string UpdateVariables {
+            get {
+                return ResourceManager.GetString("UpdateVariables", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to The path to the json profile file you wish to deploy.

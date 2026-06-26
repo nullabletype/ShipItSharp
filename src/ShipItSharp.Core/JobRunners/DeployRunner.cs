@@ -278,9 +278,12 @@ namespace ShipItSharp.Core.JobRunners
                 Packages = current.AvailablePackages.Where(x => x.SelectedPackage != null).Select(x => new PackageDeployment
                 {
                     PackageId = x.SelectedPackage.Id,
+                    FeedId = x.SelectedPackage.FeedId,
                     PackageName = x.SelectedPackage.Version,
                     StepId = x.StepId,
-                    StepName = x.StepName
+                    StepName = x.StepName,
+                    ActionName = x.SelectedPackage.ActionName,
+                    PackageReferenceName = x.SelectedPackage.PackageReferenceName
                 }).ToList(),
                 ChannelId = projectChannel?.Id,
                 ChannelVersionRange = projectChannel?.VersionRange,

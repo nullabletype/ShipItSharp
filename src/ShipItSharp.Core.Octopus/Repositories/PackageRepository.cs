@@ -35,6 +35,9 @@ namespace ShipItSharp.Core.Octopus.Repositories
 {
     public class PackageRepository : IPackageRepository
     {
+        private const string BuiltInFeedId = "feeds-builtin";
+        private const string FeedIdPropertyName = "Octopus.Action.Package.FeedId";
+        private const string PackageIdPropertyName = "Octopus.Action.Package.PackageId";
         private readonly OctopusHelper _octopusHelper;
 
         public PackageRepository(OctopusHelper octopusHelper)
@@ -49,13 +52,15 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<PackageFull> GetFullPackage(PackageStub stub)
         {
+            var feedId = GetFeedIdOrDefault(stub.FeedId);
             var package = new PackageFull
             {
                 Id = stub.Id,
+                FeedId = feedId,
                 Version = stub.Version,
                 StepName = stub.StepName
             };
-            var template = (await _octopusHelper.Client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["NotesTemplate"];
+            var template = (await _octopusHelper.Client.Repository.Feeds.Get(feedId, CancellationToken.None)).Links["NotesTemplate"];
             package.Message =
                 await _octopusHelper.Client.Get<string>(template,
                     new
@@ -66,34 +71,21 @@ namespace ShipItSharp.Core.Octopus.Repositories
             return package;
         }
 
-        internal async Task<PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName)
+        internal async Task<PackageIdResult> GetPackageId(ProjectResource project, string stepName, string actionName, string packageReferenceName = null)
         {
             var process = await _octopusHelper.DeploymentsInternal.GetDeploymentProcess(project.DeploymentProcessId);
             if (process != null)
             {
-                foreach (var step in process.Steps.Where(s => s.Name == stepName))
+                foreach (var step in process.Steps.Where(s => string.IsNullOrEmpty(stepName) || s.Name == stepName))
                 {
-                    foreach (var action in step.Actions.Where(a => a.Name == actionName))
+                    foreach (var action in step.Actions.Where(a => string.IsNullOrEmpty(actionName) || a.Name == actionName))
                     {
-                        if (action.Properties.ContainsKey("Octopus.Action.Package.FeedId") &&
-                            (action.Properties["Octopus.Action.Package.FeedId"].Value == "feeds-builtin"))
+                        var package = GetPackageReferences(step, action)
+                            .FirstOrDefault(p => PackageReferenceNameMatches(p.PackageReferenceName, packageReferenceName));
+                        if (package != null)
                         {
-                            if (action.Properties.ContainsKey("Octopus.Action.Package.PackageId") &&
-                                !string.IsNullOrEmpty(action.Properties["Octopus.Action.Package.PackageId"].Value))
-                            {
-                                var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
-                                if (!string.IsNullOrEmpty(packageId))
-                                {
-                                    return new PackageIdResult
-                                    {
-                                        PackageId = packageId,
-                                        StepName = step.Name,
-                                        StepId = step.Id
-                                    };
-                                }
-                            }
+                            return package;
                         }
-
                     }
                 }
             }
@@ -110,25 +102,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 {
                     foreach (var action in step.Actions)
                     {
-                        if (action.Properties.ContainsKey("Octopus.Action.Package.FeedId") &&
-                            (action.Properties["Octopus.Action.Package.FeedId"].Value == "feeds-builtin"))
-                        {
-                            if (action.Properties.ContainsKey("Octopus.Action.Package.PackageId") &&
-                                !string.IsNullOrEmpty(action.Properties["Octopus.Action.Package.PackageId"].Value))
-                            {
-                                var packageId = action.Properties["Octopus.Action.Package.PackageId"].Value;
-                                if (!string.IsNullOrEmpty(packageId))
-                                {
-                                    results.Add(new PackageIdResult
-                                    {
-                                        PackageId = packageId,
-                                        StepName = step.Name,
-                                        StepId = step.Id
-                                    });
-                                }
-                            }
-                        }
-
+                        results.AddRange(GetPackageReferences(step, action));
                     }
                 }
             }
@@ -149,13 +123,15 @@ namespace ShipItSharp.Core.Octopus.Repositories
                         continue; // If no versionRange specified, we likely have no channel so no packages
                     }
                     
-                    var template = _octopusHelper.CacheProvider.GetCachedObject<Href>("feeds-builtin");
+                    var feedId = GetFeedIdOrDefault(packageStepId.FeedId);
+                    var templateCacheKey = $"{feedId}:SearchTemplate";
+                    var template = _octopusHelper.CacheProvider.GetCachedObject<Href>(templateCacheKey);
 
                     if (template == null)
                     {
                         template =
-                            (await _octopusHelper.Client.Repository.Feeds.Get("feeds-builtin", CancellationToken.None)).Links["SearchTemplate"];
-                        _octopusHelper.CacheProvider.CacheObject("feeds-builtin", template);
+                            (await _octopusHelper.Client.Repository.Feeds.Get(feedId, CancellationToken.None)).Links["SearchTemplate"];
+                        _octopusHelper.CacheProvider.CacheObject(templateCacheKey, template);
                     }
 
                     var param = (dynamic) new
@@ -169,12 +145,12 @@ namespace ShipItSharp.Core.Octopus.Repositories
                         preReleaseTag = tag
                     };
 
-                    var packages = await _octopusHelper.Client.Get<List<PackageFromBuiltInFeedResource>>(template, param);
+                    var packages = await _octopusHelper.Client.Get<List<PackageResource>>(template, param);
 
                     var finalPackages = new List<PackageStub>();
                     foreach (var currentPackage in packages)
                     {
-                        finalPackages.Add(ConvertPackage(currentPackage, packageStepId.StepName));
+                        finalPackages.Add(ConvertPackage(currentPackage, packageStepId));
                     }
                     allPackages.Add(new PackageStep { AvailablePackages = finalPackages, StepName = packageStepId.StepName, StepId = packageStepId.StepId });
                 }
@@ -190,24 +166,99 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 throw new ArgumentNullException(nameof(package));
             }
 
-            var packageDetails = await GetPackageId(project, package.ActionName, package.ActionName);
+            var packageDetails = await GetPackageId(project, null, package.ActionName, package.PackageReferenceName);
             if (packageDetails == null)
             {
                 throw new InvalidOperationException($"Could not find package details for action '{package.ActionName}'.");
             }
-            return new PackageStub { Version = package.Version, StepName = packageDetails.StepName, StepId = packageDetails.StepId, Id = packageDetails.PackageId };
+            return new PackageStub
+            {
+                Version = package.Version,
+                StepName = packageDetails.StepName,
+                StepId = packageDetails.StepId,
+                ActionName = packageDetails.ActionName,
+                PackageReferenceName = packageDetails.PackageReferenceName,
+                FeedId = packageDetails.FeedId,
+                Id = packageDetails.PackageId
+            };
         }
 
-        private PackageStub ConvertPackage(PackageResource package, string stepName)
+        internal static IList<PackageIdResult> GetPackageReferences(DeploymentStepResource step, DeploymentActionResource action)
         {
-            return new PackageStub { Id = package.PackageId, Version = package.Version, StepName = stepName, PublishedOn = package.Published.HasValue ? package.Published.Value.LocalDateTime : null };
+            var packageReferences = action.Packages
+                .Where(package => !string.IsNullOrEmpty(package.PackageId) && !string.IsNullOrEmpty(package.FeedId))
+                .Select(package => new PackageIdResult
+                {
+                    PackageId = package.PackageId,
+                    FeedId = package.FeedId,
+                    StepName = step.Name,
+                    StepId = step.Id,
+                    ActionName = action.Name,
+                    PackageReferenceName = package.Name
+                })
+                .ToList();
+
+            if (packageReferences.Any())
+            {
+                return packageReferences;
+            }
+
+            if (!action.Properties.ContainsKey(PackageIdPropertyName) ||
+                string.IsNullOrEmpty(action.Properties[PackageIdPropertyName].Value))
+            {
+                return new List<PackageIdResult>();
+            }
+
+            return new List<PackageIdResult>
+            {
+                new PackageIdResult
+                {
+                    PackageId = action.Properties[PackageIdPropertyName].Value,
+                    FeedId = action.Properties.ContainsKey(FeedIdPropertyName)
+                        ? action.Properties[FeedIdPropertyName].Value
+                        : BuiltInFeedId,
+                    StepName = step.Name,
+                    StepId = step.Id,
+                    ActionName = action.Name
+                }
+            };
+        }
+
+        private static bool PackageReferenceNameMatches(string candidate, string expected)
+        {
+            return string.IsNullOrEmpty(candidate)
+                ? string.IsNullOrEmpty(expected)
+                : string.Equals(candidate, expected, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetFeedIdOrDefault(string feedId)
+        {
+            return string.IsNullOrEmpty(feedId) ? BuiltInFeedId : feedId;
+        }
+
+        private static PackageStub ConvertPackage(PackageResource package, PackageIdResult packageDetails)
+        {
+            return new PackageStub
+            {
+                Id = package.PackageId,
+                FeedId = packageDetails.FeedId,
+                Version = package.Version,
+                StepName = packageDetails.StepName,
+                StepId = packageDetails.StepId,
+                ActionName = packageDetails.ActionName,
+                PackageReferenceName = packageDetails.PackageReferenceName,
+                PublishedOn = package.Published.HasValue ? package.Published.Value.LocalDateTime : null
+            };
         }
     }
 
     public class PackageIdResult
     {
         public string PackageId { get; set; }
+        public string FeedId { get; set; }
         public string StepName { get; set; }
         public string StepId { get; set; }
+        public string ActionName { get; set; }
+        public string PackageReferenceName { get; set; }
     }
 }

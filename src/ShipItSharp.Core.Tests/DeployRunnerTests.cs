@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NSubstitute;
 using NUnit.Framework;
 using ShipItSharp.Core.Deployment;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Deployment.Models.Interfaces;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.Interfaces;
@@ -121,6 +123,46 @@ public class DeployRunnerTests
         _ = deployer.DidNotReceive().CheckDeployment(Arg.Any<EnvironmentDeployment>());
     }
 
+    [Test]
+    public async Task Run_CopiesExternalFeedMetadataToDeploymentPackage()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var deployer = Substitute.For<IDeployer>();
+        var uiLogger = Substitute.For<IUiLogger>();
+        var progressBar = Substitute.For<IProgressBar>();
+        var interaction = Substitute.For<ICommandInteraction>();
+
+        var projectRepository = Substitute.For<IProjectRepository>();
+        var channelRepository = Substitute.For<IChannelRepository>();
+        helper.Projects.Returns(projectRepository);
+        helper.Channels.Returns(channelRepository);
+
+        var projectStub = new ProjectStub { ProjectId = "Projects-1", ProjectName = "Payments" };
+        projectRepository.ConvertProject(Arg.Any<ProjectStub>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(CreateProjectWithExternalFeedPackage()));
+        channelRepository.GetChannelByName("Projects-1", "Default")
+            .Returns(Task.FromResult(new Channel { Id = "Channels-1", Name = "Default" }));
+        deployer.CheckDeployment(Arg.Any<EnvironmentDeployment>())
+            .Returns(Task.FromResult(new DeploymentCheckResult { Success = true }));
+
+        var config = DeployConfig.Create(
+            new Environment { Id = "Environments-1", Name = "Test" },
+            "Default",
+            null,
+            null,
+            null,
+            runningInteractively: false).Value;
+
+        var runner = new DeployRunner(TestLanguageProvider.Create(), helper, deployer, uiLogger);
+
+        var result = await runner.Run(config, progressBar, new List<ProjectStub> { projectStub }, interaction);
+
+        Assert.That(result, Is.EqualTo(0));
+        await deployer.Received(1).StartJob(
+            Arg.Is<IOctoJob>(job => HasExternalFeedPackage(job)),
+            uiLogger);
+    }
+
     private static Project CreateProjectWithNewPackage()
     {
         return new Project
@@ -146,5 +188,58 @@ public class DeployRunnerTests
                 }
             }
         };
+    }
+
+    private static Project CreateProjectWithExternalFeedPackage()
+    {
+        return new Project
+        {
+            ProjectId = "Projects-1",
+            ProjectName = "Payments",
+            LifeCycleId = "Lifecycles-1",
+            CurrentRelease = new Release
+            {
+                Version = "1.0.0",
+                SelectedPackages = new List<PackageStub>
+                {
+                    new() { StepId = "Step-1", Version = "1.0.0", FeedId = "Feeds-External" }
+                }
+            },
+            AvailablePackages = new List<PackageStep>
+            {
+                new()
+                {
+                    StepId = "Step-1",
+                    StepName = "Deploy web",
+                    AvailablePackages = new List<PackageStub>
+                    {
+                        new()
+                        {
+                            Id = "Acme.Web",
+                            FeedId = "Feeds-External",
+                            StepId = "Step-1",
+                            StepName = "Deploy web",
+                            ActionName = "Deploy package",
+                            PackageReferenceName = "Web",
+                            Version = "1.0.1"
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private static bool HasExternalFeedPackage(IOctoJob job)
+    {
+        var deployment = job as EnvironmentDeployment;
+        if (deployment == null)
+        {
+            return false;
+        }
+
+        var package = deployment.ProjectDeployments.Single().Packages.Single();
+        return package.FeedId == "Feeds-External" &&
+               package.ActionName == "Deploy package" &&
+               package.PackageReferenceName == "Web";
     }
 }

@@ -27,7 +27,10 @@ namespace ShipItSharp.Core.Deployment.Models
     {
         public string PackageName { get; set; }
         public string PackageId { get; set; }
+        public string FeedId { get; set; }
         public string StepName { get; set; }
         public string StepId { get; set; }
+        public string ActionName { get; set; }
+        public string PackageReferenceName { get; set; }
     }
 }

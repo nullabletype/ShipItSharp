@@ -145,7 +145,8 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 {
                     throw new InvalidOperationException($"Cannot create a release for project '{project.ProjectName}' because package '{package.StepName}' has no version.");
                 }
-                release.SelectedPackages.Add(new SelectedPackage { Version = package.PackageName, ActionName = package.StepName });
+                var actionName = string.IsNullOrEmpty(package.ActionName) ? package.StepName : package.ActionName;
+                release.SelectedPackages.Add(new SelectedPackage(actionName, package.PackageReferenceName, package.PackageName));
             }
             var result =
                 await _octopusHelper.Client.Repository.Releases.Create(release, ignoreChannelRules, CancellationToken.None);

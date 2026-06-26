@@ -182,7 +182,10 @@ namespace ShipItSharp.Console
                 // Check if we have any packages that are different versions. If they're the same, we don't need to deploy.
                 foreach (var package in project.Packages)
                 {
-                    if (!currentRelease.SelectedPackages.Any(pack => (pack.StepName == package.StepName) && (package.PackageName == pack.Version)))
+                    if (!currentRelease.SelectedPackages.Any(pack =>
+                            (pack.StepName == package.StepName) &&
+                            (package.PackageName == pack.Version) &&
+                            (string.IsNullOrEmpty(package.FeedId) || string.IsNullOrEmpty(pack.FeedId) || package.FeedId == pack.FeedId)))
                     {
                         needsDeploy = true;
                     }

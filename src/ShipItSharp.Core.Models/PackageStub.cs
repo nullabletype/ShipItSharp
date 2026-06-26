@@ -28,15 +28,19 @@ namespace ShipItSharp.Core.Deployment.Models
     public class PackageStub
     {
         public string Id { get; set; }
+        public string FeedId { get; set; }
         public string Version { get; set; }
         public string StepName { get; set; }
         public string StepId { get; set; }
+        public string ActionName { get; set; }
+        public string PackageReferenceName { get; set; }
         public DateTime? PublishedOn { get; set; }
     }
 
     public class PackageFull
     {
         public string Id { get; set; }
+        public string FeedId { get; set; }
         public string Version { get; set; }
         public string StepName { get; set; }
         public string Message { get; set; }

@@ -67,7 +67,7 @@ namespace ShipItSharp.Console.Commands
 
             var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, LanguageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
             var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"));
+            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
             var machineName = GetStringValueFromOption(PromoteOptionNames.Machine);
             var prioritise = GetBoolValueFromOption(PromoteOptionNames.Prioritise);
             var updateVariables = GetBoolValueFromOption(PromoteOptionNames.UpdateVariables);

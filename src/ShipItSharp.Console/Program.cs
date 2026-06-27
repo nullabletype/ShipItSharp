@@ -116,6 +116,11 @@ namespace ShipItSharp.Console
                 {
                     var channel = provider.GetService<Channel>();
                     app.Command(channel.CommandName, vari => channel.Configure(vari));
+                },
+                (app, provider) =>
+                {
+                    var task = provider.GetService<TaskCommand>();
+                    app.Command(task.CommandName, tasks => task.Configure(tasks));
                 }
             };
 
@@ -236,6 +241,9 @@ namespace ShipItSharp.Console
                 .AddTransient<VariablesWithProfile, VariablesWithProfile>()
                 .AddTransient<Channel, Channel>()
                 .AddTransient<CleanupChannels, CleanupChannels>()
+                .AddTransient<TaskCommand, TaskCommand>()
+                .AddTransient<PrioritiseTask, PrioritiseTask>()
+                .AddTransient<CancelTask, CancelTask>()
                 .AddTransient<Commands.Environment, Commands.Environment>()
                 .AddTransient<IUiLogger, ConsoleJobRunner>()
                 .AddTransient<IProgressBar, ConsoleProgressBar>().AddMemoryCache()
@@ -246,6 +254,7 @@ namespace ShipItSharp.Console
                 .AddTransient<DeploySpecificRunner, DeploySpecificRunner>()
                 .AddTransient<ChannelsRunner, ChannelsRunner>()
                 .AddTransient<EnvironmentRunner, EnvironmentRunner>()
+                .AddTransient<TaskRunner, TaskRunner>()
                 .AddTransient<EnsureEnvironmentRunner, EnsureEnvironmentRunner>()
                 .AddTransient<DeleteEnvironmentRunner, DeleteEnvironmentRunner>()
                 .AddTransient<EnvironmentToTeamRunner, EnvironmentToTeamRunner>()

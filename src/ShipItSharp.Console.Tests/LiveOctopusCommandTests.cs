@@ -288,6 +288,44 @@ public class LiveOctopusCommandTests
         }
     }
 
+    [Test]
+    public async Task TaskCommand_PrioritiseMovesQueuedEnvironmentTasksAgainstLiveInstance()
+    {
+        var deployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.1");
+
+        try
+        {
+            var result = await RunShipIt("task", "prioritise", "-e", _sourceEnvironment.Name);
+
+            AssertCommandSucceeded(result);
+            Assert.That(result.Output, Does.Contain("Prioritised"));
+            Assert.That(result.Output, Does.Contain(deployment.TaskId));
+        }
+        finally
+        {
+            await CancelTaskIfActive(deployment.TaskId);
+        }
+    }
+
+    [Test]
+    public async Task TaskCommand_CancelCancelsQueuedEnvironmentTasksAgainstLiveInstance()
+    {
+        var deployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.2");
+
+        var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name);
+
+        AssertCommandSucceeded(result);
+        Assert.That(result.Output, Does.Contain("Cancelled"));
+        Assert.That(result.Output, Does.Contain(deployment.TaskId));
+
+        var task = await WaitForTaskState(
+            deployment.TaskId,
+            state => state is TaskState.Canceled or TaskState.Cancelling,
+            TimeSpan.FromSeconds(30));
+
+        Assert.That(task.State, Is.EqualTo(TaskState.Canceled).Or.EqualTo(TaskState.Cancelling));
+    }
+
     private async Task<EnvironmentResource> EnsureEnvironment(string name)
     {
         var existing = await FindEnvironment(name);
@@ -597,6 +635,73 @@ public class LiveOctopusCommandTests
     private async Task<ReleaseResource> GetSampleRelease(string version)
     {
         return await _client.Repository.Projects.GetReleaseByVersion(_sampleProject, version, CancellationToken.None);
+    }
+
+    private async Task<DeploymentResource> CreateQueuedSampleDeployment(EnvironmentResource environment, string releaseVersion)
+    {
+        var release = await CreateSampleRelease(releaseVersion);
+        var deployment = new DeploymentResource
+        {
+            ChannelId = _sampleChannel.Id,
+            Comments = "Created by ShipItSharp live task command tests",
+            Created = DateTimeOffset.UtcNow,
+            EnvironmentId = environment.Id,
+            Name = $"{_sampleProject.Name}:{_samplePackage.PackageId}",
+            ProjectId = _sampleProject.Id,
+            ReleaseId = release.Id,
+            QueueTime = DateTimeOffset.UtcNow.AddMinutes(30),
+            QueueTimeExpiry = DateTimeOffset.UtcNow.AddHours(1)
+        };
+
+        return await _client.Repository.Deployments.Create(deployment, CancellationToken.None);
+    }
+
+    private async Task<ReleaseResource> CreateSampleRelease(string version)
+    {
+        var release = new ReleaseResource
+        {
+            Assembled = DateTimeOffset.UtcNow,
+            ChannelId = _sampleChannel.Id,
+            ProjectId = _sampleProject.Id,
+            ReleaseNotes = "Created by ShipItSharp live task command tests",
+            Version = version
+        };
+        release.SelectedPackages.Add(new SelectedPackage(_samplePackage.ActionName, null, _samplePackage.Version));
+
+        return await _client.Repository.Releases.Create(release, CancellationToken.None);
+    }
+
+    private async Task CancelTaskIfActive(string taskId)
+    {
+        if (string.IsNullOrEmpty(taskId))
+        {
+            return;
+        }
+
+        var task = await _client.Repository.Tasks.Get(taskId, CancellationToken.None);
+        if (task.State is TaskState.Success or TaskState.Failed or TaskState.Canceled)
+        {
+            return;
+        }
+
+        await _client.Repository.Tasks.Cancel(task, CancellationToken.None);
+    }
+
+    private async Task<TaskResource> WaitForTaskState(string taskId, Func<TaskState, bool> matches, TimeSpan timeout)
+    {
+        using var cancellation = new CancellationTokenSource(timeout);
+        while (!cancellation.IsCancellationRequested)
+        {
+            var task = await _client.Repository.Tasks.Get(taskId, CancellationToken.None);
+            if (matches(task.State))
+            {
+                return task;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellation.Token);
+        }
+
+        return await _client.Repository.Tasks.Get(taskId, CancellationToken.None);
     }
 
     private async Task AssertDeploymentExists(EnvironmentResource environment, ReleaseResource release)

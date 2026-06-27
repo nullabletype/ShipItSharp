@@ -145,6 +145,18 @@ namespace ShipItSharp.Core.Octopus.Repositories
             return (deploymentResource.ProjectId == projectId) && (deploymentResource.EnvironmentId == envId);
         }
 
+        public async Task PrioritiseTask(string taskId)
+        {
+            var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);
+            await _octopusHelper.Client.Repository.Tasks.Prioritize(task, CancellationToken.None);
+        }
+
+        public async Task CancelTask(string taskId)
+        {
+            var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);
+            await _octopusHelper.Client.Repository.Tasks.Cancel(task, CancellationToken.None);
+        }
+
         public async Task<TaskDetails> GetTaskDetails(string taskId)
         {
             var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);

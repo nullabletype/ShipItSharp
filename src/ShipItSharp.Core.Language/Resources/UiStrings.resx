@@ -444,6 +444,30 @@
     <data name="OctopusTaskNotFound" xml:space="preserve">
       <value>Octopus task {0} was not found in the task list.</value>
     </data>
+    <data name="LoadingQueuedTasks" xml:space="preserve">
+      <value>Loading queued deployment tasks...</value>
+    </data>
+    <data name="LoadingDeployments" xml:space="preserve">
+      <value>Loading deployment details...</value>
+    </data>
+    <data name="PrioritisingTask" xml:space="preserve">
+      <value>Prioritising task {0}</value>
+    </data>
+    <data name="CancellingTask" xml:space="preserve">
+      <value>Cancelling task {0}</value>
+    </data>
+    <data name="NoQueuedDeploymentTasksForEnvironment" xml:space="preserve">
+      <value>No queued deployment tasks found for {0}.</value>
+    </data>
+    <data name="PrioritisedQueuedTasks" xml:space="preserve">
+      <value>Prioritised {0} queued deployment task(s) for {1}.</value>
+    </data>
+    <data name="CancelledQueuedTasks" xml:space="preserve">
+      <value>Cancelled {0} queued deployment task(s) for {1}.</value>
+    </data>
+    <data name="TaskId" xml:space="preserve">
+      <value>Task Id</value>
+    </data>
     <data name="ProfileFileNotFound" xml:space="preserve">
       <value>Profile file not found: {0}</value>
     </data>

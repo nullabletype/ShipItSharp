@@ -171,7 +171,7 @@ namespace ShipItSharp.Console.ConsoleTools
 
             if (!System.Console.IsOutputRedirected)
             {
-                System.Console.SetCursorPosition(0, System.Console.CursorTop);
+                ParkCursor(textLength);
             }
             else
             {
@@ -210,6 +210,12 @@ namespace ShipItSharp.Console.ConsoleTools
         private static int GetBufferWidth()
         {
             return System.Console.IsOutputRedirected ? 80 : System.Console.BufferWidth;
+        }
+
+        private static void ParkCursor(int textLength)
+        {
+            var cursorLeft = Math.Clamp(textLength, 0, Math.Max(0, GetBufferWidth() - 1));
+            System.Console.SetCursorPosition(cursorLeft, System.Console.CursorTop);
         }
 
         private readonly struct ConsoleSegment

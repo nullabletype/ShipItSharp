@@ -24,28 +24,31 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using ShipItSharp.Core.Configuration.Interfaces;
 
 namespace ShipItSharp.Core.VersionChecking
 {
     public class VersionChecker : IVersionChecker
     {
         private readonly IVersionCheckingProvider _provider;
+        private readonly IConfiguration _configuration;
 
-        public VersionChecker(IVersionCheckingProvider provider)
+        public VersionChecker(IVersionCheckingProvider provider, IConfiguration configuration = null)
         {
             _provider = provider;
+            _configuration = configuration;
         }
 
         public async Task<VersionCheckResult> GetLatestVersion()
         {
-            var latestVersion = await _provider.GetLatestRelease();
+            var latestVersion = await _provider.GetLatestRelease(_configuration?.CheckForBetaReleases ?? false);
             if (latestVersion == null)
             {
                 return new VersionCheckResult();
             }
             var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
             latestVersion.CurrentVersion = currentVersion.ToString().TrimEnd(".0".ToCharArray());
-            var latestTagVersion = new Version(latestVersion.TagName.Split('-')[0]);
+            var latestTagVersion = new Version(latestVersion.TagName.TrimStart('v').Split('-')[0]);
             if (currentVersion.CompareTo(latestTagVersion) < 0)
             {
                 return new VersionCheckResult

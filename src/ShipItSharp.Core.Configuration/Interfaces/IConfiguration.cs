@@ -31,6 +31,7 @@ namespace ShipItSharp.Core.Configuration.Interfaces
         string OctopusUrl { get; set; }
         ChangeLogProviderConfiguration ChangeProviderConfiguration { get; set; }
         bool EnableTrace { get; set; }
+        bool CheckForBetaReleases { get; set; }
         int CacheTimeoutInSeconds { get; set; }
         string DefaultChannel { get; set; }
     }

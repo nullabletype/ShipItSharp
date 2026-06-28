@@ -44,7 +44,8 @@ namespace ShipItSharp.Core.Configuration
                 ApiKey = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleApiKey"),
                 OctopusUrl = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleOctopusUrl"),
                 ProjectGroupFilterString = LanguageProvider.GetString(LanguageSection.ConfigurationStrings, "SampleProjectGroupFilterString"),
-                DefaultChannel = "master"
+                DefaultChannel = "master",
+                CheckForBetaReleases = false
             };
         }
     }

@@ -63,7 +63,8 @@ public class JsonConfigurationProviderTests
             OctopusUrl = "https://octopus.example",
             ApiKey = "API-123",
             DefaultChannel = "main",
-            CacheTimeoutInSeconds = 30
+            CacheTimeoutInSeconds = 30,
+            CheckForBetaReleases = true
         }));
         var provider = new JsonConfigurationProvider(TestLanguageProvider.Create(), validator, path);
 
@@ -74,6 +75,7 @@ public class JsonConfigurationProviderTests
         Assert.That(result.Configuration.ApiKey, Is.EqualTo("API-123"));
         Assert.That(validatedConfig, Is.Not.Null);
         Assert.That(validatedConfig.DefaultChannel, Is.EqualTo("main"));
+        Assert.That(validatedConfig.CheckForBetaReleases, Is.True);
     }
 
     [Test]

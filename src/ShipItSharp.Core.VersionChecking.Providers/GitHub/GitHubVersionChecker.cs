@@ -42,12 +42,13 @@ namespace ShipItSharp.Core.VersionChecking.GitHub
             _log = LoggingProvider.GetLogger<GitHubVersionChecker>();
         }
 
-        public async Task<IRelease> GetLatestRelease()
+        public async Task<IRelease> GetLatestRelease(bool includePreReleases)
         {
             try
             {
                 var response = await Client.GetStringAsync("https://api.github.com/repos/nullabletype/ShipItSharp/releases");
-                var release = JsonConvert.DeserializeObject<List<Release>>(response)?.FirstOrDefault();
+                var release = JsonConvert.DeserializeObject<List<Release>>(response)
+                    ?.FirstOrDefault(r => includePreReleases || !r.PreRelease);
                 return release;
             }
             catch (Exception e)

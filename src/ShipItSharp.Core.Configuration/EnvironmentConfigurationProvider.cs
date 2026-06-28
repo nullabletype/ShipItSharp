@@ -34,6 +34,7 @@ namespace ShipItSharp.Core.Configuration
         public const string ApiKeyEnvironmentVariable = "SHIPITSHARP_OCTOPUS_API_KEY";
         public const string DefaultChannelEnvironmentVariable = "SHIPITSHARP_DEFAULT_CHANNEL";
         public const string CacheTimeoutEnvironmentVariable = "SHIPITSHARP_CACHE_TIMEOUT_SECONDS";
+        public const string CheckForBetaReleasesEnvironmentVariable = "SHIPITSHARP_CHECK_FOR_BETA_RELEASES";
 
         private readonly IConfigurationConnectivityValidator _connectivityValidator;
 
@@ -60,7 +61,8 @@ namespace ShipItSharp.Core.Configuration
                 OctopusUrl = Environment.GetEnvironmentVariable(OctopusUrlEnvironmentVariable),
                 ApiKey = Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariable),
                 DefaultChannel = Environment.GetEnvironmentVariable(DefaultChannelEnvironmentVariable) ?? "Default",
-                CacheTimeoutInSeconds = GetCacheTimeout()
+                CacheTimeoutInSeconds = GetCacheTimeout(),
+                CheckForBetaReleases = GetCheckForBetaReleases()
             };
 
             await ValidateConfiguration(config, loadResult);
@@ -81,6 +83,12 @@ namespace ShipItSharp.Core.Configuration
             }
 
             return 1;
+        }
+
+        private static bool GetCheckForBetaReleases()
+        {
+            var configuredValue = Environment.GetEnvironmentVariable(CheckForBetaReleasesEnvironmentVariable);
+            return bool.TryParse(configuredValue, out var checkForBetaReleases) && checkForBetaReleases;
         }
 
         private async Task ValidateConfiguration(IConfiguration config, ConfigurationLoadResult validationResult)

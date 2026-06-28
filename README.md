@@ -64,6 +64,7 @@ Minimal configuration:
   "ProjectGroupFilterString": "",
   "DefaultChannel": "",
   "CacheTimeoutInSeconds": 300,
+  "CheckForBetaReleases": false,
   "EnableTrace": false
 }
 ```
@@ -75,7 +76,10 @@ Useful fields:
 - `ProjectGroupFilterString`: Optional default text used to restrict project group matches.
 - `DefaultChannel`: Optional fallback channel used by deploy commands that allow falling back to a default.
 - `CacheTimeoutInSeconds`: Octopus object cache duration.
+- `CheckForBetaReleases`: Opts the startup version check into GitHub prereleases such as beta or prerelease tags. The default is `false`, so beta releases are not offered to regular users.
 - `EnableTrace`: Enables more verbose diagnostic logging when supported by the command path.
+
+When using environment-backed configuration, set `SHIPITSHARP_CHECK_FOR_BETA_RELEASES=true` to opt into beta release checks.
 
 Keep `config.json` out of source control when it contains real credentials.
 
@@ -167,6 +171,8 @@ Release builds should be produced from the console project:
 ```bash
 dotnet publish src/ShipItSharp.Console/ShipItSharp.Console.csproj -c Release
 ```
+
+GitHub Actions creates draft GitHub releases from pushed tags. Plain version tags such as `1.0.0` are treated as stable releases. Hyphenated SemVer tags such as `1.0.0-beta.1` or `1.0.0-prerelease.1` are marked as prereleases.
 
 Copy a real `config.json` next to the published executable before running it against Octopus.
 

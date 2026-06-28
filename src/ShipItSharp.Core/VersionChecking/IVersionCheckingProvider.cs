@@ -27,6 +27,6 @@ namespace ShipItSharp.Core.VersionChecking
 {
     public interface IVersionCheckingProvider
     {
-        Task<IRelease> GetLatestRelease();
+        Task<IRelease> GetLatestRelease(bool includePreReleases);
     }
 }

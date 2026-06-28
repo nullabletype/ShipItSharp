@@ -17,6 +17,7 @@ public class EnvironmentConfigurationProviderTests
         Clear(EnvironmentConfigurationProvider.ApiKeyEnvironmentVariable);
         Clear(EnvironmentConfigurationProvider.DefaultChannelEnvironmentVariable);
         Clear(EnvironmentConfigurationProvider.CacheTimeoutEnvironmentVariable);
+        Clear(EnvironmentConfigurationProvider.CheckForBetaReleasesEnvironmentVariable);
     }
 
     [Test]
@@ -30,6 +31,7 @@ public class EnvironmentConfigurationProviderTests
         Set(EnvironmentConfigurationProvider.ApiKeyEnvironmentVariable, "API-123");
         Set(EnvironmentConfigurationProvider.DefaultChannelEnvironmentVariable, "Main");
         Set(EnvironmentConfigurationProvider.CacheTimeoutEnvironmentVariable, "42");
+        Set(EnvironmentConfigurationProvider.CheckForBetaReleasesEnvironmentVariable, "true");
         var provider = new EnvironmentConfigurationProvider(TestLanguageProvider.Create(), validator);
 
         var result = await provider.LoadConfiguration();
@@ -39,6 +41,7 @@ public class EnvironmentConfigurationProviderTests
         Assert.That(result.Configuration.ApiKey, Is.EqualTo("API-123"));
         Assert.That(result.Configuration.DefaultChannel, Is.EqualTo("Main"));
         Assert.That(result.Configuration.CacheTimeoutInSeconds, Is.EqualTo(42));
+        Assert.That(result.Configuration.CheckForBetaReleases, Is.True);
         Assert.That(validatedConfig, Is.Not.Null);
     }
 
@@ -70,6 +73,7 @@ public class EnvironmentConfigurationProviderTests
         Assert.That(result.Success, Is.True);
         Assert.That(result.Configuration.DefaultChannel, Is.EqualTo("Default"));
         Assert.That(result.Configuration.CacheTimeoutInSeconds, Is.EqualTo(1));
+        Assert.That(result.Configuration.CheckForBetaReleases, Is.False);
     }
 
     [Test]

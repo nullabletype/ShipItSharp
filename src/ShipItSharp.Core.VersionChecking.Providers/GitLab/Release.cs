@@ -49,7 +49,7 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
 
         public bool PreRelease
         {
-            get => true;
+            get => TagName?.Contains("-") ?? false;
             set { }
         }
 

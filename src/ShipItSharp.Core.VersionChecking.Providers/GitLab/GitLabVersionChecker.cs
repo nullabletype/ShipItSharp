@@ -42,12 +42,13 @@ namespace ShipItSharp.Core.VersionChecking.GitLab
             _log = LoggingProvider.GetLogger<GitLabVersionChecker>();
         }
 
-        public async Task<IRelease> GetLatestRelease()
+        public async Task<IRelease> GetLatestRelease(bool includePreReleases)
         {
             try
             {
                 var response = await Client.GetStringAsync("https://gitlab.com/api/v4/projects/10756071/releases");
-                var release = JsonConvert.DeserializeObject<List<Release>>(response)?.FirstOrDefault();
+                var release = JsonConvert.DeserializeObject<List<Release>>(response)
+                    ?.FirstOrDefault(r => includePreReleases || !r.PreRelease);
                 return release;
             }
             catch (Exception e)

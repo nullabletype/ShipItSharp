@@ -105,7 +105,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: /home/runner/work/shipitsharp-release/zips/*
-        name: $GITHUB_REF_NAME
+        name: ${{ github.ref_name }}
         generate_release_notes: true
         prerelease: ${{ contains(github.ref_name, '-') }}
         draft: true

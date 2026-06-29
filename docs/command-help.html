@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShipItSharp Command Help</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f7f7f4; --text: #1e1f22; --muted: #5f6368; --panel: #ffffff; --border: #d8d8d2; --code: #101214; --codeText: #f3f4f6; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #151719; --text: #f1f3f4; --muted: #a8adb2; --panel: #202327; --border: #34383d; --code: #0b0d0f; --codeText: #e8eaed; } }
+    body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+    header, main { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    header { padding-bottom: 8px; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    .meta { color: var(--muted); margin: 0; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    nav a { color: inherit; text-decoration: none; border: 1px solid var(--border); background: var(--panel); border-radius: 4px; padding: 4px 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    section { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; margin: 0 0 18px; overflow: hidden; }
+    h2 { margin: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 17px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    pre { margin: 0; padding: 16px; overflow: auto; background: var(--code); color: var(--codeText); font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ShipItSharp Command Help</h1>
+    <p class="meta">Generated from the local command parser on 2026-06-29 23:41 &#x2B;01:00.</p>
+    <nav>
+      <a href="#root">ShipIt</a>
+      <a href="#deploy">ShipIt deploy</a>
+      <a href="#deploy-profile">ShipIt deploy profile</a>
+      <a href="#deploy-profiledirectory">ShipIt deploy profiledirectory</a>
+      <a href="#deploy-specific">ShipIt deploy specific</a>
+      <a href="#promote">ShipIt promote</a>
+      <a href="#env">ShipIt env</a>
+      <a href="#env-ensure">ShipIt env ensure</a>
+      <a href="#env-delete">ShipIt env delete</a>
+      <a href="#env-disable">ShipIt env disable</a>
+      <a href="#env-enable">ShipIt env enable</a>
+      <a href="#env-addtoteam">ShipIt env addtoteam</a>
+      <a href="#env-addtolifecycle">ShipIt env addtolifecycle</a>
+      <a href="#env-show">ShipIt env show</a>
+      <a href="#release">ShipIt release</a>
+      <a href="#release-rename">ShipIt release rename</a>
+      <a href="#release-updatevariables">ShipIt release updatevariables</a>
+      <a href="#var">ShipIt var</a>
+      <a href="#var-profile">ShipIt var profile</a>
+      <a href="#channel">ShipIt channel</a>
+      <a href="#channel-cleanup">ShipIt channel cleanup</a>
+      <a href="#task">ShipIt task</a>
+      <a href="#task-prioritise">ShipIt task prioritise</a>
+      <a href="#task-cancel">ShipIt task cancel</a>
+    </nav>
+  </header>
+  <main>
+    <section id="root">
+      <h2>ShipIt</h2>
+      <pre>Usage: ShipIt [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help  Show help information.&#xA;&#xA;Commands:&#xA;  channel       Options pertaining to Channels&#xA;  deploy        Deploy projects to environments&#xA;  env           Commands for dealing with environments&#xA;  promote       Promote project releases between environments&#xA;  release       Options pertaining to releases&#xA;  task          Manage Octopus deployment tasks&#xA;  var           Add or update variables&#xA;&#xA;Run &#x27;ShipIt [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="deploy">
+      <h2>ShipIt deploy</h2>
+      <pre>Deploy projects to environments&#xA;&#xA;Usage: ShipIt deploy [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help            Show help information.&#xA;  -a|--apikey             Octopus API key&#xA;  -u|--url                URL for your Octopus Deploy installation&#xA;  -n|--noprompt           Run without interactive prompts&#xA;  -c|--channel            The channel to deploy&#xA;  -e|--environment        Environment name&#xA;  -g|--groupfilter        Group filter keyword&#xA;  -s|--saveprofile        Don&#x27;t deploy, but save a profile instead to use later&#xA;                          with the profile command&#xA;  -d|--fallbacktodefault  Fallback to the default channel if there are no&#xA;                          packages available for the selected channel for a&#xA;                          project. Be careful, as this disables validation of&#xA;                          packages for channels before deploy.&#xA;  -r|--releasename        Release version number (must follow semantic&#xA;                          versioning)&#xA;  -m|--machine            Optional deployment target machine Id or name&#xA;  -p|--prioritise         Move tasks to top of the queue&#xA;&#xA;Commands:&#xA;  profile                 Deploy using a stored profile&#xA;  profiledirectory        Deploy using every auto profile in a directory&#xA;  specific                Deploy a specific release version to an environment&#xA;&#xA;Run &#x27;deploy [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="deploy-profile">
+      <h2>ShipIt deploy profile</h2>
+      <pre>Deploy using a stored profile&#xA;&#xA;Usage: ShipIt deploy profile [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help        Show help information.&#xA;  -a|--apikey         Octopus API key&#xA;  -u|--url            URL for your Octopus Deploy installation&#xA;  -f|--file           The path to the JSON profile file you wish to deploy&#xA;  -r|--forceredeploy  Force redeployment of the same package if no new one&#xA;                      exists</pre>
+    </section>
+    <section id="deploy-profiledirectory">
+      <h2>ShipIt deploy profiledirectory</h2>
+      <pre>Deploy using every auto profile in a directory&#xA;&#xA;Usage: ShipIt deploy profiledirectory [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help        Show help information.&#xA;  -a|--apikey         Octopus API key&#xA;  -u|--url            URL for your Octopus Deploy installation&#xA;  -d|--directory      The path to the directory containing the profile files you&#xA;                      wish to deploy. Profile files must contain auto.profile&#xA;  -r|--forceredeploy  Force redeployment of the same package if no new one&#xA;                      exists&#xA;  -m|--monitor        Stay running monitoring for package updates, pausing for&#xA;                      the specified time in seconds&#xA;  --actioninstall     Deprecated compatibility option; currently ignored&#xA;  --actionrun         Deprecated compatibility option; currently ignored</pre>
+    </section>
+    <section id="deploy-specific">
+      <h2>ShipIt deploy specific</h2>
+      <pre>Deploy a specific release version to an environment&#xA;&#xA;Usage: ShipIt deploy specific [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help            Show help information.&#xA;  -a|--apikey             Octopus API key&#xA;  -u|--url                URL for your Octopus Deploy installation&#xA;  -n|--noprompt           Run without interactive prompts&#xA;  -e|--environment        Environment name&#xA;  -g|--groupfilter        Group filter keyword&#xA;  -d|--fallbacktodefault  Fallback to the default channel if there are no&#xA;                          packages available for the selected channel for a&#xA;                          project. Be careful, as this disables validation of&#xA;                          packages for channels before deploy.&#xA;  -r|--releasename        Release version number (must follow semantic&#xA;                          versioning)&#xA;  -f|--fallbacktochannel  Fallback to this channel if there are no releases&#xA;                          available for the selected channel for a project.&#xA;  -m|--machine            Optional deployment target machine Id or name&#xA;  -p|--prioritise         Move tasks to top of the queue</pre>
+    </section>
+    <section id="promote">
+      <h2>ShipIt promote</h2>
+      <pre>Promote project releases between environments&#xA;&#xA;Usage: ShipIt promote [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help           Show help information.&#xA;  -a|--apikey            Octopus API key&#xA;  -u|--url               URL for your Octopus Deploy installation&#xA;  -n|--noprompt          Run without interactive prompts&#xA;  -e|--environment       Environment name&#xA;  -s|--sourcenvironment  Environment you wish to promote from&#xA;  -g|--groupfilter       Group filter keyword&#xA;  -m|--machine           Optional deployment target machine Id or name&#xA;  -p|--prioritise        Move tasks to top of the queue&#xA;  -v|--updatevariables   Update release variables before promotion</pre>
+    </section>
+    <section id="env">
+      <h2>ShipIt env</h2>
+      <pre>Commands for dealing with environments&#xA;&#xA;Usage: ShipIt env [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help    Show help information.&#xA;  -a|--apikey     Octopus API key&#xA;  -u|--url        URL for your Octopus Deploy installation&#xA;&#xA;Commands:&#xA;  addtolifecycle  Add an environment to a lifecycle phase&#xA;  addtoteam       Add an environment to a team&#xA;  delete          Delete an environment after confirmation&#xA;  disable         Disable all deployment targets in an environment, or one&#xA;                  optional machine&#xA;  enable          Enable all deployment targets in an environment, or one&#xA;                  optional machine&#xA;  ensure          Create an environment if it does not already exist&#xA;  show            Show project deployments for an environment&#xA;&#xA;Run &#x27;env [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="env-ensure">
+      <h2>ShipIt env ensure</h2>
+      <pre>Create an environment if it does not already exist&#xA;&#xA;Usage: ShipIt env ensure [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -n|--name         Environment name&#xA;  -d|--description  A short description</pre>
+    </section>
+    <section id="env-delete">
+      <h2>ShipIt env delete</h2>
+      <pre>Delete an environment after confirmation&#xA;&#xA;Usage: ShipIt env delete [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help           Show help information.&#xA;  -a|--apikey            Octopus API key&#xA;  -u|--url               URL for your Octopus Deploy installation&#xA;  -e|--environment       Environment name&#xA;  -s|--skipconfirmation  Skip any confirmation messages</pre>
+    </section>
+    <section id="env-disable">
+      <h2>ShipIt env disable</h2>
+      <pre>Disable all deployment targets in an environment, or one optional machine&#xA;&#xA;Usage: ShipIt env disable [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--environment  Environment name&#xA;  -m|--machine      Optional deployment target machine Id or name</pre>
+    </section>
+    <section id="env-enable">
+      <h2>ShipIt env enable</h2>
+      <pre>Enable all deployment targets in an environment, or one optional machine&#xA;&#xA;Usage: ShipIt env enable [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--environment  Environment name&#xA;  -m|--machine      Optional deployment target machine Id or name</pre>
+    </section>
+    <section id="env-addtoteam">
+      <h2>ShipIt env addtoteam</h2>
+      <pre>Add an environment to a team&#xA;&#xA;Usage: ShipIt env addtoteam [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help  Show help information.&#xA;  -a|--apikey   Octopus API key&#xA;  -u|--url      URL for your Octopus Deploy installation&#xA;  -e|--envid    Environment Id&#xA;  -t|--teamid   Team Id</pre>
+    </section>
+    <section id="env-addtolifecycle">
+      <h2>ShipIt env addtolifecycle</h2>
+      <pre>Add an environment to a lifecycle phase&#xA;&#xA;Usage: ShipIt env addtolifecycle [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--envid        Environment Id&#xA;  -l|--lcid         Lifecycle Id&#xA;  -p|--phasenumber  Phase number&#xA;  -t|--auto         Add the environment as an automatic deployment target</pre>
+    </section>
+    <section id="env-show">
+      <h2>ShipIt env show</h2>
+      <pre>Show project deployments for an environment&#xA;&#xA;Usage: ShipIt env show [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--environment  Environment name&#xA;  -g|--groupfilter  Group filter keyword</pre>
+    </section>
+    <section id="release">
+      <h2>ShipIt release</h2>
+      <pre>Options pertaining to releases&#xA;&#xA;Usage: ShipIt release [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help     Show help information.&#xA;  -a|--apikey      Octopus API key&#xA;  -u|--url         URL for your Octopus Deploy installation&#xA;  -n|--noprompt    Run without interactive prompts&#xA;&#xA;Commands:&#xA;  rename           Rename releases deployed to an environment&#xA;  updatevariables  Update release variables for deployed releases in an&#xA;                   environment&#xA;&#xA;Run &#x27;release [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="release-rename">
+      <h2>ShipIt release rename</h2>
+      <pre>Rename releases deployed to an environment&#xA;&#xA;Usage: ShipIt release rename [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -n|--noprompt     Run without interactive prompts&#xA;  -e|--environment  Environment name&#xA;  -r|--releasename  Release version number (must follow semantic versioning)&#xA;  -g|--groupfilter  Group filter keyword</pre>
+    </section>
+    <section id="release-updatevariables">
+      <h2>ShipIt release updatevariables</h2>
+      <pre>Update release variables for deployed releases in an environment&#xA;&#xA;Usage: ShipIt release updatevariables [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help           Show help information.&#xA;  -a|--apikey            Octopus API key&#xA;  -u|--url               URL for your Octopus Deploy installation&#xA;  -e|--environment       Environment name&#xA;  -g|--groupfilter       Group filter keyword&#xA;  -s|--skipconfirmation  Skip any confirmation messages</pre>
+    </section>
+    <section id="var">
+      <h2>ShipIt var</h2>
+      <pre>Add or update variables&#xA;&#xA;Usage: ShipIt var [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help  Show help information.&#xA;  -a|--apikey   Octopus API key&#xA;  -u|--url      URL for your Octopus Deploy installation&#xA;&#xA;Commands:&#xA;  profile       Add or update variables using a profile file&#xA;&#xA;Run &#x27;var [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="var-profile">
+      <h2>ShipIt var profile</h2>
+      <pre>Add or update variables using a profile file&#xA;&#xA;Usage: ShipIt var profile [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help   Show help information.&#xA;  -a|--apikey    Octopus API key&#xA;  -u|--url       URL for your Octopus Deploy installation&#xA;  -f|--filepath  The path to the JSON variable profile file to apply</pre>
+    </section>
+    <section id="channel">
+      <h2>ShipIt channel</h2>
+      <pre>Options pertaining to Channels&#xA;&#xA;Usage: ShipIt channel [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help   Show help information.&#xA;  -a|--apikey    Octopus API key&#xA;  -u|--url       URL for your Octopus Deploy installation&#xA;  -n|--noprompt  Run without interactive prompts&#xA;&#xA;Commands:&#xA;  cleanup        Remove any channels for the specified projects that no longer&#xA;                 have packages available&#xA;&#xA;Run &#x27;channel [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="channel-cleanup">
+      <h2>ShipIt channel cleanup</h2>
+      <pre>Remove any channels for the specified projects that no longer have packages available&#xA;&#xA;Usage: ShipIt channel cleanup [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help                Show help information.&#xA;  -a|--apikey                 Octopus API key&#xA;  -u|--url                    URL for your Octopus Deploy installation&#xA;  -g|--groupfilter            Group filter keyword&#xA;  -t|--testmode               Runs in test mode (no changes made)&#xA;  -m|--maxpackagesperproject  Number of packages to check per project before&#xA;                              cleaning up channels</pre>
+    </section>
+    <section id="task">
+      <h2>ShipIt task</h2>
+      <pre>Manage Octopus deployment tasks&#xA;&#xA;Usage: ShipIt task [command] [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help  Show help information.&#xA;  -a|--apikey   Octopus API key&#xA;  -u|--url      URL for your Octopus Deploy installation&#xA;&#xA;Commands:&#xA;  cancel        Cancel queued deployment tasks for an environment&#xA;  prioritise    Move queued deployment tasks for an environment to the top of&#xA;                the queue&#xA;&#xA;Run &#x27;task [command] -?|-h|--help&#x27; for more information about a command.</pre>
+    </section>
+    <section id="task-prioritise">
+      <h2>ShipIt task prioritise</h2>
+      <pre>Move queued deployment tasks for an environment to the top of the queue&#xA;&#xA;Usage: ShipIt task prioritise [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--environment  Environment name</pre>
+    </section>
+    <section id="task-cancel">
+      <h2>ShipIt task cancel</h2>
+      <pre>Cancel queued deployment tasks for an environment&#xA;&#xA;Usage: ShipIt task cancel [options]&#xA;&#xA;Options:&#xA;  -?|-h|--help      Show help information.&#xA;  -a|--apikey       Octopus API key&#xA;  -u|--url          URL for your Octopus Deploy installation&#xA;  -e|--environment  Environment name</pre>
+    </section>
+  </main>
+</body>
+</html>

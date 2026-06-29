@@ -16,6 +16,7 @@ Most commands support filtering by project group and channel where appropriate.
 
 - Create releases and deploy or promote them to Octopus environments
 - Create and deploy packages to environments from profile files
+- Enable or disable all deployment targets in an environment, or a single target machine
 - Run profiled deployments as a Windows service
 - Rename releases across projects
 - Clean up old channels with no packages
@@ -117,7 +118,16 @@ Examples:
 ./ShipIt release updatevariables --environment "Production" --groupfilter "Payments"
 
 # Deploy from a saved profile
-./ShipIt deploy profile --filepath "./profiles/payments.profile"
+./ShipIt deploy profile --file "./profiles/payments.profile"
+
+# Disable all deployment target machines in an environment
+./ShipIt env disable --environment "Maintenance"
+
+# Enable one deployment target machine in an environment
+./ShipIt env enable --environment "Maintenance" --machine "Worker-01"
+
+# Add an environment to a lifecycle phase as an automatic deployment target
+./ShipIt env addtolifecycle --envid "Environments-1" --lcid "Lifecycles-1" --phasenumber 1 --auto
 ```
 
 Command options can also be passed with the short aliases shown in each command's help output.

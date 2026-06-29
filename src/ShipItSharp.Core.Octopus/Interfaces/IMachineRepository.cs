@@ -28,5 +28,9 @@ namespace ShipItSharp.Core.Octopus.Interfaces
     public interface IMachineRepository
     {
         Task<Machine> GetMachine(string idOrName, string environmentId);
+        Task<int> DisableMachines(string environmentId);
+        Task<bool> DisableMachine(string idOrName, string environmentId);
+        Task<int> EnableMachines(string environmentId);
+        Task<bool> EnableMachine(string idOrName, string environmentId);
     }
 }

@@ -45,6 +45,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnsureEnvironmentCommand");
 
             AddToRegister(EnsureEnvironmentOptionNames.Name, command.Option("-n|--name", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
             AddToRegister(EnsureEnvironmentOptionNames.Description, command.Option("-d|--description", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Description"), CommandOptionType.SingleValue));

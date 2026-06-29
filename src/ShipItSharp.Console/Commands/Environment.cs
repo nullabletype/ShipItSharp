@@ -34,16 +34,20 @@ namespace ShipItSharp.Console.Commands
     internal class Environment : BaseCommand
     {
         private readonly DeleteEnvironment _delEnv;
+        private readonly DisableEnvironment _disableEnv;
+        private readonly EnableEnvironment _enableEnv;
         private readonly EnvironmentRunner _environmentRunner;
         private readonly EnsureEnvironment _ensureEnv;
         private readonly EnvironmentToLifecycle _envToLifecycle;
         private readonly EnvironmentToTeam _envToTeam;
         private readonly ShowEnvironment _showEnv;
 
-        public Environment(IOctopusHelper octoHelper, EnsureEnvironment ensureEnv, DeleteEnvironment delEnv, EnvironmentToTeam envToTeam, EnvironmentToLifecycle envToLifecycle, ShowEnvironment showEnv, ILanguageProvider languageProvider, EnvironmentRunner environmentRunner) : base(octoHelper, languageProvider)
+        public Environment(IOctopusHelper octoHelper, EnsureEnvironment ensureEnv, DeleteEnvironment delEnv, DisableEnvironment disableEnv, EnableEnvironment enableEnv, EnvironmentToTeam envToTeam, EnvironmentToLifecycle envToLifecycle, ShowEnvironment showEnv, ILanguageProvider languageProvider, EnvironmentRunner environmentRunner) : base(octoHelper, languageProvider)
         {
             _ensureEnv = ensureEnv;
             _delEnv = delEnv;
+            _disableEnv = disableEnv;
+            _enableEnv = enableEnv;
             _envToTeam = envToTeam;
             _envToLifecycle = envToLifecycle;
             _showEnv = showEnv;
@@ -58,6 +62,8 @@ namespace ShipItSharp.Console.Commands
             base.Configure(command);
             ConfigureSubCommand(_ensureEnv, command);
             ConfigureSubCommand(_delEnv, command);
+            ConfigureSubCommand(_disableEnv, command);
+            ConfigureSubCommand(_enableEnv, command);
             ConfigureSubCommand(_envToTeam, command);
             ConfigureSubCommand(_envToLifecycle, command);
             ConfigureSubCommand(_showEnv, command);

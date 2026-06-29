@@ -168,6 +168,12 @@
     <data name="EnvironmentNotFound" xml:space="preserve">
     <value>Environment not found with name {0}</value>
   </data>
+    <data name="EnvironmentDisabled" xml:space="preserve">
+    <value>Environment disabled: {0}</value>
+  </data>
+    <data name="EnvironmentEnabled" xml:space="preserve">
+    <value>Environment enabled: {0}</value>
+  </data>
     <data name="Error" xml:space="preserve">
     <value>Error: </value>
   </data>
@@ -251,6 +257,12 @@
   </data>
     <data name="NoMatchingMachine" xml:space="preserve">
     <value>No matching machine in the selected environment.</value>
+  </data>
+    <data name="MachineDisabled" xml:space="preserve">
+    <value>Machine disabled: {0} in {1}</value>
+  </data>
+    <data name="MachineEnabled" xml:space="preserve">
+    <value>Machine enabled: {0} in {1}</value>
   </data>
     <data name="NothingSelected" xml:space="preserve">
     <value>Nothing selected.</value>

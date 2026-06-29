@@ -124,10 +124,10 @@
         </value>
     </resheader>
     <data name="ApiKey" xml:space="preserve">
-    <value>The API key to use for deployment</value>
+    <value>Octopus API key</value>
   </data>
     <data name="AutomaticDeploy" xml:space="preserve">
-    <value>Automatic deploy</value>
+    <value>Add the environment as an automatic deployment target</value>
   </data>
     <data name="Channel" xml:space="preserve">
     <value>Options pertaining to Channels</value>
@@ -141,6 +141,12 @@
     <data name="DeployFromProfile" xml:space="preserve">
     <value>Deploy using a stored profile</value>
   </data>
+    <data name="DeployFromProfileDirectory" xml:space="preserve">
+    <value>Deploy using every auto profile in a directory</value>
+  </data>
+    <data name="DeploySpecificRelease" xml:space="preserve">
+    <value>Deploy a specific release version to an environment</value>
+  </data>
     <data name="DeployLatest" xml:space="preserve">
     <value>Deploy multiple projects</value>
   </data>
@@ -153,11 +159,32 @@
     <data name="EnvironmentCommands" xml:space="preserve">
     <value>Commands for dealing with environments</value>
   </data>
+    <data name="EnsureEnvironmentCommand" xml:space="preserve">
+    <value>Create an environment if it does not already exist</value>
+  </data>
+    <data name="DeleteEnvironmentCommand" xml:space="preserve">
+    <value>Delete an environment after confirmation</value>
+  </data>
+    <data name="DisableEnvironmentCommand" xml:space="preserve">
+    <value>Disable all deployment targets in an environment, or one optional machine</value>
+  </data>
+    <data name="EnableEnvironmentCommand" xml:space="preserve">
+    <value>Enable all deployment targets in an environment, or one optional machine</value>
+  </data>
+    <data name="EnvironmentToTeamCommand" xml:space="preserve">
+    <value>Add an environment to a team</value>
+  </data>
+    <data name="EnvironmentToLifecycleCommand" xml:space="preserve">
+    <value>Add an environment to a lifecycle phase</value>
+  </data>
+    <data name="ShowEnvironmentCommand" xml:space="preserve">
+    <value>Show project deployments for an environment</value>
+  </data>
     <data name="EnvironmentId" xml:space="preserve">
     <value>Environment Id</value>
   </data>
     <data name="EnvironmentName" xml:space="preserve">
-    <value>Name of the environment to deploy to</value>
+    <value>Environment name</value>
   </data>
     <data name="FallbackToChannel" xml:space="preserve">
     <value>Fallback to this channel if there are no releases available for the selected channel for a project.</value>
@@ -168,17 +195,20 @@
     <data name="ForceDeployOfSamePackage" xml:space="preserve">
     <value>Force redeployment of the same package if no new one exists</value>
   </data>
+    <data name="IgnoredCompatibilityOption" xml:space="preserve">
+    <value>Deprecated compatibility option; currently ignored</value>
+  </data>
     <data name="GroupFilter" xml:space="preserve">
     <value>Group filter keyword</value>
   </data>
     <data name="InteractiveDeploy" xml:space="preserve">
-    <value>Enter interactive mode to deploy projects</value>
+    <value>Run without interactive prompts</value>
   </data>
     <data name="LifecycleId" xml:space="preserve">
     <value>Lifecycle Id</value>
   </data>
     <data name="Machine" xml:space="preserve">
-    <value>Deployment target machine Id or name</value>
+    <value>Optional deployment target machine Id or name</value>
   </data>
     <data name="MonitorForPackages" xml:space="preserve">
     <value>Stay running monitoring for package updates, pausing for the specified time in seconds</value>
@@ -191,6 +221,9 @@
   </data>
     <data name="ProfileFile" xml:space="preserve">
     <value>The path to the JSON profile file you wish to deploy</value>
+  </data>
+    <data name="VariableProfileFile" xml:space="preserve">
+    <value>The path to the JSON variable profile file to apply</value>
   </data>
     <data name="ProfileFileDirectory" xml:space="preserve">
     <value>The path to the directory containing the profile files you wish to deploy. Profile files must contain auto.profile</value>
@@ -206,6 +239,12 @@
   </data>
     <data name="Release" xml:space="preserve">
     <value>Options pertaining to releases</value>
+  </data>
+    <data name="RenameReleaseCommand" xml:space="preserve">
+    <value>Rename releases deployed to an environment</value>
+  </data>
+    <data name="UpdateReleaseVariablesCommand" xml:space="preserve">
+    <value>Update release variables for deployed releases in an environment</value>
   </data>
     <data name="ReleaseMessage" xml:space="preserve">
     <value>Release message to set</value>
@@ -233,6 +272,9 @@
   </data>
     <data name="Variables" xml:space="preserve">
     <value>Add or update variables</value>
+  </data>
+    <data name="VariablesWithProfileCommand" xml:space="preserve">
+    <value>Add or update variables using a profile file</value>
   </data>
     <data name="Verbose" xml:space="preserve">
       <value>Display extra debug information where available</value>

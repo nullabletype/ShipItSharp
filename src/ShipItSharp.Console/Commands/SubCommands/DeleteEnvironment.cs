@@ -48,8 +48,9 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "DeleteEnvironmentCommand");
 
-            AddToRegister(EnsureEnvironmentOptionNames.Id, command.Option("-e|--e", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
+            AddToRegister(EnsureEnvironmentOptionNames.Id, command.Option("-e|--environment", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentName"), CommandOptionType.SingleValue).IsRequired());
             AddToRegister(EnsureEnvironmentOptionNames.SkipConfirmation, command.Option("-s|--skipconfirmation", LanguageProvider.GetString(LanguageSection.OptionsStrings, "SkipConfirmation"), CommandOptionType.NoValue));
         }
 

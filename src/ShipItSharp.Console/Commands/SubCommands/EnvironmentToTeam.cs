@@ -45,6 +45,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentToTeamCommand");
 
             AddToRegister(EnvironmentToTeamOptionNames.EnvId, command.Option("-e|--envid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
             AddToRegister(EnvironmentToTeamOptionNames.TeamId, command.Option("-t|--teamid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "TeamId"), CommandOptionType.SingleValue).IsRequired());

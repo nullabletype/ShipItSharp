@@ -45,11 +45,12 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentToLifecycleCommand");
 
             AddToRegister(EnvironmentToLifecycleOptions.EnvId, command.Option("-e|--envid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "EnvironmentId"), CommandOptionType.SingleValue).IsRequired());
             AddToRegister(EnvironmentToLifecycleOptions.LcId, command.Option("-l|--lcid", LanguageProvider.GetString(LanguageSection.OptionsStrings, "LifecycleId"), CommandOptionType.SingleValue).IsRequired());
             AddToRegister(EnvironmentToLifecycleOptions.PhaseId, command.Option("-p|--phasenumber", LanguageProvider.GetString(LanguageSection.OptionsStrings, "PhaseNumber"), CommandOptionType.SingleValue).IsRequired());
-            AddToRegister(EnvironmentToLifecycleOptions.Automatic, command.Option("-a|--auto", LanguageProvider.GetString(LanguageSection.OptionsStrings, "AutomaticDeploy"), CommandOptionType.NoValue));
+            AddToRegister(EnvironmentToLifecycleOptions.Automatic, command.Option("-t|--auto", LanguageProvider.GetString(LanguageSection.OptionsStrings, "AutomaticDeploy"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)

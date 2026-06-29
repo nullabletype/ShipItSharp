@@ -48,13 +48,14 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "DeployFromProfileDirectory");
 
             AddToRegister(DeployWithProfileDirectoryOptionNames.Directory, command.Option("-d|--directory", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFileDirectory"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
             AddToRegister(DeployWithProfileDirectoryOptionNames.ForceRedeploy, command.Option("-r|--forceredeploy", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
             AddToRegister(DeployWithProfileDirectoryOptionNames.Monitor, command.Option("-m|--monitor", LanguageProvider.GetString(LanguageSection.OptionsStrings, "MonitorForPackages"), CommandOptionType.SingleValue).Accepts(v => v.RegularExpression("[0-9]*", LanguageProvider.GetString(LanguageSection.UiStrings, "ParameterNotANumber"))));
 
-            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionInstall, command.Option("--actioninstall", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
-            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionRun, command.Option("--actionrun", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ForceDeployOfSamePackage"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionInstall, command.Option("--actioninstall", LanguageProvider.GetString(LanguageSection.OptionsStrings, "IgnoredCompatibilityOption"), CommandOptionType.NoValue));
+            AddToRegister(DeployWithProfileDirectoryOptionNames.ActionRun, command.Option("--actionrun", LanguageProvider.GetString(LanguageSection.OptionsStrings, "IgnoredCompatibilityOption"), CommandOptionType.NoValue));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)

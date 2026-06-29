@@ -47,8 +47,9 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "VariablesWithProfileCommand");
 
-            AddToRegister(VariablesWithProfileOptionNames.File, command.Option("-f|--filepath", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
+            AddToRegister(VariablesWithProfileOptionNames.File, command.Option("-f|--filepath", LanguageProvider.GetString(LanguageSection.OptionsStrings, "VariableProfileFile"), CommandOptionType.SingleValue).IsRequired().Accepts(v => v.LegalFilePath()));
         }
 
         protected override async Task<int> Run(CommandLineApplication command)

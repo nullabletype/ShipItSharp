@@ -21,9 +21,11 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Octopus.Client.Exceptions;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Octopus.Interfaces;
 using Machine = ShipItSharp.Core.Deployment.Models.Machine;
@@ -61,6 +63,101 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 .FirstOrDefault(m => m.Name.Equals(idOrName, StringComparison.CurrentCultureIgnoreCase));
 
             return machine == null ? null : ConvertMachine(machine);
+        }
+
+        public async Task<bool> DisableMachine(string idOrName, string environmentId)
+        {
+            return await SetMachineDisabled(idOrName, environmentId, true);
+        }
+
+        public async Task<int> DisableMachines(string environmentId)
+        {
+            return await SetMachinesDisabled(environmentId, true);
+        }
+
+        public async Task<bool> EnableMachine(string idOrName, string environmentId)
+        {
+            return await SetMachineDisabled(idOrName, environmentId, false);
+        }
+
+        public async Task<int> EnableMachines(string environmentId)
+        {
+            return await SetMachinesDisabled(environmentId, false);
+        }
+
+        private async Task<bool> SetMachineDisabled(string idOrName, string environmentId, bool disabled)
+        {
+            var machine = await GetMachineResource(idOrName, environmentId);
+            if (machine == null)
+            {
+                return false;
+            }
+
+            machine.IsDisabled = disabled;
+            await _octopusHelper.Client.Repository.Machines.Modify(machine, CancellationToken.None);
+            return true;
+        }
+
+        private async Task<int> SetMachinesDisabled(string environmentId, bool disabled)
+        {
+            var machines = await GetMachineResources(environmentId);
+            var changed = 0;
+            foreach (var machine in machines)
+            {
+                machine.IsDisabled = disabled;
+                await _octopusHelper.Client.Repository.Machines.Modify(machine, CancellationToken.None);
+                changed++;
+            }
+
+            return changed;
+        }
+
+        private async Task<MachineResource> GetMachineResource(string idOrName, string environmentId)
+        {
+            if (string.IsNullOrWhiteSpace(idOrName) || string.IsNullOrWhiteSpace(environmentId))
+            {
+                return null;
+            }
+
+            if (IsMachineId(idOrName))
+            {
+                try
+                {
+                    var machine = await _octopusHelper.Client.Repository.Machines.Get(idOrName, CancellationToken.None);
+                    return machine.EnvironmentIds.Contains(environmentId) ? machine : null;
+                }
+                catch (OctopusResourceNotFoundException)
+                {
+                    return null;
+                }
+            }
+
+            var machines = await GetMachineResources(environmentId, idOrName);
+
+            return machines
+                .FirstOrDefault(m => m.Name.Equals(idOrName, StringComparison.CurrentCultureIgnoreCase));
+        }
+
+        private async Task<MachineResource[]> GetMachineResources(string environmentId, string partialName = null)
+        {
+            const int pageSize = 100;
+            var skip = 0;
+            var results = new List<MachineResource>();
+            var root = await _octopusHelper.Client.Repository.LoadRootDocument(CancellationToken.None);
+            MachineResource[] page;
+            do
+            {
+                var machines = await _octopusHelper.Client.List<MachineResource>(
+                    root.Links["Machines"],
+                    new { environments = environmentId, partialName, skip, take = pageSize },
+                    CancellationToken.None);
+
+                page = machines.Items.ToArray();
+                results.AddRange(page);
+                skip += pageSize;
+            } while (page.Length == pageSize);
+
+            return results.ToArray();
         }
 
         private static Machine ConvertMachine(MachineResource machine)

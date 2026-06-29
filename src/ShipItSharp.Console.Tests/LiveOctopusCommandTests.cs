@@ -145,6 +145,62 @@ public class LiveOctopusCommandTests
     }
 
     [Test]
+    public async Task EnvDisableAndEnableCommands_ToggleDisposableEnvironmentMachinesAgainstLiveInstance()
+    {
+        var name = $"{FixturePrefix}{RunId}-D";
+        EnvironmentResource disposable = null;
+        MachineResource disposableMachine = null;
+
+        try
+        {
+            disposable = await EnsureEnvironment(name);
+            disposableMachine = await CreateSampleMachine(disposable, "DM");
+
+            var result = await RunShipIt("env", "disable", "-e", name);
+
+            AssertCommandSucceeded(result);
+            Assert.That(result.Output, Does.Contain("Environment disabled"));
+            disposableMachine = await _client.Repository.Machines.Get(disposableMachine.Id, CancellationToken.None);
+            Assert.That(disposableMachine.IsDisabled, Is.True);
+
+            var enable = await RunShipIt("env", "enable", "-e", name);
+            AssertCommandSucceeded(enable);
+            Assert.That(enable.Output, Does.Contain("Environment enabled"));
+            disposableMachine = await _client.Repository.Machines.Get(disposableMachine.Id, CancellationToken.None);
+            Assert.That(disposableMachine.IsDisabled, Is.False);
+        }
+        finally
+        {
+            await DeleteMachine(disposableMachine);
+            await DeleteEnvironment(disposable);
+        }
+    }
+
+    [Test]
+    public async Task EnvDisableAndEnableCommands_ToggleMachineInEnvironmentAgainstLiveInstance()
+    {
+        try
+        {
+            var result = await RunShipIt("env", "disable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name);
+
+            AssertCommandSucceeded(result);
+            Assert.That(result.Output, Does.Contain("Machine disabled"));
+            _sampleMachine = await _client.Repository.Machines.Get(_sampleMachine.Id, CancellationToken.None);
+            Assert.That(_sampleMachine.IsDisabled, Is.True);
+
+            var enable = await RunShipIt("env", "enable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name);
+            AssertCommandSucceeded(enable);
+            Assert.That(enable.Output, Does.Contain("Machine enabled"));
+            _sampleMachine = await _client.Repository.Machines.Get(_sampleMachine.Id, CancellationToken.None);
+            Assert.That(_sampleMachine.IsDisabled, Is.False);
+        }
+        finally
+        {
+            await SetMachineDisabled(_sampleMachine, false);
+        }
+    }
+
+    [Test]
     public async Task DeployCommand_CanBuildProfileAgainstLiveInstance()
     {
         var profilePath = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"shipitsharp-live-save-{RunId}.json");
@@ -409,11 +465,29 @@ public class LiveOctopusCommandTests
         }
     }
 
-    private async Task<MachineResource> CreateSampleMachine(EnvironmentResource environment)
+    private async Task DeleteMachine(MachineResource machine)
+    {
+        if (machine == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var current = await _client.Repository.Machines.Get(machine.Id, CancellationToken.None);
+            await _client.Repository.Machines.Delete(current, CancellationToken.None);
+        }
+        catch
+        {
+            // Best effort cleanup for disposable live-test machines.
+        }
+    }
+
+    private async Task<MachineResource> CreateSampleMachine(EnvironmentResource environment, string suffix = "Machine")
     {
         var machine = new MachineResource
         {
-            Name = $"{FixturePrefix}{RunId}-Machine",
+            Name = $"{FixturePrefix}{RunId}-{suffix}",
             Endpoint = new OfflineDropEndpointResource
             {
                 ApplicationsDirectory = "/tmp/shipitsharp-live-tests/apps",
@@ -428,6 +502,18 @@ public class LiveOctopusCommandTests
         machine.Roles.Add("shipitsharp-live-tests");
 
         return await _client.Repository.Machines.Create(machine, CancellationToken.None);
+    }
+
+    private async Task SetMachineDisabled(MachineResource machine, bool disabled)
+    {
+        if (machine == null)
+        {
+            return;
+        }
+
+        var current = await _client.Repository.Machines.Get(machine.Id, CancellationToken.None);
+        current.IsDisabled = disabled;
+        _sampleMachine = await _client.Repository.Machines.Modify(current, CancellationToken.None);
     }
 
     private async Task<ChannelResource> CreateSampleProjectChannel(string name, string minimumVersion)

@@ -46,6 +46,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         public override void Configure(CommandLineApplication command)
         {
             base.Configure(command);
+            command.Description = LanguageProvider.GetString(LanguageSection.OptionsStrings, "CleanUpChannels");
 
             AddToRegister(EnsureEnvironmentOptionNames.GroupFilter, command.Option("-g|--groupfilter", LanguageProvider.GetString(LanguageSection.OptionsStrings, "GroupFilter"), CommandOptionType.SingleValue));
             AddToRegister(EnsureEnvironmentOptionNames.TestMode, command.Option("-t|--testmode", LanguageProvider.GetString(LanguageSection.OptionsStrings, "TestMode"), CommandOptionType.NoValue));

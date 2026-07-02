@@ -5,7 +5,8 @@ model {
       description '''
         Adapter around Octopus.Client. OctopusHelper owns the async client,
         repository facades, and cache provider; repositories translate Octopus
-        resources into ShipItSharp deployment models.
+        resources into ShipItSharp deployment models, including package-feed
+        metadata, deployment queues, and environment machine state.
       '''
 
       octopusHelper = component 'OctopusHelper'
@@ -16,6 +17,7 @@ model {
       releaseRepository = component 'Release repository'
       deploymentRepository = component 'Deployment repository'
       environmentRepository = component 'Environment repository'
+      machineRepository = component 'Machine repository'
       channelRepository = component 'Channel repository'
       lifecycleRepository = component 'Lifecycle repository'
       teamRepository = component 'Team repository'

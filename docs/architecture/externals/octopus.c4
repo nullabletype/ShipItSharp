@@ -3,7 +3,8 @@ model {
     description '''
       External Octopus Deploy server accessed through Octopus.Client.
       It owns projects, project groups, channels, releases, packages,
-      variables, environments, lifecycles, teams, deployments, and task logs.
+      variables, environments, lifecycles, teams, deployment targets, package
+      feeds, deployments, queued tasks, and task logs.
     '''
   }
 }

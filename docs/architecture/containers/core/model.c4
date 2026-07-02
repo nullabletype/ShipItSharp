@@ -5,8 +5,8 @@ model {
       description '''
         Application workflow layer. It receives parsed command configs, reads
         Octopus state, prompts when needed, builds deployment models, and
-        coordinates deployment, promotion, environment, channel, release, and
-        variable workflows.
+        coordinates deployment, promotion, environment, machine, task queue,
+        channel, release, and variable workflows.
       '''
 
       jobConfigs = component 'Job configuration models'
@@ -16,8 +16,10 @@ model {
       profileDirectoryRunner = component 'Profile directory runner'
       environmentRunner = component 'Environment runner'
       environmentMaintenanceRunners = component 'Environment maintenance runners'
+      environmentAvailabilityRunners = component 'Environment availability runners'
       channelRunner = component 'Channel cleanup runner'
       releaseRunner = component 'Release maintenance runners'
+      taskRunner = component 'Task queue runner'
       variableRunner = component 'Variable profile runner'
       versionChecker = component 'Version checker'
     }

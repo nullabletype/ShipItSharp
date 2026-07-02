@@ -5,7 +5,8 @@ model {
       description '''
         Deployment execution engine. It validates lifecycle promotion safety,
         fills required variables, creates releases when needed, starts Octopus
-        deployment tasks, polls asynchronous task state, and reports failures.
+        deployment tasks, optionally scopes deployments to a specific machine,
+        polls asynchronous task state, and reports failures.
       '''
 
       deployer = component 'Deployer'

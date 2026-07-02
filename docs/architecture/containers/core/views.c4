@@ -4,4 +4,19 @@ views {
     include *
     include -> *
   }
+
+  view core-task-and-environment-components {
+    title 'C3 - Task and environment operations'
+    include shipitsharp.cli.subCommands
+    include shipitsharp.cli.taskCommands
+    include shipitsharp.cli.progressBar
+    include shipitsharp.core.environmentRunner
+    include shipitsharp.core.environmentMaintenanceRunners
+    include shipitsharp.core.environmentAvailabilityRunners
+    include shipitsharp.core.taskRunner
+    include shipitsharp.octopusAdapter.environmentRepository
+    include shipitsharp.octopusAdapter.machineRepository
+    include shipitsharp.octopusAdapter.deploymentRepository
+    include * -> *
+  }
 }

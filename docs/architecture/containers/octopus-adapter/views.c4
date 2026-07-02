@@ -4,4 +4,22 @@ views {
     include *
     include -> *
   }
+
+  view octopus-task-machine-components {
+    title 'C3 - Octopus task, package, and machine repositories'
+    include shipitsharp.core.taskRunner
+    include shipitsharp.core.environmentAvailabilityRunners
+    include shipitsharp.core.deployRunner
+    include shipitsharp.core.promotionRunner
+    include shipitsharp.deployment.releasePlanner
+    include shipitsharp.octopusAdapter.projectRepository
+    include shipitsharp.octopusAdapter.packageRepository
+    include shipitsharp.octopusAdapter.releaseRepository
+    include shipitsharp.octopusAdapter.deploymentRepository
+    include shipitsharp.octopusAdapter.environmentRepository
+    include shipitsharp.octopusAdapter.machineRepository
+    include shipitsharp.octopusAdapter.octopusClient
+    include octopus
+    include * -> *
+  }
 }

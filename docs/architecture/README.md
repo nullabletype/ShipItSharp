@@ -26,6 +26,9 @@ The diagram set is organized as a C4-style drill-down:
 The `Cross-cutting - ...` and `Workflow - ...` views are supporting diagrams for runtime dependencies,
 external integrations, deployment flow, and environment administration flow.
 
+The public site build publishes these diagrams under `/architecture/` while keeping the existing
+`docs/` homepage at the GitHub Pages root.
+
 Build the static review site from the repository root:
 
 ```bash

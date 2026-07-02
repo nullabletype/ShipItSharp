@@ -4,12 +4,13 @@ model {
       technology '.NET class library, Newtonsoft.Json'
       description '''
         Configuration loading and validation. The JSON provider finds or creates
-        config.json, deserializes Octopus URL/API key/cache settings, and checks
-        Octopus connectivity before the CLI starts commands.
+        config.json, deserializes Octopus URL/API key/cache/beta-release
+        settings, and checks Octopus connectivity before the CLI starts commands.
       '''
 
       configurationProvider = component 'ConfigurationProvider'
       jsonConfigurationProvider = component 'JsonConfigurationProvider'
+      environmentConfigurationProvider = component 'Environment configuration provider'
       connectivityValidator = component 'Octopus connectivity validator'
       configurationModel = component 'Configuration model'
     }

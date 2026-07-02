@@ -172,7 +172,7 @@ The console app changes its working directory to the built executable directory 
 - `src/ShipItSharp.Core.Deployment`: deployment coordination logic.
 - `src/ShipItSharp.Core.Language`: localised UI and option strings.
 - `src/*Tests`: NUnit test projects.
-- `docs/architecture`: LikeC4 architecture source and preview instructions.
+- `docs/architecture`: LikeC4 architecture source and preview instructions. Published diagrams are available at [shipitsharp.app/architecture](https://shipitsharp.app/architecture/).
 
 ## Releasing
 

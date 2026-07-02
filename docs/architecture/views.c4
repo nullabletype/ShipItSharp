@@ -76,6 +76,7 @@ views {
     include shipitsharp.deployment.asyncMonitor
     include shipitsharp.octopusAdapter.projectRepository
     include shipitsharp.octopusAdapter.channelRepository
+    include shipitsharp.octopusAdapter.machineRepository
     include shipitsharp.octopusAdapter.lifecycleRepository
     include shipitsharp.octopusAdapter.releaseRepository
     include shipitsharp.octopusAdapter.deploymentRepository
@@ -91,9 +92,41 @@ views {
     include shipitsharp.cli.subCommands
     include shipitsharp.core.environmentRunner
     include shipitsharp.core.environmentMaintenanceRunners
+    include shipitsharp.core.environmentAvailabilityRunners
     include shipitsharp.octopusAdapter.environmentRepository
+    include shipitsharp.octopusAdapter.machineRepository
     include shipitsharp.octopusAdapter.lifecycleRepository
     include shipitsharp.octopusAdapter.teamRepository
+    include * -> *
+  }
+
+  view task-queue-workflow {
+    title 'Workflow - Task queue management'
+    include operator
+    include octopus
+    include shipitsharp.cli.commandFramework
+    include shipitsharp.cli.taskCommands
+    include shipitsharp.cli.progressBar
+    include shipitsharp.core.taskRunner
+    include shipitsharp.octopusAdapter.environmentRepository
+    include shipitsharp.octopusAdapter.deploymentRepository
+    include * -> *
+  }
+
+  view machine-targeting-workflow {
+    title 'Workflow - Machine-targeted deployment and maintenance'
+    include operator
+    include octopus
+    include shipitsharp.cli.topLevelCommands
+    include shipitsharp.cli.subCommands
+    include shipitsharp.core.deployRunner
+    include shipitsharp.core.deploySpecificRunner
+    include shipitsharp.core.promotionRunner
+    include shipitsharp.core.environmentAvailabilityRunners
+    include shipitsharp.deployment.deployer
+    include shipitsharp.deployment.releasePlanner
+    include shipitsharp.octopusAdapter.machineRepository
+    include shipitsharp.octopusAdapter.deploymentRepository
     include * -> *
   }
 }

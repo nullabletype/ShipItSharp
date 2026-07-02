@@ -35,6 +35,12 @@ Build the static review site from the repository root:
 likec4 build docs/architecture -o docs/architecture/site --title "ShipItSharp Architecture" --use-hash-history
 ```
 
+Build the GitHub Pages version with the `/architecture/` base path:
+
+```bash
+likec4 build docs/architecture -o docs/architecture/site --base /architecture/ --title "ShipItSharp Architecture" --use-hash-history
+```
+
 For a local live preview instead:
 
 ```bash

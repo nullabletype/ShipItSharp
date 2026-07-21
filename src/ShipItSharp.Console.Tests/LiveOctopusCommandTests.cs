@@ -345,9 +345,10 @@ public class LiveOctopusCommandTests
     }
 
     [Test]
-    public async Task TaskCommand_PrioritiseMovesQueuedEnvironmentTasksAgainstLiveInstance()
+    public async Task TaskCommand_PrioritiseMovesAllQueuedEnvironmentTasksAgainstLiveInstance()
     {
-        var deployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.1");
+        var firstDeployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.1");
+        var secondDeployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.3");
 
         try
         {
@@ -355,11 +356,13 @@ public class LiveOctopusCommandTests
 
             AssertCommandSucceeded(result);
             Assert.That(result.Output, Does.Contain("Prioritised"));
-            Assert.That(result.Output, Does.Contain(deployment.TaskId));
+            Assert.That(result.Output, Does.Contain(firstDeployment.TaskId));
+            Assert.That(result.Output, Does.Contain(secondDeployment.TaskId));
         }
         finally
         {
-            await CancelTaskIfActive(deployment.TaskId);
+            await CancelTaskIfActive(firstDeployment.TaskId);
+            await CancelTaskIfActive(secondDeployment.TaskId);
         }
     }
 

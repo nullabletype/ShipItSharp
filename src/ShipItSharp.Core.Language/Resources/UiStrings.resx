@@ -516,6 +516,12 @@
     <data name="LatestDeploymentQueuePosition" xml:space="preserve">
       <value>Latest deployment is at queue position {0}.</value>
     </data>
+    <data name="ConfirmQueueJump" xml:space="preserve">
+      <value>Move all {0} queued task(s) from this deployment job to the top of the queue?</value>
+    </data>
+    <data name="QueueJumpRequested" xml:space="preserve">
+      <value>Moved {0} deployment task(s) to the top of the queue.</value>
+    </data>
     <data name="TaskStatusProgress" xml:space="preserve">
       <value>Current status: {0}. Percentage: {1}. Estimated time remaining: {2}</value>
     </data>

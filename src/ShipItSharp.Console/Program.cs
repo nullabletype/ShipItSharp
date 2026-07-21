@@ -224,6 +224,7 @@ namespace ShipItSharp.Console
                 .AddTransient<IVersionChecker, VersionChecker>()
                 .AddTransient<IJobRunner, ConsoleJobRunner>()
                 .AddTransient<ICommandInteraction, ConsoleCommandInteraction>()
+                .AddSingleton<IDeploymentQueueInteraction, ConsoleDeploymentQueueInteraction>()
                 .AddTransient<Deploy, Deploy>()
                 .AddTransient<Promote, Promote>()
                 .AddTransient<Release, Release>()

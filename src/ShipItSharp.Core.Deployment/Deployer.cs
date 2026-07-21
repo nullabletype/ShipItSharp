@@ -43,12 +43,14 @@ namespace ShipItSharp.Core.Deployment
         private readonly IConfiguration _configuration;
         private readonly IOctopusHelper _helper;
         private readonly ILanguageProvider _languageProvider;
+        private readonly IDeploymentQueueInteraction _queueInteraction;
 
-        public Deployer(IOctopusHelper helper, IConfiguration configuration, ILanguageProvider languageProvider)
+        public Deployer(IOctopusHelper helper, IConfiguration configuration, ILanguageProvider languageProvider, IDeploymentQueueInteraction queueInteraction)
         {
             _helper = helper;
             _configuration = configuration;
             _languageProvider = languageProvider;
+            _queueInteraction = queueInteraction;
         }
 
         public async Task<DeploymentCheckResult> CheckDeployment(EnvironmentDeployment deployment)
@@ -285,20 +287,40 @@ namespace ShipItSharp.Core.Deployment
             var totalCount = taskRegister.Count();
             var latestTaskId = taskRegister.Keys.Last();
             int? lastReportedQueuePosition = null;
+            var queueJumped = false;
+            _queueInteraction.Reset();
 
             while (!done)
             {
-                var tasks = await _helper.Deployments.GetDeploymentTasks(0, 100);
+                var tasks = await GetAllDeploymentTasks();
                 var queuedTasks = tasks
                     .Where(task => task.State == TaskStatus.Queued)
                     .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
                     .ToList();
                 var latestQueuePosition = queuedTasks.FindIndex(task => task.TaskId == latestTaskId) + 1;
-                if (latestQueuePosition > 0 && latestQueuePosition != lastReportedQueuePosition)
+                if (latestQueuePosition > 1 && latestQueuePosition != lastReportedQueuePosition)
                 {
                     uiLogger.CleanCurrentLine();
                     WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("LatestDeploymentQueuePosition"), latestQueuePosition));
                     lastReportedQueuePosition = latestQueuePosition;
+                }
+
+                var queuedJobTaskIds = taskRegister.Keys
+                    .Where(taskId => queuedTasks.Any(task => task.TaskId == taskId))
+                    .ToList();
+                var queueJumpRequested = latestQueuePosition > 1 && queuedJobTaskIds.Count > 0 && _queueInteraction.QueueJumpRequested();
+                if (!queueJumped && queueJumpRequested)
+                {
+                    uiLogger.CleanCurrentLine();
+                    if (_queueInteraction.ConfirmQueueJump(string.Format(UiString("ConfirmQueueJump"), queuedJobTaskIds.Count)))
+                    {
+                        foreach (var taskId in queuedJobTaskIds.AsEnumerable().Reverse())
+                        {
+                            await _helper.Deployments.PrioritiseTask(taskId);
+                        }
+                        WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("QueueJumpRequested"), queuedJobTaskIds.Count));
+                        queueJumped = true;
+                    }
                 }
 
                 foreach (var currentTask in taskRegister.ToList())
@@ -342,6 +364,22 @@ namespace ShipItSharp.Core.Deployment
             }
             uiLogger.StopAnimation();
             uiLogger.CleanCurrentLine();
+        }
+
+        private async Task<List<TaskStub>> GetAllDeploymentTasks()
+        {
+            const int pageSize = 100;
+            var tasks = new List<TaskStub>();
+            var skip = 0;
+            IReadOnlyCollection<TaskStub> page;
+            do
+            {
+                page = (await _helper.Deployments.GetDeploymentTasks(skip, pageSize)).ToList();
+                tasks.AddRange(page);
+                skip += pageSize;
+            } while (page.Count == pageSize);
+
+            return tasks;
         }
 
         private static string GetDeploymentTargetName(EnvironmentDeployment deployment)

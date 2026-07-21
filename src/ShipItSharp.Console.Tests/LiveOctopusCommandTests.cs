@@ -13,6 +13,16 @@ using Octopus.Client.Model;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
+using NSubstitute;
+using ShipItSharp.Core.Configuration.Interfaces;
+using ShipItSharp.Core.Deployment;
+using ShipItSharp.Core.Deployment.Interfaces;
+using ShipItSharp.Core.Deployment.Models;
+using ShipItSharp.Core.Octopus;
+using ShipItSharp.Core.Octopus.Interfaces;
+using ShipItSharp.Console.ConsoleTools;
+using DeploymentTaskStatus = ShipItSharp.Core.Deployment.Models.TaskStatus;
+using Environment = System.Environment;
 
 namespace ShipItSharp.Console.Tests;
 
@@ -385,6 +395,100 @@ public class LiveOctopusCommandTests
         Assert.That(task.State, Is.EqualTo(TaskState.Canceled).Or.EqualTo(TaskState.Cancelling));
     }
 
+    [Test]
+    public async Task DeploymentQueueJump_PrioritisesEveryCurrentJobTaskAgainstLiveInstance()
+    {
+        var blockingDeployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.6");
+        var firstDeployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.4");
+        var secondDeployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.5");
+
+        try
+        {
+            var firstTaskBefore = await _client.Repository.Tasks.Get(firstDeployment.TaskId, CancellationToken.None);
+            var secondTaskBefore = await _client.Repository.Tasks.Get(secondDeployment.TaskId, CancellationToken.None);
+            var blockingTaskBefore = await _client.Repository.Tasks.Get(blockingDeployment.TaskId, CancellationToken.None);
+            var firstQueuedBehindBefore = await GetQueuedBehindTaskIds(firstTaskBefore);
+            var secondQueuedBehindBefore = await GetQueuedBehindTaskIds(secondTaskBefore);
+            Assert.That(firstQueuedBehindBefore, Does.Contain(blockingDeployment.TaskId));
+            Assert.That(secondQueuedBehindBefore, Does.Contain(blockingDeployment.TaskId));
+            var realHelper = new OctopusHelper(_client);
+            var helper = Substitute.For<IOctopusHelper>();
+            var releases = Substitute.For<IReleaseRepository>();
+            var deployments = Substitute.For<IDeploymentRepository>();
+            var configuration = Substitute.For<IConfiguration>();
+            var uiLogger = Substitute.For<IUiLogger>();
+            string confirmationPrompt = null;
+            var interaction = new ConsoleDeploymentQueueInteraction(
+                () => new[] { 'q', 'j' },
+                prompt =>
+                {
+                    confirmationPrompt = prompt;
+                    return true;
+                });
+            helper.Releases.Returns(releases);
+            helper.Deployments.Returns(deployments);
+            var projects = new[]
+            {
+                new ProjectDeployment { ProjectId = _sampleProject.Id, ProjectName = "First", ReleaseId = firstDeployment.ReleaseId },
+                new ProjectDeployment { ProjectId = _sampleProject.Id, ProjectName = "Second", ReleaseId = secondDeployment.ReleaseId }
+            };
+            releases.GetRelease(firstDeployment.ReleaseId)
+                .Returns(new Release { Id = firstDeployment.ReleaseId, Version = $"2.0.{VersionSeed}.4" });
+            releases.GetRelease(secondDeployment.ReleaseId)
+                .Returns(new Release { Id = secondDeployment.ReleaseId, Version = $"2.0.{VersionSeed}.5" });
+            deployments.CreateDeploymentTask(projects[0], _sourceEnvironment.Id, firstDeployment.ReleaseId, false, null)
+                .Returns(new ShipItSharp.Core.Deployment.Models.Deployment { TaskId = firstDeployment.TaskId });
+            deployments.CreateDeploymentTask(projects[1], _sourceEnvironment.Id, secondDeployment.ReleaseId, false, null)
+                .Returns(new ShipItSharp.Core.Deployment.Models.Deployment { TaskId = secondDeployment.TaskId });
+            deployments.GetTaskDetails(firstDeployment.TaskId)
+                .Returns(new TaskDetails { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued });
+            deployments.GetTaskDetails(secondDeployment.TaskId)
+                .Returns(new TaskDetails { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued });
+            deployments.GetDeploymentTasks(0, 100).Returns(
+                new[]
+                {
+                    new TaskStub { TaskId = blockingDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = blockingTaskBefore.QueueTime },
+                    new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = firstTaskBefore.QueueTime },
+                    new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = secondTaskBefore.QueueTime }
+                },
+                new[]
+                {
+                    new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Done },
+                    new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Done }
+                });
+            deployments.PrioritiseTask(Arg.Any<string>())
+                .Returns(call => realHelper.Deployments.PrioritiseTask(call.Arg<string>()));
+            var deployer = new Deployer(helper, configuration, TestLanguageProvider.Create(), interaction);
+            var job = new EnvironmentDeployment
+            {
+                EnvironmentId = _sourceEnvironment.Id,
+                EnvironmentName = _sourceEnvironment.Name,
+                DeployAsync = true,
+                ProjectDeployments = projects.ToList()
+            };
+
+            await deployer.StartJob(job, uiLogger);
+
+            await deployments.Received(1).PrioritiseTask(firstDeployment.TaskId);
+            await deployments.Received(1).PrioritiseTask(secondDeployment.TaskId);
+            Assert.That(confirmationPrompt, Does.Contain("ConfirmQueueJump"));
+            var firstTaskAfter = await _client.Repository.Tasks.Get(firstDeployment.TaskId, CancellationToken.None);
+            var secondTaskAfter = await _client.Repository.Tasks.Get(secondDeployment.TaskId, CancellationToken.None);
+            var blockingTaskAfter = await _client.Repository.Tasks.Get(blockingDeployment.TaskId, CancellationToken.None);
+            var firstQueuedBehindAfter = await GetQueuedBehindTaskIds(firstTaskAfter);
+            var secondQueuedBehindAfter = await GetQueuedBehindTaskIds(secondTaskAfter);
+            Assert.That(blockingTaskAfter.State, Is.EqualTo(TaskState.Queued));
+            Assert.That(firstQueuedBehindAfter, Does.Not.Contain(blockingDeployment.TaskId));
+            Assert.That(secondQueuedBehindAfter, Does.Not.Contain(blockingDeployment.TaskId));
+        }
+        finally
+        {
+            await CancelTaskIfActive(blockingDeployment.TaskId);
+            await CancelTaskIfActive(firstDeployment.TaskId);
+            await CancelTaskIfActive(secondDeployment.TaskId);
+        }
+    }
+
     private async Task<EnvironmentResource> EnsureEnvironment(string name)
     {
         var existing = await FindEnvironment(name);
@@ -440,6 +544,7 @@ public class LiveOctopusCommandTests
         var projects = await _client.Repository.Projects.GetAll(CancellationToken.None);
         foreach (var project in projects.Where(project => project.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
         {
+            await CancelActiveTasksForProject(project.Id);
             await _client.Repository.Projects.Delete(project, CancellationToken.None);
         }
 
@@ -456,6 +561,22 @@ public class LiveOctopusCommandTests
         foreach (var channel in channels.Where(channel => channel.Name.StartsWith(FixturePrefix, StringComparison.Ordinal)))
         {
             await DeleteChannelIfExists(channel);
+        }
+    }
+
+    private async Task CancelActiveTasksForProject(string projectId)
+    {
+        var tasks = (await _client.Repository.Tasks.GetAllActive(CancellationToken.None, 100))
+            .Where(task => task.ProjectId == projectId)
+            .ToList();
+        foreach (var task in tasks)
+        {
+            await _client.Repository.Tasks.Cancel(task, CancellationToken.None);
+        }
+
+        foreach (var task in tasks)
+        {
+            await WaitForTaskState(task.Id, state => state is TaskState.Success or TaskState.Failed or TaskState.Canceled, TimeSpan.FromSeconds(30));
         }
     }
 
@@ -791,6 +912,12 @@ public class LiveOctopusCommandTests
         }
 
         return await _client.Repository.Tasks.Get(taskId, CancellationToken.None);
+    }
+
+    private async Task<string[]> GetQueuedBehindTaskIds(TaskResource task)
+    {
+        var queuedBehind = await _client.Get<ResourceCollection<TaskResource>>(task.Links["QueuedBehind"], CancellationToken.None);
+        return queuedBehind.Items.Select(queuedTask => queuedTask.Id).ToArray();
     }
 
     private async Task AssertDeploymentExists(EnvironmentResource environment, ReleaseResource release)

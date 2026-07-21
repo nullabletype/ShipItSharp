@@ -287,7 +287,7 @@ namespace ShipItSharp.Core.Deployment
             var totalCount = taskRegister.Count();
             var latestTaskId = taskRegister.Keys.Last();
             int? lastReportedQueuePosition = null;
-            var queueJumped = false;
+            var queueJumpAttempted = false;
             _queueInteraction.Reset();
 
             while (!done)
@@ -309,17 +309,29 @@ namespace ShipItSharp.Core.Deployment
                     .Where(taskId => queuedTasks.Any(task => task.TaskId == taskId))
                     .ToList();
                 var queueJumpRequested = latestQueuePosition > 1 && queuedJobTaskIds.Count > 0 && _queueInteraction.QueueJumpRequested();
-                if (!queueJumped && queueJumpRequested)
+                if (!queueJumpAttempted && queueJumpRequested)
                 {
                     uiLogger.CleanCurrentLine();
                     if (_queueInteraction.ConfirmQueueJump(string.Format(UiString("ConfirmQueueJump"), queuedJobTaskIds.Count)))
                     {
+                        queueJumpAttempted = true;
+                        var prioritisedTaskCount = 0;
                         foreach (var taskId in queuedJobTaskIds.AsEnumerable().Reverse())
                         {
-                            await _helper.Deployments.PrioritiseTask(taskId);
+                            try
+                            {
+                                await _helper.Deployments.PrioritiseTask(taskId);
+                                prioritisedTaskCount++;
+                            }
+                            catch (Exception exception)
+                            {
+                                WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("QueueJumpFailed"), taskId, exception.Message));
+                            }
                         }
-                        WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("QueueJumpRequested"), queuedJobTaskIds.Count));
-                        queueJumped = true;
+                        if (prioritisedTaskCount > 0)
+                        {
+                            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("QueueJumpRequested"), prioritisedTaskCount));
+                        }
                     }
                 }
 

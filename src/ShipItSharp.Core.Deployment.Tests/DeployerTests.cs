@@ -267,6 +267,67 @@ public class DeployerTests
         uiLogger.Received(1).WriteLine(Arg.Is<string>(line => line.Contains("Moved 2 deployment task(s)")));
     }
 
+    [Test]
+    public async Task StartJob_ReportsQueueJumpFailureAndContinuesMonitoring_WhenPrioritisingThrows()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        var interaction = Substitute.For<IDeploymentQueueInteraction>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var projects = new[]
+        {
+            new ProjectDeployment { ProjectId = "Projects-1", ProjectName = "Payments", ReleaseId = "Releases-1" },
+            new ProjectDeployment { ProjectId = "Projects-2", ProjectName = "Orders", ReleaseId = "Releases-2" }
+        };
+        releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1.0.0" });
+        releases.GetRelease("Releases-2").Returns(new Release { Id = "Releases-2", Version = "1.0.0" });
+        deployments.CreateDeploymentTask(projects[0], "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
+        deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
+        deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
+        deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
+        var queueTime = System.DateTimeOffset.UtcNow;
+        var queuedTasks = new[]
+        {
+            new TaskStub { TaskId = "ServerTasks-ahead", State = TaskStatus.Queued, QueueTime = queueTime },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(1) },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(2) }
+        };
+        deployments.GetDeploymentTasks(0, 100).Returns(
+            queuedTasks,
+            queuedTasks,
+            new[]
+            {
+                new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done },
+                new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done }
+            });
+        deployments.PrioritiseTask("ServerTasks-3")
+            .Returns(Task.FromException(new System.InvalidOperationException(
+                "ServerTasks-3 cannot be prioritized as it is not in the task queue.")));
+        interaction.QueueJumpRequested().Returns(true);
+        interaction.ConfirmQueueJump(Arg.Any<string>()).Returns(true);
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider(), interaction);
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment
+        {
+            EnvironmentId = "Environments-1",
+            EnvironmentName = "Prod",
+            DeployAsync = true,
+            ProjectDeployments = projects.ToList()
+        };
+
+        Assert.DoesNotThrowAsync(() => deployer.StartJob(job, uiLogger));
+
+        await deployments.Received(1).PrioritiseTask("ServerTasks-3");
+        await deployments.Received(1).PrioritiseTask("ServerTasks-2");
+        interaction.Received(1).ConfirmQueueJump(Arg.Any<string>());
+        uiLogger.Received(1).WriteLine(Arg.Is<string>(line =>
+            line.Contains("ServerTasks-3") && line.Contains("cannot be prioritized as it is not in the task queue")));
+    }
+
     private static IOctopusHelper CreateHelperWithLifecycle(LifeCycleModel lifecycle)
     {
         var helper = Substitute.For<IOctopusHelper>();
@@ -324,7 +385,8 @@ public class DeployerTests
             ["DeploymentElapsedTime"] = "Time taken: {0}",
             ["LatestDeploymentQueuePosition"] = "Latest deployment is at queue position {0}.",
             ["ConfirmQueueJump"] = "Move all {0} queued task(s) from this deployment job to the top of the queue?",
-            ["QueueJumpRequested"] = "Moved {0} deployment task(s) to the top of the queue."
+            ["QueueJumpRequested"] = "Moved {0} deployment task(s) to the top of the queue.",
+            ["QueueJumpFailed"] = "Could not move deployment task {0} to the top of the queue: {1}"
         };
 
         var language = Substitute.For<ILanguageProvider>();

@@ -21,11 +21,15 @@
 #endregion
 
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
-using NuGet.Versioning;
 using ShipItSharp.Core.Deployment.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Language;
@@ -158,6 +162,18 @@ namespace ShipItSharp.Console.Commands
             return option;
         }
 
+        protected string GetStringFromUser(string optionName, string prompt, TimeSpan timeout)
+        {
+            var option = GetStringValueFromOption(optionName);
+
+            if (InInteractiveMode && string.IsNullOrEmpty(option))
+            {
+                option = PromptForStringWithTimeout(prompt, timeout, System.Console.In, System.Console.Out);
+            }
+
+            return option;
+        }
+
         protected static string PromptForStringWithoutQuitting(string prompt)
         {
             string channel;
@@ -169,16 +185,107 @@ namespace ShipItSharp.Console.Commands
             return channel;
         }
 
-        protected string PromptForReleaseName()
+        internal static string PromptForStringWithTimeout(string prompt, TimeSpan timeout, TextReader input, TextWriter output)
         {
-            string releaseName;
-
-            do
+            if (ReferenceEquals(input, System.Console.In) && !System.Console.IsInputRedirected)
             {
-                releaseName = GetStringFromUser(OptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"), true);
-            } while (InInteractiveMode && !string.IsNullOrEmpty(releaseName) && !SemanticVersion.TryParse(releaseName, out _));
+                return PromptConsoleForStringWithTimeout(prompt, timeout, output);
+            }
 
-            return releaseName;
+            using var cancellation = new CancellationTokenSource();
+            var inputTask = Task.Run(async () => await input.ReadLineAsync(cancellation.Token));
+            var timer = Stopwatch.StartNew();
+            var displayedSeconds = -1;
+
+            try
+            {
+                while (timer.Elapsed < timeout)
+                {
+                    var remainingSeconds = Math.Max(1, (int)Math.Ceiling((timeout - timer.Elapsed).TotalSeconds));
+                    if (remainingSeconds != displayedSeconds)
+                    {
+                        if (displayedSeconds != -1)
+                        {
+                            output.Write('\r');
+                        }
+                        output.Write($"{prompt} ({remainingSeconds,2}s): ");
+                        displayedSeconds = remainingSeconds;
+                    }
+
+                    var remainingTime = timeout - timer.Elapsed;
+                    var refreshDelay = remainingTime < TimeSpan.FromSeconds(1)
+                        ? remainingTime
+                        : TimeSpan.FromSeconds(1);
+                    var completedTask = Task.WhenAny(inputTask, Task.Delay(refreshDelay)).GetAwaiter().GetResult();
+                    if (completedTask == inputTask)
+                    {
+                        return inputTask.GetAwaiter().GetResult();
+                    }
+                }
+
+                cancellation.Cancel();
+                output.WriteLine();
+                return string.Empty;
+            }
+            catch (OperationCanceledException)
+            {
+                output.WriteLine();
+                return string.Empty;
+            }
+        }
+
+        private static string PromptConsoleForStringWithTimeout(string prompt, TimeSpan timeout, TextWriter output)
+        {
+            var input = new StringBuilder();
+            var timer = Stopwatch.StartNew();
+            var displayedSeconds = -1;
+
+            while (timer.Elapsed < timeout)
+            {
+                var remainingSeconds = Math.Max(1, (int)Math.Ceiling((timeout - timer.Elapsed).TotalSeconds));
+                if (remainingSeconds != displayedSeconds)
+                {
+                    if (displayedSeconds != -1)
+                    {
+                        output.Write('\r');
+                    }
+                    output.Write($"{prompt} ({remainingSeconds,2}s): {input}");
+                    output.Flush();
+                    displayedSeconds = remainingSeconds;
+                }
+
+                if (!System.Console.KeyAvailable)
+                {
+                    Thread.Sleep(25);
+                    continue;
+                }
+
+                var key = System.Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    output.WriteLine();
+                    return input.ToString();
+                }
+
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    if (input.Length > 0)
+                    {
+                        input.Length--;
+                        output.Write("\b \b");
+                    }
+                    continue;
+                }
+
+                if (!char.IsControl(key.KeyChar))
+                {
+                    input.Append(key.KeyChar);
+                    output.Write(key.KeyChar);
+                }
+            }
+
+            output.WriteLine();
+            return string.Empty;
         }
 
         protected async Task<bool> ValidateDeployment(EnvironmentDeployment deployment, IDeployer deployer)

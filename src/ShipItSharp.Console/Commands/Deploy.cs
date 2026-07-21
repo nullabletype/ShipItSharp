@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.Commands.SubCommands;
@@ -87,7 +88,10 @@ namespace ShipItSharp.Console.Commands
             }
             var channelName = GetStringFromUser(DeployOptionNames.ChannelName, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichChannelPrompt"));
             var environmentName = GetStringFromUser(DeployOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
+            var groupRestriction = GetStringFromUser(
+                DeployOptionNames.GroupFilter,
+                LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"),
+                TimeSpan.FromSeconds(15));
             var machineName = GetStringValueFromOption(DeployOptionNames.Machine);
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
             var prioritise = GetBoolValueFromOption(DeployOptionNames.Prioritise);

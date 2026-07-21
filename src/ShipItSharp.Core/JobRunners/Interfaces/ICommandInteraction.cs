@@ -20,6 +20,7 @@
 // */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.JobRunners.JobConfigs;
@@ -32,6 +33,7 @@ namespace ShipItSharp.Core.JobRunners.Interfaces
         IEnumerable<int> SelectPromotionProjects(PromotionConfig config, IList<Project> currentProjects, IList<Project> targetProjects);
         IEnumerable<int> SelectDeploySpecificProjects(DeploySpecificConfig config, IList<Project> currentProjects, IList<Release> targetReleases);
         string Prompt(string prompt);
+        string Prompt(string prompt, TimeSpan timeout);
         string PromptRequired(string prompt);
         bool Confirm(string prompt, bool defaultValue);
     }

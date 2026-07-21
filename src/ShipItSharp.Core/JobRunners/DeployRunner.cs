@@ -107,7 +107,9 @@ namespace ShipItSharp.Core.JobRunners
 
             if (config.RunningInteractively && string.IsNullOrEmpty(config.ReleaseName))
             {
-                releaseName = interaction.Prompt(_languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"));
+                releaseName = interaction.Prompt(
+                    _languageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"),
+                    TimeSpan.FromSeconds(15));
             }
 
             if (!string.IsNullOrEmpty(releaseName))

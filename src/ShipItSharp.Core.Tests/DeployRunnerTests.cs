@@ -19,6 +19,45 @@ namespace ShipItSharp.Core.Tests;
 public class DeployRunnerTests
 {
     [Test]
+    public async Task Run_UsesTimedReleaseVersionPrompt_WhenInteractiveReleaseNameIsEmpty()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var deployer = Substitute.For<IDeployer>();
+        var uiLogger = Substitute.For<IUiLogger>();
+        var progressBar = Substitute.For<IProgressBar>();
+        var interaction = Substitute.For<ICommandInteraction>();
+        var projectRepository = Substitute.For<IProjectRepository>();
+        var channelRepository = Substitute.For<IChannelRepository>();
+        helper.Projects.Returns(projectRepository);
+        helper.Channels.Returns(channelRepository);
+
+        var projectStub = new ProjectStub { ProjectId = "Projects-1", ProjectName = "Payments" };
+        projectRepository.ConvertProject(Arg.Any<ProjectStub>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(CreateProjectWithNewPackage()));
+        channelRepository.GetChannelByName("Projects-1", "Default")
+            .Returns(Task.FromResult(new Channel { Id = "Channels-1", Name = "Default" }));
+        interaction.SelectDeployProjects(Arg.Any<DeployConfig>(), Arg.Any<IList<Project>>())
+            .Returns(new[] { 0 });
+        deployer.CheckDeployment(Arg.Any<EnvironmentDeployment>())
+            .Returns(Task.FromResult(new DeploymentCheckResult { Success = true }));
+
+        var config = DeployConfig.Create(
+            new Environment { Id = "Environments-1", Name = "Test" },
+            "Default",
+            null,
+            null,
+            null,
+            runningInteractively: true).Value;
+        var runner = new DeployRunner(TestLanguageProvider.Create(), helper, deployer, uiLogger);
+
+        var result = await runner.Run(config, progressBar, new List<ProjectStub> { projectStub }, interaction);
+
+        Assert.That(result, Is.EqualTo(0));
+        interaction.Received(1).Prompt(Arg.Any<string>(), System.TimeSpan.FromSeconds(15));
+        interaction.DidNotReceive().Prompt(Arg.Any<string>());
+    }
+
+    [Test]
     public async Task Run_AddsMachineToDeployment_WhenMachineIsConfigured()
     {
         var helper = Substitute.For<IOctopusHelper>();

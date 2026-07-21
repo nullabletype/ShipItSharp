@@ -132,6 +132,11 @@ namespace ShipItSharp.Console.ConsoleTools
             return McMaster.Extensions.CommandLineUtils.Prompt.GetString(prompt);
         }
 
+        public string Prompt(string prompt, TimeSpan timeout)
+        {
+            return Commands.BaseCommand.PromptForStringWithTimeout(prompt, timeout, System.Console.In, System.Console.Out);
+        }
+
         public string PromptRequired(string prompt)
         {
             string value;

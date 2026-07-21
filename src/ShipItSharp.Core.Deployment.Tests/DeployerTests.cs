@@ -147,7 +147,7 @@ public class DeployerTests
     }
 
     [Test]
-    public async Task StartJob_ReportsLatestDeploymentQueuePosition_WhenItIsQueued()
+    public async Task StartJob_ReportsLeadingDeploymentQueuePosition_WhenItIsQueued()
     {
         var helper = Substitute.For<IOctopusHelper>();
         var releases = Substitute.For<IReleaseRepository>();
@@ -181,6 +181,12 @@ public class DeployerTests
             firstPage,
             new[]
             {
+                new TaskStub { TaskId = "OtherTasks-1", State = TaskStatus.Queued, QueueTime = queueTime },
+                new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.InProgress },
+                new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(1) }
+            },
+            new[]
+            {
                 new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done },
                 new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done }
             });
@@ -198,7 +204,10 @@ public class DeployerTests
 
         await deployer.StartJob(job, uiLogger);
 
-        uiLogger.Received(1).WriteLine(Arg.Is<string>(line => line.Contains("Latest deployment is at queue position 101.")));
+        uiLogger.Received(1).WriteLine(Arg.Is<string>(line =>
+            line.Contains("queued") && line.Contains("First deployment in this job is at queue position 100.")));
+        uiLogger.Received(1).WriteLine(Arg.Is<string>(line =>
+            line.Contains("queued") && line.Contains("First deployment in this job is at queue position 2.")));
     }
 
     [Test]
@@ -383,7 +392,8 @@ public class DeployerTests
             ["DeploymentSummaryFailed"] = "Failed: {0}",
             ["DeploymentSummaryTotal"] = "Total: {0}",
             ["DeploymentElapsedTime"] = "Time taken: {0}",
-            ["LatestDeploymentQueuePosition"] = "Latest deployment is at queue position {0}.",
+            ["LeadingDeploymentQueuePosition"] = "First deployment in this job is at queue position {0}.",
+            ["StatusQueued"] = "queued",
             ["ConfirmQueueJump"] = "Move all {0} queued task(s) from this deployment job to the top of the queue?",
             ["QueueJumpRequested"] = "Moved {0} deployment task(s) to the top of the queue.",
             ["QueueJumpFailed"] = "Could not move deployment task {0} to the top of the queue: {1}"

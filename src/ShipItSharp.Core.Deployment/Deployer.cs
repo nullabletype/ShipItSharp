@@ -285,7 +285,6 @@ namespace ShipItSharp.Core.Deployment
         {
             var done = false;
             var totalCount = taskRegister.Count();
-            var latestTaskId = taskRegister.Keys.Last();
             int? lastReportedQueuePosition = null;
             var queueJumpAttempted = false;
             _queueInteraction.Reset();
@@ -297,19 +296,22 @@ namespace ShipItSharp.Core.Deployment
                     .Where(task => task.State == TaskStatus.Queued)
                     .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
                     .ToList();
-                var latestQueuePosition = queuedTasks.FindIndex(task => task.TaskId == latestTaskId) + 1;
-                if (latestQueuePosition > 1 && latestQueuePosition != lastReportedQueuePosition)
-                {
-                    uiLogger.CleanCurrentLine();
-                    WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("LatestDeploymentQueuePosition"), latestQueuePosition));
-                    lastReportedQueuePosition = latestQueuePosition;
-                }
-
                 var queuedJobTaskIds = taskRegister.Keys
                     .Where(taskId => queuedTasks.Any(task => task.TaskId == taskId))
                     .ToList();
-                var queueJumpRequested = latestQueuePosition > 1 && queuedJobTaskIds.Count > 0 && _queueInteraction.QueueJumpRequested();
-                if (!queueJumpAttempted && queueJumpRequested)
+                var leadingQueuePosition = queuedJobTaskIds.Count == 0
+                    ? 0
+                    : queuedTasks.FindIndex(task => task.TaskId == queuedJobTaskIds[0]) + 1;
+                if (leadingQueuePosition > 1 && leadingQueuePosition != lastReportedQueuePosition)
+                {
+                    uiLogger.CleanCurrentLine();
+                    WriteDeploymentStatus(uiLogger, "StatusQueued", string.Format(UiString("LeadingDeploymentQueuePosition"), leadingQueuePosition));
+                    lastReportedQueuePosition = leadingQueuePosition;
+                }
+
+                var shouldReadQueueJump = queuedJobTaskIds.Count > 0 && (leadingQueuePosition > 1 || queueJumpAttempted);
+                var queueJumpRequested = shouldReadQueueJump && _queueInteraction.QueueJumpRequested();
+                if (!queueJumpAttempted && leadingQueuePosition > 1 && queueJumpRequested)
                 {
                     uiLogger.CleanCurrentLine();
                     if (_queueInteraction.ConfirmQueueJump(string.Format(UiString("ConfirmQueueJump"), queuedJobTaskIds.Count)))

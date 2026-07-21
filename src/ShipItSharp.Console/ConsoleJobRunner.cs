@@ -215,6 +215,13 @@ namespace ShipItSharp.Console
                 return true;
             }
 
+            var queuedStatusPrefix = GetStatusPrefix(_languageProvider.GetString(LanguageSection.UiStrings, "StatusQueued"));
+            if (toWrite.StartsWith(queuedStatusPrefix, StringComparison.Ordinal))
+            {
+                WriteStatusLine(toWrite, queuedStatusPrefix, ConsoleColor.Yellow);
+                return true;
+            }
+
             var runStatusPrefix = GetStatusPrefix(_languageProvider.GetString(LanguageSection.UiStrings, "StatusRun"));
             if (toWrite.StartsWith(runStatusPrefix, StringComparison.Ordinal))
             {

@@ -513,8 +513,11 @@
     <data name="TaskQueuedWaiting" xml:space="preserve">
       <value>Currently queued. Waiting...</value>
     </data>
-    <data name="LatestDeploymentQueuePosition" xml:space="preserve">
-      <value>Latest deployment is at queue position {0}.</value>
+    <data name="LeadingDeploymentQueuePosition" xml:space="preserve">
+      <value>First deployment in this job is at queue position {0}.</value>
+    </data>
+    <data name="StatusQueued" xml:space="preserve">
+      <value>queued</value>
     </data>
     <data name="ConfirmQueueJump" xml:space="preserve">
       <value>Move all {0} queued task(s) from this deployment job to the top of the queue?</value>

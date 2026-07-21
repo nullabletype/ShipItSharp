@@ -513,6 +513,9 @@
     <data name="TaskQueuedWaiting" xml:space="preserve">
       <value>Currently queued. Waiting...</value>
     </data>
+    <data name="LatestDeploymentQueuePosition" xml:space="preserve">
+      <value>Latest deployment is at queue position {0}.</value>
+    </data>
     <data name="TaskStatusProgress" xml:space="preserve">
       <value>Current status: {0}. Percentage: {1}. Estimated time remaining: {2}</value>
     </data>

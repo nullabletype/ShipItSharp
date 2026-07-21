@@ -21,6 +21,7 @@
 #endregion
 
 
+using System;
 using System.Collections.Generic;
 
 namespace ShipItSharp.Core.Deployment.Models
@@ -35,5 +36,6 @@ namespace ShipItSharp.Core.Deployment.Models
         public string ErrorMessage { get; set; }
         public Dictionary<string, string> Links { get; set; }
         public string DeploymentId { get; set; }
+        public DateTimeOffset? QueueTime { get; set; }
     }
 }

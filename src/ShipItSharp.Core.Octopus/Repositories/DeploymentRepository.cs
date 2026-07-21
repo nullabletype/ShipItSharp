@@ -111,7 +111,8 @@ namespace ShipItSharp.Core.Octopus.Repositories
                     IsComplete = currentTask.IsCompleted,
                     TaskId = currentTask.Id,
                     Links = currentTask.Links.ToDictionary(l => l.Key, l => l.Value.ToString()),
-                    DeploymentId = deploymentId
+                    DeploymentId = deploymentId,
+                    QueueTime = currentTask.QueueTime
                 });
             }
 

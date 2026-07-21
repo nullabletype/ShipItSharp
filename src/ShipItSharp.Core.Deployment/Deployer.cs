@@ -283,10 +283,24 @@ namespace ShipItSharp.Core.Deployment
         {
             var done = false;
             var totalCount = taskRegister.Count();
+            var latestTaskId = taskRegister.Keys.Last();
+            int? lastReportedQueuePosition = null;
 
             while (!done)
             {
                 var tasks = await _helper.Deployments.GetDeploymentTasks(0, 100);
+                var queuedTasks = tasks
+                    .Where(task => task.State == TaskStatus.Queued)
+                    .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
+                    .ToList();
+                var latestQueuePosition = queuedTasks.FindIndex(task => task.TaskId == latestTaskId) + 1;
+                if (latestQueuePosition > 0 && latestQueuePosition != lastReportedQueuePosition)
+                {
+                    uiLogger.CleanCurrentLine();
+                    WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("LatestDeploymentQueuePosition"), latestQueuePosition));
+                    lastReportedQueuePosition = latestQueuePosition;
+                }
+
                 foreach (var currentTask in taskRegister.ToList())
                 {
                     var found = tasks.FirstOrDefault(t => t.TaskId == currentTask.Key);

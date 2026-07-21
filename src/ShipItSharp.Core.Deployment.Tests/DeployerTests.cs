@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using NSubstitute;
 using NUnit.Framework;
@@ -145,6 +146,54 @@ public class DeployerTests
         uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("run") && line.Contains("Time taken:")));
     }
 
+    [Test]
+    public async Task StartJob_ReportsLatestDeploymentQueuePosition_WhenItIsQueued()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var projects = new[]
+        {
+            new ProjectDeployment { ProjectId = "Projects-1", ProjectName = "Payments", ReleaseId = "Releases-1" },
+            new ProjectDeployment { ProjectId = "Projects-2", ProjectName = "Orders", ReleaseId = "Releases-2" }
+        };
+        releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1.0.0" });
+        releases.GetRelease("Releases-2").Returns(new Release { Id = "Releases-2", Version = "1.0.0" });
+        deployments.CreateDeploymentTask(projects[0], "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
+        deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
+        deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
+        deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
+        deployments.GetDeploymentTasks(0, 100).Returns(
+            new[]
+            {
+                new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued, QueueTime = System.DateTimeOffset.UtcNow.AddMinutes(2) },
+                new TaskStub { TaskId = "ServerTasks-1", State = TaskStatus.Queued, QueueTime = System.DateTimeOffset.UtcNow },
+                new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued, QueueTime = System.DateTimeOffset.UtcNow.AddMinutes(1) }
+            },
+            new[]
+            {
+                new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done },
+                new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done }
+            });
+        var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment
+        {
+            EnvironmentId = "Environments-1",
+            EnvironmentName = "Prod",
+            DeployAsync = true,
+            ProjectDeployments = projects.ToList()
+        };
+
+        await deployer.StartJob(job, uiLogger);
+
+        uiLogger.Received(1).WriteLine(Arg.Is<string>(line => line.Contains("Latest deployment is at queue position 3.")));
+    }
+
     private static IOctopusHelper CreateHelperWithLifecycle(LifeCycleModel lifecycle)
     {
         var helper = Substitute.For<IOctopusHelper>();
@@ -199,7 +248,8 @@ public class DeployerTests
             ["DeploymentSummaryCompleted"] = "Completed: {0}",
             ["DeploymentSummaryFailed"] = "Failed: {0}",
             ["DeploymentSummaryTotal"] = "Total: {0}",
-            ["DeploymentElapsedTime"] = "Time taken: {0}"
+            ["DeploymentElapsedTime"] = "Time taken: {0}",
+            ["LatestDeploymentQueuePosition"] = "Latest deployment is at queue position {0}."
         };
 
         var language = Substitute.For<ILanguageProvider>();

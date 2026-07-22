@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -51,6 +52,32 @@ public class ReleaseNamePromptTests
             Assert.That(result, Is.Empty);
             Assert.That(output.ToString(), Does.StartWith("Release version"));
             Assert.That(timer.Elapsed, Is.LessThan(TimeSpan.FromMilliseconds(150)));
+        });
+    }
+
+    [Test]
+    public void PromptConsoleForStringWithTimeout_CancelsTimeoutWhenTypingStarts()
+    {
+        using var output = new StringWriter();
+        var keys = new Queue<ConsoleKeyInfo>(new[]
+        {
+            new ConsoleKeyInfo('1', ConsoleKey.D1, false, false, false),
+            new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false)
+        });
+        var availabilityChecks = 0;
+
+        var result = BaseCommand.PromptConsoleForStringWithTimeout(
+            "Release version",
+            TimeSpan.FromMilliseconds(20),
+            output,
+            () => ++availabilityChecks != 2,
+            keys.Dequeue,
+            Thread.Sleep);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.EqualTo("1"));
+            Assert.That(output.ToString(), Does.Contain("\rRelease version: 1"));
         });
     }
 

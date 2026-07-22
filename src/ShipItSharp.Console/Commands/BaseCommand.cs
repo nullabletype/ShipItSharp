@@ -236,31 +236,55 @@ namespace ShipItSharp.Console.Commands
 
         private static string PromptConsoleForStringWithTimeout(string prompt, TimeSpan timeout, TextWriter output)
         {
+            return PromptConsoleForStringWithTimeout(
+                prompt,
+                timeout,
+                output,
+                () => System.Console.KeyAvailable,
+                () => System.Console.ReadKey(intercept: true),
+                Thread.Sleep);
+        }
+
+        internal static string PromptConsoleForStringWithTimeout(
+            string prompt,
+            TimeSpan timeout,
+            TextWriter output,
+            Func<bool> keyAvailable,
+            Func<ConsoleKeyInfo> readKey,
+            Action<int> wait)
+        {
             var input = new StringBuilder();
             var timer = Stopwatch.StartNew();
             var displayedSeconds = -1;
+            var timeoutCancelled = false;
+            var renderedLength = 0;
 
-            while (timer.Elapsed < timeout)
+            while (timeoutCancelled || timer.Elapsed < timeout)
             {
-                var remainingSeconds = Math.Max(1, (int)Math.Ceiling((timeout - timer.Elapsed).TotalSeconds));
-                if (remainingSeconds != displayedSeconds)
+                if (!timeoutCancelled)
                 {
-                    if (displayedSeconds != -1)
+                    var remainingSeconds = Math.Max(1, (int)Math.Ceiling((timeout - timer.Elapsed).TotalSeconds));
+                    if (remainingSeconds != displayedSeconds)
                     {
-                        output.Write('\r');
+                        if (displayedSeconds != -1)
+                        {
+                            output.Write('\r');
+                        }
+                        var timedPrompt = $"{prompt} ({remainingSeconds,2}s): {input}";
+                        output.Write(timedPrompt);
+                        output.Flush();
+                        renderedLength = timedPrompt.Length;
+                        displayedSeconds = remainingSeconds;
                     }
-                    output.Write($"{prompt} ({remainingSeconds,2}s): {input}");
-                    output.Flush();
-                    displayedSeconds = remainingSeconds;
                 }
 
-                if (!System.Console.KeyAvailable)
+                if (!keyAvailable())
                 {
-                    Thread.Sleep(25);
+                    wait(25);
                     continue;
                 }
 
-                var key = System.Console.ReadKey(intercept: true);
+                var key = readKey();
                 if (key.Key == ConsoleKey.Enter)
                 {
                     output.WriteLine();
@@ -280,7 +304,20 @@ namespace ShipItSharp.Console.Commands
                 if (!char.IsControl(key.KeyChar))
                 {
                     input.Append(key.KeyChar);
-                    output.Write(key.KeyChar);
+                    if (!timeoutCancelled)
+                    {
+                        timeoutCancelled = true;
+                        var untimedPrompt = $"{prompt}: {input}";
+                        output.Write('\r');
+                        output.Write(untimedPrompt.PadRight(renderedLength));
+                        output.Write('\r');
+                        output.Write(untimedPrompt);
+                    }
+                    else
+                    {
+                        output.Write(key.KeyChar);
+                    }
+                    output.Flush();
                 }
             }
 

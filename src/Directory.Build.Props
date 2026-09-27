@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <AssemblyFileVersion>1.0.0</AssemblyFileVersion>
-    <Version>1.0.0-beta.1</Version>
+    <Version>1.0.0-rc.1</Version>
     <FileVersion>1.0.0</FileVersion>
     <Authors>Steven Davies</Authors>
     <Copyright>Steven Davies</Copyright>

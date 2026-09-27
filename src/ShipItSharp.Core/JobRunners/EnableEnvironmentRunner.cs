@@ -24,6 +24,7 @@ using System;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using DeploymentEnvironment = ShipItSharp.Core.Deployment.Models.Environment;
 
@@ -40,11 +41,24 @@ namespace ShipItSharp.Core.JobRunners
             _languageProvider = languageProvider;
         }
 
-        public async Task<int> Run(DeploymentEnvironment environment, Machine machine = null)
+        public Task<int> Run(DeploymentEnvironment environment, Machine machine = null)
+        {
+            return Run(environment, machine, true, null);
+        }
+
+        public async Task<int> Run(DeploymentEnvironment environment, Machine machine, bool skipConfirmation, ICommandInteraction interaction)
         {
             if (environment == null)
             {
                 return -1;
+            }
+
+            var confirmation = machine == null
+                ? string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmEnableEnvironment"), environment.Name)
+                : string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmEnableMachine"), machine.Name, environment.Name);
+            if (!skipConfirmation && !interaction.Confirm(confirmation, false))
+            {
+                return 0;
             }
 
             try

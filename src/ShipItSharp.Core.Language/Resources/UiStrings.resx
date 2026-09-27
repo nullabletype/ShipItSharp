@@ -132,8 +132,38 @@
     <data name="CheckingOptions" xml:space="preserve">
     <value>Checking your options...</value>
   </data>
-    <data name="ConfirmationCheck" xml:space="preserve">
+  <data name="ConfirmationCheck" xml:space="preserve">
     <value>Delete environment {0}? This cannot be undone.</value>
+  </data>
+  <data name="ConfirmDisableEnvironment" xml:space="preserve">
+    <value>Disable all deployment targets in environment {0}?</value>
+  </data>
+  <data name="ConfirmDisableMachine" xml:space="preserve">
+    <value>Disable deployment target {0} in environment {1}?</value>
+  </data>
+  <data name="ConfirmEnableEnvironment" xml:space="preserve">
+    <value>Enable all deployment targets in environment {0}?</value>
+  </data>
+  <data name="ConfirmEnableMachine" xml:space="preserve">
+    <value>Enable deployment target {0} in environment {1}?</value>
+  </data>
+  <data name="ConfirmAddEnvironmentToTeam" xml:space="preserve">
+    <value>Add environment {0} to team {1}?</value>
+  </data>
+  <data name="ConfirmAddEnvironmentToLifecycle" xml:space="preserve">
+    <value>Add environment {0} to phase {2} of lifecycle {1}?</value>
+  </data>
+  <data name="ConfirmApplyVariableProfile" xml:space="preserve">
+    <value>Apply variable profile {0}?</value>
+  </data>
+  <data name="ConfirmCleanupChannels" xml:space="preserve">
+    <value>Remove {0} obsolete channel(s)?</value>
+  </data>
+  <data name="ConfirmPrioritiseTasks" xml:space="preserve">
+    <value>Move {0} queued deployment task(s) for environment {1} to the top of the queue?</value>
+  </data>
+  <data name="ConfirmCancelTasks" xml:space="preserve">
+    <value>Cancel {0} queued deployment task(s) for environment {1}?</value>
   </data>
     <data name="CouldntAddEnvToTeam" xml:space="preserve">
     <value>Could not add the environment to that team: {0}</value>

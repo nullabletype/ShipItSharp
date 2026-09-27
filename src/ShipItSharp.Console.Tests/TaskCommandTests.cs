@@ -8,6 +8,7 @@ using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using DeploymentModel = ShipItSharp.Core.Deployment.Models.Deployment;
 using DeploymentEnvironment = ShipItSharp.Core.Deployment.Models.Environment;
@@ -23,7 +24,7 @@ public class TaskCommandTests
     {
         var (app, deployments) = CreateApp();
 
-        var result = app.Execute("task", "prioritise", "-e", "Pro");
+        var result = app.Execute("task", "prioritise", "-e", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await deployments.Received(1).PrioritiseTask("ServerTasks-1");
@@ -35,7 +36,7 @@ public class TaskCommandTests
     {
         var (app, deployments) = CreateApp();
 
-        var result = app.Execute("task", "cancel", "-e", "Pro");
+        var result = app.Execute("task", "cancel", "-e", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await deployments.Received(1).CancelTask("ServerTasks-1");
@@ -48,6 +49,7 @@ public class TaskCommandTests
         var environments = Substitute.For<IEnvironmentRepository>();
         var deployments = Substitute.For<IDeploymentRepository>();
         var progressBar = Substitute.For<IProgressBar>();
+        var interaction = Substitute.For<ICommandInteraction>();
 
         helper.Environments.Returns(environments);
         helper.Deployments.Returns(deployments);
@@ -68,8 +70,8 @@ public class TaskCommandTests
 
         var languageProvider = TestLanguageProvider.Create();
         var runner = new TaskRunner(helper);
-        var prioritise = new PrioritiseTask(helper, languageProvider, progressBar, runner);
-        var cancel = new CancelTask(helper, languageProvider, progressBar, runner);
+        var prioritise = new PrioritiseTask(helper, languageProvider, progressBar, runner, interaction);
+        var cancel = new CancelTask(helper, languageProvider, progressBar, runner, interaction);
         var task = new TaskCommand(helper, prioritise, cancel, languageProvider);
 
         var app = new CommandLineApplication();

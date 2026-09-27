@@ -43,7 +43,12 @@ namespace ShipItSharp.Core.JobRunners
             _languageProvider = languageProvider;
         }
 
-        public async Task<int> Run(RenameReleaseConfig config, IProgressBar progressBar, ICommandInteraction interaction)
+        public Task<int> Run(RenameReleaseConfig config, IProgressBar progressBar, ICommandInteraction interaction)
+        {
+            return Run(config, progressBar, interaction, false);
+        }
+
+        public async Task<int> Run(RenameReleaseConfig config, IProgressBar progressBar, ICommandInteraction interaction, bool skipConfirmation)
         {
             var toRename = await GetProjectReleases(config, progressBar);
             if (!toRename.Any())
@@ -51,7 +56,7 @@ namespace ShipItSharp.Core.JobRunners
                 return 0;
             }
 
-            if (!interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "GoingToRename"), config.ReleaseName), true))
+            if (!skipConfirmation && !interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "GoingToRename"), config.ReleaseName), true))
             {
                 return 0;
             }

@@ -22,6 +22,7 @@
 
 using System.Threading.Tasks;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Octopus.Repositories;
 
@@ -38,7 +39,12 @@ namespace ShipItSharp.Core.JobRunners
             _languageProvider = languageProvider;
         }
 
-        public async Task<int> Run(string environmentId, string lifecycleId, string stringPhaseId, bool automatic)
+        public Task<int> Run(string environmentId, string lifecycleId, string stringPhaseId, bool automatic)
+        {
+            return Run(environmentId, lifecycleId, stringPhaseId, automatic, true, null);
+        }
+
+        public async Task<int> Run(string environmentId, string lifecycleId, string stringPhaseId, bool automatic, bool skipConfirmation, ICommandInteraction interaction)
         {
             if (string.IsNullOrEmpty(environmentId))
             {
@@ -56,6 +62,11 @@ namespace ShipItSharp.Core.JobRunners
             {
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "LifecyclePhaseIsInvalid"));
                 return -1;
+            }
+
+            if (!skipConfirmation && !interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmAddEnvironmentToLifecycle"), environmentId, lifecycleId, phaseId), false))
+            {
+                return 0;
             }
 
             var result = await _octopusHelper.LifeCycles.AddEnvironmentToLifecyclePhase(environmentId, lifecycleId, phaseId - 1, automatic);

@@ -32,6 +32,7 @@ namespace ShipItSharp.Console.Tests;
 public class LiveOctopusCommandTests
 {
     private const int CommandTimeoutSeconds = 240;
+    private const int LiveTestPacingDelaySeconds = 15;
     private const string UrlEnvironmentVariable = "SHIPITSHARP_OCTOPUS_URL";
     private const string ApiKeyEnvironmentVariable = "SHIPITSHARP_OCTOPUS_API_KEY";
     private const string FixturePrefix = "ShipItSharp-LiveTests-";
@@ -74,9 +75,9 @@ public class LiveOctopusCommandTests
         Assert.That(currentUser, Is.Not.Null, "The supplied Octopus API key must be valid.");
 
         await DeleteStaleFixtureProjectsAndGroups();
+        await DeleteStaleFixtureMachines();
         await DeleteStaleFixtureEnvironments();
         await LoadSampleProjectFixture();
-        await DeleteStaleFixtureMachines();
         _sampleMachine = await CreateSampleMachine(_sourceEnvironment);
         await DeleteStaleFixtureChannels();
         _team = (await _client.Repository.Teams.FindAll(CancellationToken.None)).FirstOrDefault();
@@ -94,6 +95,12 @@ public class LiveOctopusCommandTests
         await DeleteStaleFixtureMachines();
         await DeleteStaleFixtureProjectsAndGroups();
         await DeleteStaleFixtureEnvironments();
+    }
+
+    [SetUp]
+    public Task PaceRequestsToTheLiveInstance()
+    {
+        return Task.Delay(TimeSpan.FromSeconds(LiveTestPacingDelaySeconds));
     }
 
     [Test]
@@ -132,17 +139,17 @@ public class LiveOctopusCommandTests
 
             if (_lifecycle != null)
             {
-                var addToLifecycle = await RunShipIt("env", "addtolifecycle", "-e", disposable.Id, "-l", _lifecycle.Id, "-p", "1");
+                var addToLifecycle = await RunShipIt("env", "addtolifecycle", "-e", disposable.Id, "-l", _lifecycle.Id, "-p", "1", "--noprompt");
                 AssertCommandSucceeded(addToLifecycle);
             }
 
             if (_team != null)
             {
-                var addToTeam = await RunShipIt("env", "addtoteam", "-e", disposable.Id, "-t", _team.Id);
+                var addToTeam = await RunShipIt("env", "addtoteam", "-e", disposable.Id, "-t", _team.Id, "--noprompt");
                 AssertCommandSucceeded(addToTeam);
             }
 
-            var delete = await RunShipIt("env", "delete", "-e", disposable.Id, "-s");
+            var delete = await RunShipIt("env", "delete", "-e", disposable.Id, "--noprompt");
             AssertCommandSucceeded(delete);
 
             disposable = await FindEnvironment(name);
@@ -166,14 +173,14 @@ public class LiveOctopusCommandTests
             disposable = await EnsureEnvironment(name);
             disposableMachine = await CreateSampleMachine(disposable, "DM");
 
-            var result = await RunShipIt("env", "disable", "-e", name);
+            var result = await RunShipIt("env", "disable", "-e", name, "--noprompt");
 
             AssertCommandSucceeded(result);
             Assert.That(result.Output, Does.Contain("Environment disabled"));
             disposableMachine = await _client.Repository.Machines.Get(disposableMachine.Id, CancellationToken.None);
             Assert.That(disposableMachine.IsDisabled, Is.True);
 
-            var enable = await RunShipIt("env", "enable", "-e", name);
+            var enable = await RunShipIt("env", "enable", "-e", name, "--noprompt");
             AssertCommandSucceeded(enable);
             Assert.That(enable.Output, Does.Contain("Environment enabled"));
             disposableMachine = await _client.Repository.Machines.Get(disposableMachine.Id, CancellationToken.None);
@@ -191,14 +198,14 @@ public class LiveOctopusCommandTests
     {
         try
         {
-            var result = await RunShipIt("env", "disable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name);
+            var result = await RunShipIt("env", "disable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name, "--noprompt");
 
             AssertCommandSucceeded(result);
             Assert.That(result.Output, Does.Contain("Machine disabled"));
             _sampleMachine = await _client.Repository.Machines.Get(_sampleMachine.Id, CancellationToken.None);
             Assert.That(_sampleMachine.IsDisabled, Is.True);
 
-            var enable = await RunShipIt("env", "enable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name);
+            var enable = await RunShipIt("env", "enable", "-e", _sourceEnvironment.Name, "-m", _sampleMachine.Name, "--noprompt");
             AssertCommandSucceeded(enable);
             Assert.That(enable.Output, Does.Contain("Machine enabled"));
             _sampleMachine = await _client.Repository.Machines.Get(_sampleMachine.Id, CancellationToken.None);
@@ -277,7 +284,7 @@ public class LiveOctopusCommandTests
         AssertDeploymentOutput(promote, _promotionEnvironment, sourceReleaseVersion);
         await AssertDeploymentExists(_promotionEnvironment, sourceRelease);
 
-        var updateVariables = await RunShipIt("release", "updatevariables", "-e", _sourceEnvironment.Name, "-g", _sampleProjectGroup.Name, "-s");
+        var updateVariables = await RunShipIt("release", "updatevariables", "-e", _sourceEnvironment.Name, "-g", _sampleProjectGroup.Name, "--noprompt");
         AssertCommandSucceeded(updateVariables);
         Assert.That(updateVariables.Output, Does.Contain(_sampleProject.Name));
 
@@ -305,7 +312,7 @@ public class LiveOctopusCommandTests
         var profilePath = Path.Combine(TestContext.CurrentContext.WorkDirectory, $"shipitsharp-vars-{RunId}.json");
         await File.WriteAllTextAsync(profilePath, @"{""VariableSets"":[]}");
 
-        var result = await RunShipIt("var", "profile", "-f", profilePath);
+        var result = await RunShipIt("var", "profile", "-f", profilePath, "--noprompt");
 
         AssertCommandSucceeded(result);
     }
@@ -339,6 +346,7 @@ public class LiveOctopusCommandTests
                 "channel",
                 "cleanup",
                 "-g", _sampleProjectGroup.Name,
+                "--noprompt",
                 "--maxpackagesperproject:1");
 
             AssertCommandSucceeded(cleanup);
@@ -362,7 +370,7 @@ public class LiveOctopusCommandTests
 
         try
         {
-            var result = await RunShipIt("task", "prioritise", "-e", _sourceEnvironment.Name);
+            var result = await RunShipIt("task", "prioritise", "-e", _sourceEnvironment.Name, "--noprompt");
 
             AssertCommandSucceeded(result);
             Assert.That(result.Output, Does.Contain("Prioritised"));
@@ -381,7 +389,7 @@ public class LiveOctopusCommandTests
     {
         var deployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.2");
 
-        var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name);
+        var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name, "--noprompt");
 
         AssertCommandSucceeded(result);
         Assert.That(result.Output, Does.Contain("Cancelled"));

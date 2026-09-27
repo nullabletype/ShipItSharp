@@ -42,6 +42,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             _interaction = interaction;
         }
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "delete";
 
 
@@ -57,7 +58,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var id = GetStringFromUser(EnsureEnvironmentOptionNames.Id, string.Empty);
-            var skipConfirm = GetOption(EnsureEnvironmentOptionNames.SkipConfirmation).HasValue();
+            var skipConfirm = NoPromptSpecified || GetOption(EnsureEnvironmentOptionNames.SkipConfirmation).HasValue();
             return await _runner.Run(id, skipConfirm, _interaction);
         }
 

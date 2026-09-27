@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Core.JobRunners
@@ -40,17 +41,27 @@ namespace ShipItSharp.Core.JobRunners
             _octopusHelper = octopusHelper;
         }
 
+        public Task<TaskOperationResult> PrioritiseQueuedTasks(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages, bool skipConfirmation, ICommandInteraction interaction)
+        {
+            return Run(environmentName, progressBar, messages, skipConfirmation, interaction, taskId => _octopusHelper.Deployments.PrioritiseTask(taskId));
+        }
+
         public Task<TaskOperationResult> PrioritiseQueuedTasks(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages)
         {
-            return Run(environmentName, progressBar, messages, taskId => _octopusHelper.Deployments.PrioritiseTask(taskId));
+            return PrioritiseQueuedTasks(environmentName, progressBar, messages, true, null);
+        }
+
+        public Task<TaskOperationResult> CancelQueuedTasks(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages, bool skipConfirmation, ICommandInteraction interaction)
+        {
+            return Run(environmentName, progressBar, messages, skipConfirmation, interaction, taskId => _octopusHelper.Deployments.CancelTask(taskId));
         }
 
         public Task<TaskOperationResult> CancelQueuedTasks(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages)
         {
-            return Run(environmentName, progressBar, messages, taskId => _octopusHelper.Deployments.CancelTask(taskId));
+            return CancelQueuedTasks(environmentName, progressBar, messages, true, null);
         }
 
-        private async Task<TaskOperationResult> Run(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages, Func<string, Task> taskAction)
+        private async Task<TaskOperationResult> Run(string environmentName, IProgressBar progressBar, TaskRunnerMessages messages, bool skipConfirmation, ICommandInteraction interaction, Func<string, Task> taskAction)
         {
             var environment = await _octopusHelper.Environments.GetEnvironment(environmentName);
             if (environment == null)
@@ -75,6 +86,12 @@ namespace ShipItSharp.Core.JobRunners
             var matchingTasks = queuedTasks
                 .Where(t => deploymentsByTask.TryGetValue(t.TaskId, out var deployment) && deployment.EnvironmentId == environment.Id)
                 .ToList();
+
+            progressBar.CleanCurrentLine();
+            if (matchingTasks.Count > 0 && !skipConfirmation && !interaction.Confirm(string.Format(messages.Confirmation, matchingTasks.Count, environment.Name), false))
+            {
+                return TaskOperationResult.CancelledByOperator(queuedTasks.Count);
+            }
 
             for (var index = 0; index < matchingTasks.Count; index++)
             {
@@ -109,29 +126,37 @@ namespace ShipItSharp.Core.JobRunners
         public string LoadingQueuedTasks { get; init; }
         public string LoadingDeployments { get; init; }
         public string ProcessingTask { get; init; }
+        public string Confirmation { get; init; }
     }
 
     public class TaskOperationResult
     {
-        private TaskOperationResult(bool found, int scannedTaskCount, List<string> affectedTaskIds)
+        private TaskOperationResult(bool found, bool cancelled, int scannedTaskCount, List<string> affectedTaskIds)
         {
             Found = found;
+            Cancelled = cancelled;
             ScannedTaskCount = scannedTaskCount;
             AffectedTaskIds = affectedTaskIds;
         }
 
         public bool Found { get; }
+        public bool Cancelled { get; }
         public int ScannedTaskCount { get; }
         public List<string> AffectedTaskIds { get; }
 
         public static TaskOperationResult NotFound()
         {
-            return new TaskOperationResult(false, 0, new List<string>());
+            return new TaskOperationResult(false, false, 0, new List<string>());
         }
 
         public static TaskOperationResult Success(int scannedTaskCount, List<string> affectedTaskIds)
         {
-            return new TaskOperationResult(true, scannedTaskCount, affectedTaskIds);
+            return new TaskOperationResult(true, false, scannedTaskCount, affectedTaskIds);
+        }
+
+        public static TaskOperationResult CancelledByOperator(int scannedTaskCount)
+        {
+            return new TaskOperationResult(true, true, scannedTaskCount, new List<string>());
         }
     }
 }

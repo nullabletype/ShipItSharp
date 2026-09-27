@@ -29,6 +29,7 @@ using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Core.JobRunners
@@ -48,7 +49,12 @@ namespace ShipItSharp.Core.JobRunners
             _uiLogger = uiLogger;
         }
 
-        public async Task<bool> Cleanup(ChannelCleanupConfig config)
+        public Task<bool> Cleanup(ChannelCleanupConfig config)
+        {
+            return Cleanup(config, true, null);
+        }
+
+        public async Task<bool> Cleanup(ChannelCleanupConfig config, bool skipConfirmation, ICommandInteraction interaction)
         {
             var toDelete = new List<(string ProjectId, string ProjectName, string ChannelId, string ChannelName)>();
 
@@ -84,6 +90,11 @@ namespace ShipItSharp.Core.JobRunners
             }
 
             var failed = new List<(string ProjectName, string ChannelName, IEnumerable<Release> Releases)>();
+
+            if (!config.TestMode && toDelete.Count > 0 && !skipConfirmation && !interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmCleanupChannels"), toDelete.Count), false))
+            {
+                return true;
+            }
 
             foreach (var current in toDelete)
             {

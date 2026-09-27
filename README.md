@@ -132,6 +132,8 @@ Examples:
 
 Command options can also be passed with the short aliases shown in each command's help output.
 
+State-changing environment, release, variable, channel-cleanup, and task commands ask for confirmation before applying changes. Pass `--noprompt` only for explicitly unattended execution. Deployment profile commands and `env ensure` retain their existing automation-oriented behaviour without an additional confirmation.
+
 ## Development setup
 
 Clone the repository and restore dependencies:

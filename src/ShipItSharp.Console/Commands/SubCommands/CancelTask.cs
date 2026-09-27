@@ -25,15 +25,17 @@ using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    internal class CancelTask(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, TaskRunner runner)
+    internal class CancelTask(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, TaskRunner runner, ICommandInteraction interaction)
         : BaseCommand(octopusHelper, languageProvider)
     {
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "cancel";
 
         public override void Configure(CommandLineApplication command)
@@ -53,17 +55,18 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 return -1;
             }
 
-            var result = await runner.CancelQueuedTasks(environment.Id, progressBar, CreateMessages("CancellingTask"));
+            var result = await runner.CancelQueuedTasks(environment.Id, progressBar, CreateMessages("CancellingTask", "ConfirmCancelTasks"), NoPromptSpecified, interaction);
             return WriteResult(environment.Name, result);
         }
 
-        private TaskRunnerMessages CreateMessages(string processingKey)
+        private TaskRunnerMessages CreateMessages(string processingKey, string confirmationKey)
         {
             return new TaskRunnerMessages
             {
                 LoadingQueuedTasks = LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingQueuedTasks"),
                 LoadingDeployments = LanguageProvider.GetString(LanguageSection.UiStrings, "LoadingDeployments"),
-                ProcessingTask = LanguageProvider.GetString(LanguageSection.UiStrings, processingKey)
+                ProcessingTask = LanguageProvider.GetString(LanguageSection.UiStrings, processingKey),
+                Confirmation = LanguageProvider.GetString(LanguageSection.UiStrings, confirmationKey)
             };
         }
 
@@ -73,6 +76,11 @@ namespace ShipItSharp.Console.Commands.SubCommands
             {
                 System.Console.WriteLine(LanguageProvider.GetString(LanguageSection.UiStrings, "EnvironmentNotFound"), environment);
                 return -1;
+            }
+
+            if (result.Cancelled)
+            {
+                return 0;
             }
 
             if (result.AffectedTaskIds.Count == 0)

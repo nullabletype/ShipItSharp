@@ -80,7 +80,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 return -1;
             }
 
-            return await _runner.Run(configResult.Value, _progressBar, _interaction);
+            return await _runner.Run(configResult.Value, _progressBar, _interaction, NoPromptSpecified);
         }
 
         private struct RenameReleaseOptionNames

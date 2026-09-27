@@ -23,6 +23,7 @@
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -31,13 +32,16 @@ namespace ShipItSharp.Console.Commands.SubCommands
     internal class EnableEnvironment : BaseCommand
     {
         private readonly EnableEnvironmentRunner _runner;
+        private readonly ICommandInteraction _interaction;
 
-        public EnableEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnableEnvironmentRunner runner) : base(octopusHelper, languageProvider)
+        public EnableEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnableEnvironmentRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _runner = runner;
+            _interaction = interaction;
         }
 
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "enable";
 
         public override void Configure(CommandLineApplication command)
@@ -66,7 +70,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
                 return -2;
             }
 
-            return await _runner.Run(environment, machine);
+            return await _runner.Run(environment, machine, NoPromptSpecified, _interaction);
         }
 
         private struct EnableEnvironmentOptionNames

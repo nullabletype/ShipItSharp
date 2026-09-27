@@ -25,6 +25,7 @@ using System.IO;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Deployment.Models.Variables;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
 
@@ -41,7 +42,12 @@ namespace ShipItSharp.Core.JobRunners
             _languageProvider = languageProvider;
         }
 
-        public async Task<int> Run(string file)
+        public Task<int> Run(string file)
+        {
+            return Run(file, true, null);
+        }
+
+        public async Task<int> Run(string file, bool skipConfirmation, ICommandInteraction interaction)
         {
             var config = StandardSerialiser.DeserializeFromJsonNet<VariableSetCollection>(File.ReadAllText(file));
 
@@ -49,6 +55,11 @@ namespace ShipItSharp.Core.JobRunners
             {
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "FailedParsingVariableFile"));
                 return -1;
+            }
+
+            if (config.VariableSets.Count > 0 && !skipConfirmation && !interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmApplyVariableProfile"), file), false))
+            {
+                return 0;
             }
 
             foreach (var varSet in config.VariableSets)

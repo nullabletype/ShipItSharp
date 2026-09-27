@@ -25,6 +25,7 @@ using System;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -33,12 +34,15 @@ namespace ShipItSharp.Console.Commands.SubCommands
     internal class EnvironmentToLifecycle : BaseCommand
     {
         private readonly EnvironmentToLifecycleRunner _runner;
+        private readonly ICommandInteraction _interaction;
 
-        public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnvironmentToLifecycleRunner runner) : base(octopusHelper, languageProvider)
+        public EnvironmentToLifecycle(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, EnvironmentToLifecycleRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _runner = runner;
+            _interaction = interaction;
         }
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "addtolifecycle";
 
 
@@ -59,7 +63,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
             var lcId = GetStringFromUser(EnvironmentToLifecycleOptions.LcId, string.Empty, true);
             var stringPhaseId = GetStringFromUser(EnvironmentToLifecycleOptions.PhaseId, string.Empty, true);
             var auto = GetOption(EnvironmentToLifecycleOptions.Automatic).HasValue();
-            return await _runner.Run(environmentId, lcId, stringPhaseId, auto);
+            return await _runner.Run(environmentId, lcId, stringPhaseId, auto, NoPromptSpecified, _interaction);
         }
 
         private struct EnvironmentToLifecycleOptions

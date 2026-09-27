@@ -26,6 +26,7 @@ using System.IO;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 using ShipItSharp.Core.Utilities;
@@ -35,12 +36,15 @@ namespace ShipItSharp.Console.Commands.SubCommands
     internal class VariablesWithProfile : BaseCommand
     {
         private readonly VariablesWithProfileRunner _runner;
+        private readonly ICommandInteraction _interaction;
 
-        public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, VariablesWithProfileRunner runner) : base(octopusHelper, languageProvider)
+        public VariablesWithProfile(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, VariablesWithProfileRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _runner = runner;
+            _interaction = interaction;
         }
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "profile";
 
 
@@ -55,7 +59,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var file = GetStringFromUser(VariablesWithProfileOptionNames.File, string.Empty);
-            return await _runner.Run(file);
+            return await _runner.Run(file, NoPromptSpecified, _interaction);
         }
 
         private struct VariablesWithProfileOptionNames

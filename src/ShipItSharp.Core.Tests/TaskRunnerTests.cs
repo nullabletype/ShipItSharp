@@ -5,6 +5,7 @@ using NUnit.Framework;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using DeploymentModel = ShipItSharp.Core.Deployment.Models.Deployment;
 using DeploymentTaskStatus = ShipItSharp.Core.Deployment.Models.TaskStatus;
@@ -32,10 +33,12 @@ public class TaskRunnerTests
         }));
 
         var runner = new TaskRunner(helper);
+        var interaction = Substitute.For<ICommandInteraction>();
 
-        var result = await runner.PrioritiseQueuedTasks("Prod", progressBar, Messages());
+        var result = await runner.PrioritiseQueuedTasks("Prod", progressBar, Messages(), true, interaction);
 
         Assert.That(result.Found, Is.True);
+        interaction.DidNotReceive().Confirm(Arg.Any<string>(), Arg.Any<bool>());
         Assert.That(result.AffectedTaskIds, Is.EqualTo(new[] { "ServerTasks-1" }));
         await deployments.Received(1).PrioritiseTask("ServerTasks-1");
         await deployments.DidNotReceive().PrioritiseTask("ServerTasks-3");
@@ -58,10 +61,12 @@ public class TaskRunnerTests
         }));
 
         var runner = new TaskRunner(helper);
+        var interaction = Substitute.For<ICommandInteraction>();
 
-        var result = await runner.CancelQueuedTasks("Prod", progressBar, Messages());
+        var result = await runner.CancelQueuedTasks("Prod", progressBar, Messages(), true, interaction);
 
         Assert.That(result.Found, Is.True);
+        interaction.DidNotReceive().Confirm(Arg.Any<string>(), Arg.Any<bool>());
         Assert.That(result.AffectedTaskIds, Is.EqualTo(new[] { "ServerTasks-1" }));
         await deployments.Received(1).CancelTask("ServerTasks-1");
         await deployments.DidNotReceive().PrioritiseTask(Arg.Any<string>());
@@ -74,10 +79,12 @@ public class TaskRunnerTests
         environments.GetEnvironment("missing").Returns(Task.FromResult<Environment>(null));
 
         var runner = new TaskRunner(helper);
+        var interaction = Substitute.For<ICommandInteraction>();
 
-        var result = await runner.PrioritiseQueuedTasks("missing", progressBar, Messages());
+        var result = await runner.PrioritiseQueuedTasks("missing", progressBar, Messages(), false, interaction);
 
         Assert.That(result.Found, Is.False);
+        interaction.DidNotReceive().Confirm(Arg.Any<string>(), Arg.Any<bool>());
         await deployments.DidNotReceive().GetDeploymentTasks(Arg.Any<int>(), Arg.Any<int>());
         await deployments.DidNotReceive().PrioritiseTask(Arg.Any<string>());
     }
@@ -104,11 +111,40 @@ public class TaskRunnerTests
         }));
 
         var runner = new TaskRunner(helper);
+        var interaction = Substitute.For<ICommandInteraction>();
 
-        var result = await runner.PrioritiseQueuedTasks("Prod", progressBar, Messages());
+        var result = await runner.PrioritiseQueuedTasks("Prod", progressBar, Messages(), true, interaction);
 
         Assert.That(result.AffectedTaskIds, Is.EqualTo(new[] { "ServerTasks-101" }));
         await deployments.Received(1).GetDeploymentTasks(100, 100);
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task QueuedTaskOperation_DoesNotMutate_WhenConfirmationIsRejected(bool prioritise)
+    {
+        var (helper, environments, deployments, progressBar) = CreateDependencies();
+        var interaction = Substitute.For<ICommandInteraction>();
+        environments.GetEnvironment("Prod").Returns(Task.FromResult(new Environment { Id = "Environments-1", Name = "Prod" }));
+        deployments.GetDeploymentTasks(0, 100).Returns(Task.FromResult<IEnumerable<TaskStub>>(new List<TaskStub>
+        {
+            new() { TaskId = "ServerTasks-1", DeploymentId = "Deployments-1", State = DeploymentTaskStatus.Queued }
+        }));
+        deployments.GetDeployments(Arg.Any<string[]>()).Returns(Task.FromResult<IEnumerable<DeploymentModel>>(new List<DeploymentModel>
+        {
+            new() { TaskId = "ServerTasks-1", EnvironmentId = "Environments-1" }
+        }));
+        interaction.Confirm(Arg.Any<string>(), false).Returns(false);
+        var runner = new TaskRunner(helper);
+
+        var result = prioritise
+            ? await runner.PrioritiseQueuedTasks("Prod", progressBar, Messages(), false, interaction)
+            : await runner.CancelQueuedTasks("Prod", progressBar, Messages(), false, interaction);
+
+        Assert.That(result.Cancelled, Is.True);
+        interaction.Received(1).Confirm(Arg.Any<string>(), false);
+        await deployments.DidNotReceive().PrioritiseTask(Arg.Any<string>());
+        await deployments.DidNotReceive().CancelTask(Arg.Any<string>());
     }
 
     private static (IOctopusHelper Helper, IEnvironmentRepository Environments, IDeploymentRepository Deployments, IProgressBar ProgressBar) CreateDependencies()
@@ -130,7 +166,8 @@ public class TaskRunnerTests
         {
             LoadingQueuedTasks = "loading tasks",
             LoadingDeployments = "loading deployments",
-            ProcessingTask = "processing {0}"
+            ProcessingTask = "processing {0}",
+            Confirmation = "confirm {0} tasks for {1}"
         };
     }
 }

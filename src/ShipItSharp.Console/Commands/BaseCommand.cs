@@ -53,8 +53,10 @@ namespace ShipItSharp.Console.Commands
             LanguageProvider = languageProvider;
         }
         protected abstract bool SupportsInteractiveMode { get; }
+        protected virtual bool SupportsNoPrompt => SupportsInteractiveMode;
         public abstract string CommandName { get; }
         protected bool InInteractiveMode { get; private set; }
+        protected bool NoPromptSpecified => SupportsNoPrompt && GetOption(OptionNames.NoPrompt).HasValue();
         protected abstract Task<int> Run(CommandLineApplication command);
 
         public virtual void Configure(CommandLineApplication command)
@@ -63,13 +65,13 @@ namespace ShipItSharp.Console.Commands
             command.UnrecognizedArgumentHandling = UnrecognizedArgumentHandling.Throw;
             AddToRegister(OptionNames.ApiKey, command.Option("-a|--apikey", LanguageProvider.GetString(LanguageSection.OptionsStrings, "ApiKey"), CommandOptionType.SingleValue));
             AddToRegister(OptionNames.Url, command.Option("-u|--url", LanguageProvider.GetString(LanguageSection.OptionsStrings, "Url"), CommandOptionType.SingleValue));
-            if (SupportsInteractiveMode)
+            if (SupportsNoPrompt)
             {
                 AddToRegister(OptionNames.NoPrompt, command.Option("-n|--noprompt", LanguageProvider.GetString(LanguageSection.OptionsStrings, "InteractiveDeploy"), CommandOptionType.NoValue));
             }
             command.OnExecuteAsync(async _ =>
             {
-                if (SupportsInteractiveMode && !GetOption(OptionNames.NoPrompt).HasValue())
+                if (SupportsInteractiveMode && !NoPromptSpecified)
                 {
                     SetInteractiveMode(true);
                 }

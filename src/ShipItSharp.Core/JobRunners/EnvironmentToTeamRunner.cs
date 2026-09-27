@@ -23,6 +23,7 @@
 using System;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Language;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Core.JobRunners
@@ -38,7 +39,12 @@ namespace ShipItSharp.Core.JobRunners
             _languageProvider = languageProvider;
         }
 
-        public async Task<int> Run(string environmentId, string teamId)
+        public Task<int> Run(string environmentId, string teamId)
+        {
+            return Run(environmentId, teamId, true, null);
+        }
+
+        public async Task<int> Run(string environmentId, string teamId, bool skipConfirmation, ICommandInteraction interaction)
         {
             if (string.IsNullOrEmpty(environmentId))
             {
@@ -50,6 +56,11 @@ namespace ShipItSharp.Core.JobRunners
             {
                 System.Console.WriteLine(_languageProvider.GetString(LanguageSection.UiStrings, "TeamDoesntExist"));
                 return -1;
+            }
+
+            if (!skipConfirmation && !interaction.Confirm(string.Format(_languageProvider.GetString(LanguageSection.UiStrings, "ConfirmAddEnvironmentToTeam"), environmentId, teamId), false))
+            {
+                return 0;
             }
 
             try

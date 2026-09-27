@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.JobConfigs;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
 
@@ -34,12 +35,15 @@ namespace ShipItSharp.Console.Commands.SubCommands
     internal class CleanupChannels : BaseCommand
     {
         private readonly ChannelsRunner _runner;
+        private readonly ICommandInteraction _interaction;
 
-        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, ChannelsRunner runner) : base(octopusHelper, languageProvider)
+        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, ChannelsRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
         {
             _runner = runner;
+            _interaction = interaction;
         }
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "cleanup";
 
 
@@ -57,7 +61,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty);
             var testMode = GetBoolValueFromOption(EnsureEnvironmentOptionNames.TestMode);
-            
+
             if (!TryGetIntValueFromOption(EnsureEnvironmentOptionNames.MaxPackagesPerProject, out int maxNumberOfPackagesPerProject))
             {
                 System.Console.WriteLine(String.Format(LanguageProvider.GetString(LanguageSection.UiStrings, "MustBeNumber"), "maxpackagesperproject"));
@@ -68,7 +72,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
             if (config.IsSuccess)
             {
-                await _runner.Cleanup(config.Value);
+                await _runner.Cleanup(config.Value, NoPromptSpecified, _interaction);
             }
 
             return 0;

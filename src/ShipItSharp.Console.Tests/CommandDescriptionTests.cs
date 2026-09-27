@@ -4,6 +4,7 @@ using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using NUnit.Framework;
 using ShipItSharp.Console.Commands;
+using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Language;
 
 namespace ShipItSharp.Console.Tests;
@@ -23,7 +24,7 @@ public class CommandDescriptionTests
 
         foreach (var commandType in commandTypes)
         {
-            var command = (BaseCommand) Create(commandType);
+            var command = (BaseCommand)Create(commandType);
             var app = new CommandLineApplication();
 
             command.Configure(app);
@@ -44,7 +45,7 @@ public class CommandDescriptionTests
 
         foreach (var commandType in commandTypes)
         {
-            var command = (BaseCommand) Create(commandType);
+            var command = (BaseCommand)Create(commandType);
             var app = new CommandLineApplication();
 
             command.Configure(app);
@@ -57,6 +58,39 @@ public class CommandDescriptionTests
                 .ToArray();
 
             Assert.That(duplicateShortOptions, Is.Empty, $"{commandType.FullName} declares duplicate short options.");
+        }
+    }
+
+    [Test]
+    public void Configure_StateChangingInteractiveCommands_ExposeNoPromptOption()
+    {
+        var commandTypes = new[]
+        {
+            typeof(Deploy),
+            typeof(Promote),
+            typeof(DeploySpecific),
+            typeof(DeleteEnvironment),
+            typeof(DisableEnvironment),
+            typeof(EnableEnvironment),
+            typeof(EnvironmentToTeam),
+            typeof(EnvironmentToLifecycle),
+            typeof(RenameRelease),
+            typeof(UpdateReleaseVariables),
+            typeof(VariablesWithProfile),
+            typeof(CleanupChannels),
+            typeof(PrioritiseTask),
+            typeof(CancelTask)
+        };
+
+        foreach (var commandType in commandTypes)
+        {
+            var command = (BaseCommand)Create(commandType);
+            var app = new CommandLineApplication();
+
+            command.Configure(app);
+
+            Assert.That(app.GetOptions().Any(option => option.LongName == "noprompt"), Is.True,
+                $"{commandType.FullName} must expose --noprompt.");
         }
     }
 

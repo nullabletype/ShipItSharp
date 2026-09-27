@@ -6,6 +6,7 @@ using NUnit.Framework;
 using ShipItSharp.Console.Commands.SubCommands;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.JobRunners;
+using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Octopus.Interfaces;
 using DeploymentEnvironment = ShipItSharp.Core.Deployment.Models.Environment;
 
@@ -19,7 +20,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("disable", "-e", "Pro");
+        var result = app.Execute("disable", "-e", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).DisableMachines("Environments-1");
@@ -31,7 +32,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("disable", "-e", "Environments-1");
+        var result = app.Execute("disable", "-e", "Environments-1", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).DisableMachines("Environments-1");
@@ -42,7 +43,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("disable", "--environment", "Pro");
+        var result = app.Execute("disable", "--environment", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).DisableMachines("Environments-1");
@@ -53,7 +54,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("disable", "-e", "Pro", "-m", "Worker");
+        var result = app.Execute("disable", "-e", "Pro", "-m", "Worker", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).DisableMachine("Machines-1", "Environments-1");
@@ -65,7 +66,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("enable", "-e", "Pro");
+        var result = app.Execute("enable", "-e", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).EnableMachines("Environments-1");
@@ -77,7 +78,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("enable", "-e", "Environments-1");
+        var result = app.Execute("enable", "-e", "Environments-1", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).EnableMachines("Environments-1");
@@ -88,7 +89,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("enable", "--environment", "Pro");
+        var result = app.Execute("enable", "--environment", "Pro", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).EnableMachines("Environments-1");
@@ -99,7 +100,7 @@ public class EnvironmentCommandTests
     {
         var (app, environments, machines) = CreateApp();
 
-        var result = app.Execute("enable", "-e", "Pro", "-m", "Worker");
+        var result = app.Execute("enable", "-e", "Pro", "-m", "Worker", "--noprompt");
 
         Assert.That(result, Is.EqualTo(0));
         await machines.Received(1).EnableMachine("Machines-1", "Environments-1");
@@ -111,6 +112,7 @@ public class EnvironmentCommandTests
         var helper = Substitute.For<IOctopusHelper>();
         var environments = Substitute.For<IEnvironmentRepository>();
         var machines = Substitute.For<IMachineRepository>();
+        var interaction = Substitute.For<ICommandInteraction>();
 
         helper.Environments.Returns(environments);
         helper.Machines.Returns(machines);
@@ -126,8 +128,8 @@ public class EnvironmentCommandTests
         var languageProvider = TestLanguageProvider.Create();
         var disableRunner = new DisableEnvironmentRunner(helper, languageProvider);
         var enableRunner = new EnableEnvironmentRunner(helper, languageProvider);
-        var disable = new DisableEnvironment(helper, languageProvider, disableRunner);
-        var enable = new EnableEnvironment(helper, languageProvider, enableRunner);
+        var disable = new DisableEnvironment(helper, languageProvider, disableRunner, interaction);
+        var enable = new EnableEnvironment(helper, languageProvider, enableRunner, interaction);
 
         var app = new CommandLineApplication();
         app.Command(disable.CommandName, disable.Configure);

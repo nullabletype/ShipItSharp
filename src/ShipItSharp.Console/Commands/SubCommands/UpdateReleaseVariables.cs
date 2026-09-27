@@ -46,6 +46,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         }
 
         protected override bool SupportsInteractiveMode => false;
+        protected override bool SupportsNoPrompt => true;
         public override string CommandName => "updatevariables";
 
 
@@ -63,7 +64,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var environmentName = GetStringFromUser(UpdateReleaseVariablesOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
             var groupRestriction = GetStringFromUser(UpdateReleaseVariablesOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
-            var skipConfirmation = GetOption(UpdateReleaseVariablesOptionNames.SkipConfirmation).HasValue();
+            var skipConfirmation = NoPromptSpecified || GetOption(UpdateReleaseVariablesOptionNames.SkipConfirmation).HasValue();
 
             var environment = await FetchEnvironmentFromUserInput(environmentName);
 

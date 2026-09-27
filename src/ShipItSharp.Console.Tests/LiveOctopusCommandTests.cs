@@ -40,6 +40,7 @@ public class LiveOctopusCommandTests
     private const string SampleProjectName = "Sample Project";
 
     private static readonly string RunId = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
+    private static readonly string FixtureTargetRole = $"{FixturePrefix}{RunId}-Role";
     private static readonly int VersionSeed = (int) (DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 100000);
     private static readonly ConcurrentQueue<ExecutedCommandLog> ExecutionLogs = new();
 
@@ -78,7 +79,11 @@ public class LiveOctopusCommandTests
         await DeleteStaleFixtureMachines();
         await DeleteStaleFixtureEnvironments();
         await LoadSampleProjectFixture();
-        _sampleMachine = await CreateSampleMachine(_sourceEnvironment);
+        _sampleMachine = await CreateSampleMachine(
+            _sourceEnvironment,
+            "Machine",
+            _destinationEnvironment,
+            _promotionEnvironment);
         await DeleteStaleFixtureChannels();
         _team = (await _client.Repository.Teams.FindAll(CancellationToken.None)).FirstOrDefault();
     }
@@ -615,7 +620,10 @@ public class LiveOctopusCommandTests
         }
     }
 
-    private async Task<MachineResource> CreateSampleMachine(EnvironmentResource environment, string suffix = "Machine")
+    private async Task<MachineResource> CreateSampleMachine(
+        EnvironmentResource environment,
+        string suffix = "Machine",
+        params EnvironmentResource[] additionalEnvironments)
     {
         var machine = new MachineResource
         {
@@ -627,11 +635,19 @@ public class LiveOctopusCommandTests
                 Destination = new OfflineDropDestinationResource
                 {
                     DestinationType = OfflineDropDestinationType.Artifact
+                },
+                SensitiveVariablesEncryptionPassword = new SensitiveValue
+                {
+                    NewValue = Guid.NewGuid().ToString("N")
                 }
             }
         };
         machine.EnvironmentIds.Add(environment.Id);
-        machine.Roles.Add("shipitsharp-live-tests");
+        foreach (var additionalEnvironment in additionalEnvironments)
+        {
+            machine.EnvironmentIds.Add(additionalEnvironment.Id);
+        }
+        machine.Roles.Add(FixtureTargetRole);
 
         return await _client.Repository.Machines.Create(machine, CancellationToken.None);
     }
@@ -746,6 +762,9 @@ public class LiveOctopusCommandTests
         fixtureProcess.Steps.Clear();
         foreach (var step in templateProcess.Steps)
         {
+            Assert.That(step.Properties.ContainsKey("Octopus.Action.TargetRoles"), Is.True,
+                $"Template step '{step.Name}' must define target roles.");
+            step.Properties["Octopus.Action.TargetRoles"] = FixtureTargetRole;
             fixtureProcess.Steps.Add(step);
         }
         await _client.Repository.DeploymentProcesses.Modify(fixtureProcess, CancellationToken.None);
@@ -945,6 +964,19 @@ public class LiveOctopusCommandTests
             path: null);
 
         Assert.That(deployment, Is.Not.Null, $"Expected release {release.Version} to be deployed to {environment.Name}.");
+
+        var task = await WaitForTaskState(
+            deployment.TaskId,
+            state => state is TaskState.Success or TaskState.Failed or TaskState.Canceled,
+            TimeSpan.FromMinutes(2));
+        string failureLog = null;
+        if (task.State == TaskState.Failed)
+        {
+            failureLog = await _client.Repository.Tasks.GetRawOutputLog(task, CancellationToken.None);
+        }
+
+        Assert.That(task.State, Is.EqualTo(TaskState.Success),
+            $"Expected deployment task {task.Id} for {environment.Name} to succeed.{Environment.NewLine}{failureLog}");
     }
 
     private void AssertDeploymentOutput(CommandResult result, EnvironmentResource environment, string releaseVersion)

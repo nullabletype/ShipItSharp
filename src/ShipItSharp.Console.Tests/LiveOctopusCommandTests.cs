@@ -638,6 +638,7 @@ public class LiveOctopusCommandTests
                 },
                 SensitiveVariablesEncryptionPassword = new SensitiveValue
                 {
+                    HasValue = true,
                     NewValue = Guid.NewGuid().ToString("N")
                 }
             }

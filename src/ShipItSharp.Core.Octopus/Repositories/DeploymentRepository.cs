@@ -45,7 +45,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
 
         public async Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false, string machineId = null)
         {
-            var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
+            var user = await _octopusHelper.Client.Repository.Users.GetCurrent(CancellationToken.None);
             var deployment = new DeploymentResource
             {
                 ChannelId = project.ChannelId,

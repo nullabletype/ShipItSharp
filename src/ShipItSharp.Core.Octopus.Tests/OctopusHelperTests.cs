@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
 using NUnit.Framework;
@@ -14,7 +15,7 @@ public class OctopusHelperTests
     [TearDown]
     public void TearDown()
     {
-        OctopusHelper.ClientCreator = endpoint => OctopusAsyncClient.Create(endpoint);
+        OctopusHelper.ClientCreator = endpoint => OctopusAsyncClient.Create(endpoint, cancellationToken: CancellationToken.None);
     }
 
     [Test]
@@ -63,9 +64,9 @@ public class OctopusHelperTests
     }
 
     [Test]
-    public void CreateAsync_WithInvalidInputs_ThrowsArgumentException()
+    public async Task CreateAsync_WithInvalidInputs_ThrowsArgumentException()
     {
-        Assert.ThrowsAsync<ArgumentException>(async () => await OctopusHelper.CreateAsync("", "abc"));
-        Assert.ThrowsAsync<ArgumentException>(async () => await OctopusHelper.CreateAsync("https://example.octopus.app", ""));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await OctopusHelper.CreateAsync("", "abc"));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await OctopusHelper.CreateAsync("https://example.octopus.app", ""));
     }
 }

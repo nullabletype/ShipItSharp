@@ -68,7 +68,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var targetEnvironmentName = GetStringFromUser(DeployOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), defaultValue: _configuration.ProjectGroupFilterString);
+            var groupRestriction = GetStringFromUser(DeployOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), allowEmpty: true, defaultValue: _configuration.ProjectGroupFilterString);
             var releaseName = GetStringFromUser(DeployOptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseName"));
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
             var fallbackToChannel = GetStringFromUser(DeployOptionNames.FallbackToChannel, LanguageProvider.GetString(LanguageSection.UiStrings, "FallbackToChannel"));

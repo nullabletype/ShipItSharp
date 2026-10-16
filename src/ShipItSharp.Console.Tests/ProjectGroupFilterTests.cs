@@ -106,6 +106,37 @@ public class ProjectGroupFilterTests
         }
     }
 
+    [TestCaseSource(nameof(InteractiveCases))]
+    public async Task Execute_InteractiveCommand_ExplicitEmptyFilterDoesNotReadInput(Type commandType, string[] arguments)
+    {
+        var (app, projects, services) = CreateApp(commandType, "Payments");
+        using (services)
+        {
+            var originalInput = System.Console.In;
+            using var input = new UnexpectedInputReader();
+            try
+            {
+                System.Console.SetIn(input);
+
+                app.Execute(arguments.Concat(new[] { "--groupfilter", "" }).ToArray());
+
+                await projects.DidNotReceiveWithAnyArgs().GetFilteredProjectGroups(default);
+                var interaction = services.GetRequiredService<ICommandInteraction>();
+                // Clearing the filter must preserve the interactive confirmation/selection step.
+                if (commandType != typeof(RenameRelease))
+                {
+                    Assert.That(interaction.ReceivedCalls().Any(call =>
+                        call.GetMethodInfo().Name.StartsWith("Select")), Is.True);
+                }
+                await services.GetRequiredService<IDeployer>().DidNotReceiveWithAnyArgs().StartJob(default, default);
+            }
+            finally
+            {
+                System.Console.SetIn(originalInput);
+            }
+        }
+    }
+
     private static IEnumerable<(Type Type, string[] Arguments)> Commands()
     {
         yield return (typeof(Deploy), new[] { "-e", "Prod", "-c", "Default" });

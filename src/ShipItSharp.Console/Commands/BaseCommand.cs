@@ -143,6 +143,12 @@ namespace ShipItSharp.Console.Commands
         {
             var option = GetStringValueFromOption(optionName, defaultValue);
 
+            // An explicitly empty optional value clears its configured default.
+            if (allowEmpty && GetOption(optionName).HasValue())
+            {
+                return option;
+            }
+
             if (InInteractiveMode)
             {
                 if (allowEmpty)
@@ -168,7 +174,7 @@ namespace ShipItSharp.Console.Commands
         {
             var option = GetStringValueFromOption(optionName, defaultValue);
 
-            if (InInteractiveMode && string.IsNullOrEmpty(option))
+            if (InInteractiveMode && !GetOption(optionName).HasValue() && string.IsNullOrEmpty(option))
             {
                 option = PromptForStringWithTimeout(prompt, timeout, System.Console.In, System.Console.Out);
             }

@@ -91,7 +91,8 @@ namespace ShipItSharp.Console.Commands
             var groupRestriction = GetStringFromUser(
                 DeployOptionNames.GroupFilter,
                 LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"),
-                TimeSpan.FromSeconds(15));
+                TimeSpan.FromSeconds(15),
+                defaultValue: _configuration.ProjectGroupFilterString);
             var machineName = GetStringValueFromOption(DeployOptionNames.Machine);
             var forceDefault = GetOption(DeployOptionNames.DefaultFallback).HasValue();
             var prioritise = GetBoolValueFromOption(DeployOptionNames.Prioritise);

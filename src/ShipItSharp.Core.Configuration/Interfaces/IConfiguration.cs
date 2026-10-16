@@ -27,6 +27,7 @@ namespace ShipItSharp.Core.Configuration.Interfaces
 {
     public interface IConfiguration
     {
+        string ProjectGroupFilterString { get; set; }
         string ApiKey { get; set; }
         string OctopusUrl { get; set; }
         ChangeLogProviderConfiguration ChangeProviderConfiguration { get; set; }

@@ -74,7 +74,7 @@ Useful fields:
 
 - `OctopusUrl`: Base URL for your Octopus Deploy instance.
 - `ApiKey`: Octopus API key used by the CLI.
-- `ProjectGroupFilterString`: Optional default text used to restrict project group matches.
+- `ProjectGroupFilterString`: Optional default text used to restrict project group matches (case-insensitive substring). Applies to commands that support `--groupfilter`; an explicit `-g` / `--groupfilter` value overrides it. Leave it empty for no default restriction.
 - `DefaultChannel`: Optional fallback channel used by deploy commands that allow falling back to a default.
 - `CacheTimeoutInSeconds`: Octopus object cache duration.
 - `CheckForBetaReleases`: Opts the startup version check into GitHub prereleases such as beta or prerelease tags. The default is `false`, so beta releases are not offered to regular users.

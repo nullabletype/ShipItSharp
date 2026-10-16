@@ -62,6 +62,7 @@ public class JsonConfigurationProviderTests
         {
             OctopusUrl = "https://octopus.example",
             ApiKey = "API-123",
+            ProjectGroupFilterString = "Payments",
             DefaultChannel = "main",
             CacheTimeoutInSeconds = 30,
             CheckForBetaReleases = true
@@ -73,6 +74,7 @@ public class JsonConfigurationProviderTests
         Assert.That(result.Success, Is.True);
         Assert.That(result.Configuration.OctopusUrl, Is.EqualTo("https://octopus.example"));
         Assert.That(result.Configuration.ApiKey, Is.EqualTo("API-123"));
+        Assert.That(result.Configuration.ProjectGroupFilterString, Is.EqualTo("Payments"));
         Assert.That(validatedConfig, Is.Not.Null);
         Assert.That(validatedConfig.DefaultChannel, Is.EqualTo("main"));
         Assert.That(validatedConfig.CheckForBetaReleases, Is.True);

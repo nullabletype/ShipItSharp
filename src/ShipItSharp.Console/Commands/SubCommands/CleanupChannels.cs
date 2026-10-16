@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.JobConfigs;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.JobRunners.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -34,11 +35,13 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class CleanupChannels : BaseCommand
     {
+        private readonly IConfiguration _configuration;
         private readonly ChannelsRunner _runner;
         private readonly ICommandInteraction _interaction;
 
-        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, ChannelsRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
+        public CleanupChannels(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, ChannelsRunner runner, ICommandInteraction interaction, IConfiguration configuration) : base(octopusHelper, languageProvider)
         {
+            _configuration = configuration;
             _runner = runner;
             _interaction = interaction;
         }
@@ -59,7 +62,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
 
         protected override async Task<int> Run(CommandLineApplication command)
         {
-            var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty);
+            var groupFilter = GetStringFromUser(EnsureEnvironmentOptionNames.GroupFilter, string.Empty, defaultValue: _configuration.ProjectGroupFilterString);
             var testMode = GetBoolValueFromOption(EnsureEnvironmentOptionNames.TestMode);
 
             if (!TryGetIntValueFromOption(EnsureEnvironmentOptionNames.MaxPackagesPerProject, out int maxNumberOfPackagesPerProject))

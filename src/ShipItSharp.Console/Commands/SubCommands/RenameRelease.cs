@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.Interfaces;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.Language;
@@ -35,12 +36,14 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class RenameRelease : BaseCommand
     {
+        private readonly IConfiguration _configuration;
         private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly RenameReleaseRunner _runner;
 
-        public RenameRelease(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, RenameReleaseRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
+        public RenameRelease(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, RenameReleaseRunner runner, ICommandInteraction interaction, IConfiguration configuration) : base(octopusHelper, languageProvider)
         {
+            _configuration = configuration;
             _progressBar = progressBar;
             _runner = runner;
             _interaction = interaction;
@@ -64,7 +67,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         {
             var environmentName = GetStringFromUser(RenameReleaseOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
             var releaseName = GetStringFromUser(RenameReleaseOptionNames.ReleaseName, LanguageProvider.GetString(LanguageSection.UiStrings, "ReleaseNamePrompt"));
-            var groupRestriction = GetStringFromUser(RenameReleaseOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
+            var groupRestriction = GetStringFromUser(RenameReleaseOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true, defaultValue: _configuration.ProjectGroupFilterString);
 
             var environment = await FetchEnvironmentFromUserInput(environmentName);
 

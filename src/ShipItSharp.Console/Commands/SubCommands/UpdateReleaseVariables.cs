@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.Interfaces;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -34,12 +35,14 @@ namespace ShipItSharp.Console.Commands.SubCommands
 {
     internal class UpdateReleaseVariables : BaseCommand
     {
+        private readonly IConfiguration _configuration;
         private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly UpdateReleaseVariablesRunner _runner;
 
-        public UpdateReleaseVariables(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, UpdateReleaseVariablesRunner runner, ICommandInteraction interaction) : base(octopusHelper, languageProvider)
+        public UpdateReleaseVariables(IOctopusHelper octopusHelper, IProgressBar progressBar, ILanguageProvider languageProvider, UpdateReleaseVariablesRunner runner, ICommandInteraction interaction, IConfiguration configuration) : base(octopusHelper, languageProvider)
         {
+            _configuration = configuration;
             _progressBar = progressBar;
             _runner = runner;
             _interaction = interaction;
@@ -63,7 +66,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var environmentName = GetStringFromUser(UpdateReleaseVariablesOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(UpdateReleaseVariablesOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
+            var groupRestriction = GetStringFromUser(UpdateReleaseVariablesOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true, defaultValue: _configuration.ProjectGroupFilterString);
             var skipConfirmation = NoPromptSpecified || GetOption(UpdateReleaseVariablesOptionNames.SkipConfirmation).HasValue();
 
             var environment = await FetchEnvironmentFromUserInput(environmentName);

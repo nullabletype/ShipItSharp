@@ -108,14 +108,14 @@ namespace ShipItSharp.Console.Commands
             return _optionRegister[key];
         }
 
-        protected string GetStringValueFromOption(string key)
+        protected string GetStringValueFromOption(string key, string defaultValue = null)
         {
             var option = GetOption(key);
             if (option.HasValue())
             {
                 return option.Value();
             }
-            return string.Empty;
+            return defaultValue ?? string.Empty;
         }
 
         public bool GetBoolValueFromOption(string key)
@@ -139,9 +139,15 @@ namespace ShipItSharp.Console.Commands
             return false;
         }
 
-        protected string GetStringFromUser(string optionName, string prompt, bool allowEmpty = false)
+        protected string GetStringFromUser(string optionName, string prompt, bool allowEmpty = false, string defaultValue = null)
         {
-            var option = GetStringValueFromOption(optionName);
+            var option = GetStringValueFromOption(optionName, defaultValue);
+
+            // An explicitly empty optional value clears its configured default.
+            if (allowEmpty && GetOption(optionName).HasValue())
+            {
+                return option;
+            }
 
             if (InInteractiveMode)
             {
@@ -164,11 +170,11 @@ namespace ShipItSharp.Console.Commands
             return option;
         }
 
-        protected string GetStringFromUser(string optionName, string prompt, TimeSpan timeout)
+        protected string GetStringFromUser(string optionName, string prompt, TimeSpan timeout, string defaultValue = null)
         {
-            var option = GetStringValueFromOption(optionName);
+            var option = GetStringValueFromOption(optionName, defaultValue);
 
-            if (InInteractiveMode && string.IsNullOrEmpty(option))
+            if (InInteractiveMode && !GetOption(optionName).HasValue() && string.IsNullOrEmpty(option))
             {
                 option = PromptForStringWithTimeout(prompt, timeout, System.Console.In, System.Console.Out);
             }

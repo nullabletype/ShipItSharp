@@ -26,6 +26,7 @@ using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
 using ShipItSharp.Core.JobRunners.Interfaces;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.JobRunners.JobConfigs;
 using ShipItSharp.Core.Language;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -34,12 +35,14 @@ namespace ShipItSharp.Console.Commands
 {
     internal class Promote : BaseCommand
     {
+        private readonly IConfiguration _configuration;
         private readonly ICommandInteraction _interaction;
         private readonly IProgressBar _progressBar;
         private readonly PromotionRunner _runner;
 
-        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner, ICommandInteraction interaction) : base(octoHelper, languageProvider)
+        public Promote(IOctopusHelper octoHelper, IProgressBar progressBar, ILanguageProvider languageProvider, PromotionRunner runner, ICommandInteraction interaction, IConfiguration configuration) : base(octoHelper, languageProvider)
         {
+            _configuration = configuration;
             _progressBar = progressBar;
             _runner = runner;
             _interaction = interaction;
@@ -67,7 +70,7 @@ namespace ShipItSharp.Console.Commands
 
             var environmentName = GetStringFromUser(PromoteOptionNames.SourceEnvironment, LanguageProvider.GetString(LanguageSection.UiStrings, "SourceEnvironment"));
             var targetEnvironmentName = GetStringFromUser(PromoteOptionNames.Environment, LanguageProvider.GetString(LanguageSection.UiStrings, "WhichEnvironmentPrompt"));
-            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true);
+            var groupRestriction = GetStringFromUser(PromoteOptionNames.GroupFilter, LanguageProvider.GetString(LanguageSection.UiStrings, "RestrictToGroupsPrompt"), true, defaultValue: _configuration.ProjectGroupFilterString);
             var machineName = GetStringValueFromOption(PromoteOptionNames.Machine);
             var prioritise = GetBoolValueFromOption(PromoteOptionNames.Prioritise);
             var updateVariables = GetBoolValueFromOption(PromoteOptionNames.UpdateVariables);

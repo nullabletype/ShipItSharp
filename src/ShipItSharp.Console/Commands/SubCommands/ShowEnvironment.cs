@@ -26,6 +26,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using ShipItSharp.Console.ConsoleTools;
+using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Interfaces;
 using ShipItSharp.Core.JobRunners;
@@ -34,7 +35,7 @@ using ShipItSharp.Core.Octopus.Interfaces;
 
 namespace ShipItSharp.Console.Commands.SubCommands
 {
-    internal class ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, ShowEnvironmentRunner runner)
+    internal class ShowEnvironment(IOctopusHelper octopusHelper, ILanguageProvider languageProvider, IProgressBar progressBar, ShowEnvironmentRunner runner, IConfiguration configuration)
         : BaseCommand(octopusHelper, languageProvider)
     {
 
@@ -54,7 +55,7 @@ namespace ShipItSharp.Console.Commands.SubCommands
         protected override async Task<int> Run(CommandLineApplication command)
         {
             var id = GetStringFromUser(ShowEnvironmentOptionNames.Id, string.Empty);
-            var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true);
+            var groupFilter = GetStringFromUser(ShowEnvironmentOptionNames.GroupFilter, string.Empty, true, defaultValue: configuration.ProjectGroupFilterString);
 
             var result = await runner.Run(
                 id,

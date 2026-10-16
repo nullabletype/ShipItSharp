@@ -71,8 +71,8 @@ public class LiveOctopusCommandTests
         }
 
         var endpoint = new OctopusServerEndpoint(_url, _apiKey);
-        _client = await OctopusAsyncClient.Create(endpoint);
-        var currentUser = await _client.Repository.Users.GetCurrent();
+        _client = await OctopusAsyncClient.Create(endpoint, cancellationToken: CancellationToken.None);
+        var currentUser = await _client.Repository.Users.GetCurrent(CancellationToken.None);
         Assert.That(currentUser, Is.Not.Null, "The supplied Octopus API key must be valid.");
 
         await DeleteStaleFixtureProjectsAndGroups();
@@ -750,7 +750,7 @@ public class LiveOctopusCommandTests
         _destinationEnvironment = await _client.Repository.Environments.Get(lifecycleEnvironmentIds[1], CancellationToken.None);
         _promotionEnvironment = await _client.Repository.Environments.Get(lifecycleEnvironmentIds[2], CancellationToken.None);
 
-        _sampleChannel = await _client.Repository.Channels.FindByName(_sampleProject, "Default");
+        _sampleChannel = await _client.Repository.Channels.FindByName(_sampleProject, "Default", CancellationToken.None);
         Assert.That(_sampleChannel, Is.Not.Null, $"Project '{_sampleProject.Name}' must have a Default channel.");
 
         _samplePackage = await FindLatestSamplePackage();

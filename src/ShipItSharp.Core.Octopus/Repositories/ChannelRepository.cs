@@ -43,13 +43,13 @@ namespace ShipItSharp.Core.Octopus.Repositories
         public async Task<Channel> GetChannelByProjectNameAndChannelName(string name, string channelName)
         {
             var project = await _octopusHelper.Client.Repository.Projects.FindOne(resource => resource.Name == name, CancellationToken.None);
-            return ConvertChannel(await _octopusHelper.Client.Repository.Channels.FindByName(project, channelName));
+            return ConvertChannel(await _octopusHelper.Client.Repository.Channels.FindByName(project, channelName, CancellationToken.None));
         }
 
         public async Task<Channel> GetChannelByName(string projectIdOrName, string channelName)
         {
             var project = await _octopusHelper.Projects.GetProject(projectIdOrName);
-            return ConvertChannel(await _octopusHelper.Client.Repository.Channels.FindByName(project, channelName));
+            return ConvertChannel(await _octopusHelper.Client.Repository.Channels.FindByName(project, channelName, CancellationToken.None));
         }
 
         public async Task<List<Channel>> GetChannelsForProject(string projectIdOrHref, int take = 30)
@@ -62,7 +62,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
         public async Task<(bool Success, IEnumerable<Release> Releases)> RemoveChannel(string channelId)
         {
             var channel = await _octopusHelper.Client.Repository.Channels.Get(channelId, CancellationToken.None);
-            var allReleases = await _octopusHelper.Client.Repository.Channels.GetAllReleases(channel);
+            var allReleases = await _octopusHelper.Client.Repository.Channels.GetAllReleases(channel, CancellationToken.None);
             if (!allReleases.Any())
             {
                 await _octopusHelper.Client.Repository.Channels.Delete(channel, CancellationToken.None);

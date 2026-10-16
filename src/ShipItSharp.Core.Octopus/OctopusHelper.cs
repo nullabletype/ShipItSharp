@@ -22,6 +22,7 @@
 
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Octopus.Client;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -32,7 +33,7 @@ namespace ShipItSharp.Core.Octopus
     public class OctopusHelper : IOctopusHelper
     {
         public static IOctopusHelper Default { get; private set; }
-        internal static Func<OctopusServerEndpoint, Task<IOctopusAsyncClient>> ClientCreator { get; set; } = endpoint => OctopusAsyncClient.Create(endpoint);
+        internal static Func<OctopusServerEndpoint, Task<IOctopusAsyncClient>> ClientCreator { get; set; } = endpoint => OctopusAsyncClient.Create(endpoint, cancellationToken: CancellationToken.None);
         private readonly ChannelRepository _channelsInternal;
         private readonly EnvironmentRepository _environmentsInternal;
         private readonly LifeCycleRepository _lifeCyclesInternal;

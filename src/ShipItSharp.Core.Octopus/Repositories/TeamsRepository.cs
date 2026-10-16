@@ -42,7 +42,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             var teams = await _octopusHelper.Client.Repository.Teams.FindAll(CancellationToken.None);
             foreach (var team in teams)
             {
-                var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team);
+                var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team, CancellationToken.None);
 
                 foreach (var scope in scopes.Where(s => s.EnvironmentIds.Contains(envId)))
                 {
@@ -61,7 +61,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
             {
                 return;
             }
-            var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team);
+            var scopes = await _octopusHelper.Client.Repository.Teams.GetScopedUserRoles(team, CancellationToken.None);
             foreach (var scope in scopes)
             {
                 if (!scope.EnvironmentIds.Contains(envId))

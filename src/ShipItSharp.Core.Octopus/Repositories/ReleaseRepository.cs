@@ -98,12 +98,12 @@ namespace ShipItSharp.Core.Octopus.Repositories
             try
             {
                 var projectRes = await _octopusHelper.Client.Repository.Projects.Get(project.ProjectId, CancellationToken.None);
-                var channelRes = await _octopusHelper.Client.Repository.Channels.FindByName(projectRes, channelName);
+                var channelRes = await _octopusHelper.Client.Repository.Channels.FindByName(projectRes, channelName, CancellationToken.None);
                 if (channelRes == null)
                 {
                     return null;
                 }
-                release = (await _octopusHelper.Client.Repository.Channels.GetReleases(channelRes, 0, 1)).Items.FirstOrDefault();
+                release = (await _octopusHelper.Client.Repository.Channels.GetReleases(channelRes, CancellationToken.None, 0, 1)).Items.FirstOrDefault();
             }
             catch (OctopusResourceNotFoundException)
             {
@@ -127,7 +127,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 throw new InvalidOperationException($"Cannot create a release for project '{project.ProjectName}' because no packages were selected.");
             }
 
-            var user = await _octopusHelper.Client.Repository.Users.GetCurrent();
+            var user = await _octopusHelper.Client.Repository.Users.GetCurrent(CancellationToken.None);
             var releaseName = project.ReleaseVersion ?? BuildInferredReleaseName(project.Packages.First().PackageName, project.ChannelName, project.ProjectName);
             var release = new ReleaseResource
             {

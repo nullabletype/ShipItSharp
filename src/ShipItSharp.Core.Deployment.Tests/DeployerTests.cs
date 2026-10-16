@@ -328,7 +328,7 @@ public class DeployerTests
             ProjectDeployments = projects.ToList()
         };
 
-        Assert.DoesNotThrowAsync(() => deployer.StartJob(job, uiLogger));
+        await Assert.DoesNotThrowAsync(() => deployer.StartJob(job, uiLogger));
 
         await deployments.Received(1).PrioritiseTask("ServerTasks-3");
         await deployments.Received(1).PrioritiseTask("ServerTasks-2");

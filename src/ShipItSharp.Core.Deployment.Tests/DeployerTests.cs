@@ -166,7 +166,6 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
         deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
-        deployments.GetTaskDetails(Arg.Any<string>()).Returns(call => new TaskDetails { TaskId = call.Arg<string>(), State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-1").Returns(
             new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
         deployments.GetTaskStatus("ServerTasks-2").Returns(
@@ -184,8 +183,9 @@ public class DeployerTests
 
         await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger).WaitAsync(System.TimeSpan.FromSeconds(15));
 
-        uiLogger.Received().WriteProgress(1, 2, Arg.Any<string>());
-        uiLogger.Received().WriteProgress(2, 2, Arg.Any<string>());
+        uiLogger.Received(1).WriteProgress(0, 2, Arg.Any<string>());
+        uiLogger.Received(1).WriteProgress(1, 2, Arg.Any<string>());
+        uiLogger.Received(1).WriteProgress(2, 2, Arg.Any<string>());
         Assert.That(queueToken.IsCancellationRequested, Is.True);
         uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Completed: 2")));
         await deployments.DidNotReceiveWithAnyArgs().GetDeploymentTasks(default, default);
@@ -203,7 +203,6 @@ public class DeployerTests
         releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
         deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
-        deployments.GetTaskDetails("ServerTasks-1").Returns(new TaskDetails { TaskId = "ServerTasks-1", State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-1").Returns(
             new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
         deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>())
@@ -235,7 +234,6 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
         deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
-        deployments.GetTaskDetails(Arg.Any<string>()).Returns(call => new TaskDetails { TaskId = call.Arg<string>(), State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-1").Returns(Task.FromResult<TaskStub>(null));
         deployments.GetTaskStatus("ServerTasks-2").Returns(new TaskStub
         {
@@ -246,6 +244,7 @@ public class DeployerTests
 
         await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger);
 
+        await deployments.DidNotReceiveWithAnyArgs().GetTaskDetails(default);
         uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Completed: 0")));
         uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Failed: 2")));
         uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Failed step")));
@@ -271,8 +270,6 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
         deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
-        deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
-        deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-2").Returns(
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.InProgress },
@@ -344,8 +341,6 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
         deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
-        deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
-        deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-2").Returns(
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
@@ -411,7 +406,6 @@ public class DeployerTests
         releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
         deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
-        deployments.GetTaskDetails("ServerTasks-1").Returns(new TaskDetails { TaskId = "ServerTasks-1", State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-1").Returns(
             new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
         var now = System.DateTimeOffset.UtcNow;
@@ -450,8 +444,6 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
         deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
-        deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
-        deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
         deployments.GetTaskStatus("ServerTasks-2").Returns(
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },

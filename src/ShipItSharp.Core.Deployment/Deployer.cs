@@ -208,7 +208,6 @@ namespace ShipItSharp.Core.Deployment
             uiLogger.WriteLine(string.Format(UiString("ShipItSharpDeploymentToTarget"), targetName));
             var failedProjects = new Dictionary<ProjectDeployment, TaskDetails>();
 
-            var taskRegister = new Dictionary<string, TaskDetails>();
             var projectRegister = new Dictionary<string, ProjectDeployment>();
 
             foreach (var project in deployment.ProjectDeployments)
@@ -231,15 +230,13 @@ namespace ShipItSharp.Core.Deployment
                 var deployResult = await _helper.Deployments.CreateDeploymentTask(project, deployment.EnvironmentId, result.Id, deployment.Prioritise, deployment.MachineId);
                 WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("CreatedOctopusTask"), deployResult.TaskId));
 
-                var taskDeets = await _helper.Deployments.GetTaskDetails(deployResult.TaskId);
-                //taskDeets = await StartDeployment(uiLogger, taskDeets, !deployment.DeployAsync);
                 if (deployment.DeployAsync)
                 {
-                    taskRegister.Add(taskDeets.TaskId, taskDeets);
-                    projectRegister.Add(taskDeets.TaskId, project);
+                    projectRegister.Add(deployResult.TaskId, project);
                 }
                 else
                 {
+                    var taskDeets = await _helper.Deployments.GetTaskDetails(deployResult.TaskId);
                     if (taskDeets.State == TaskStatus.Failed)
                     {
                         WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("ProjectFailedToDeploy"), project.ProjectName));
@@ -256,7 +253,7 @@ namespace ShipItSharp.Core.Deployment
 
             if (deployment.DeployAsync)
             {
-                await DeployAsync(uiLogger, failedProjects, taskRegister, projectRegister, targetName);
+                await DeployAsync(uiLogger, failedProjects, projectRegister, targetName);
             }
 
             if (failedProjects.Any())
@@ -282,9 +279,9 @@ namespace ShipItSharp.Core.Deployment
             }
         }
 
-        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister, string targetName)
+        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, ProjectDeployment> pendingProjects, string targetName)
         {
-            var totalCount = taskRegister.Count();
+            var totalCount = pendingProjects.Count;
             int? lastReportedQueuePosition = null;
             var queueJumpAttempted = false;
             _queueInteraction.Reset();
@@ -295,46 +292,47 @@ namespace ShipItSharp.Core.Deployment
             {
                 while (true)
                 {
-                    var taskIds = taskRegister.Keys.ToList();
+                    var taskIds = pendingProjects.Keys.ToList();
                     var statuses = await Task.WhenAll(taskIds.Select(id => _helper.Deployments.GetTaskStatus(id)));
+                    var queuedIds = new HashSet<string>();
                     for (var index = 0; index < taskIds.Count; index++)
                     {
                         var taskId = taskIds[index];
                         var found = statuses[index];
-                        var project = projectRegister[taskId];
+                        var project = pendingProjects[taskId];
                         if (found == null)
                         {
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("OctopusTaskNotFound"), taskId));
                             failedProjects.Add(project, new TaskDetails { TaskId = taskId });
-                            taskRegister.Remove(taskId);
+                            pendingProjects.Remove(taskId);
                         }
                         else if (found.State == TaskStatus.Done)
                         {
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, targetName));
-                            taskRegister.Remove(taskId);
+                            pendingProjects.Remove(taskId);
                         }
                         else if (found.State == TaskStatus.Failed)
                         {
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("ProjectFailedWithError"), project.ProjectName, found.ErrorMessage));
                             failedProjects.Add(project, new TaskDetails { TaskId = taskId, Links = found.Links });
-                            taskRegister.Remove(taskId);
+                            pendingProjects.Remove(taskId);
                         }
-                        else
+                        else if (found.State == TaskStatus.Queued)
                         {
-                            taskRegister[taskId].State = found.State;
+                            queuedIds.Add(taskId);
                         }
                     }
 
-                    uiLogger.WriteProgress(totalCount - taskRegister.Count, totalCount, $"Deploying the requested projects ({totalCount - taskRegister.Count} of {totalCount} done)...");
-                    if (taskRegister.Count == 0)
+                    if (pendingProjects.Count == 0)
                     {
+                        uiLogger.WriteProgress(totalCount, totalCount, $"Deploying the requested projects ({totalCount} of {totalCount} done)...");
                         break;
                     }
 
-                    if (queueScan == null && taskRegister.Values.Any(task => task.State == TaskStatus.Queued))
+                    if (queueScan == null && queuedIds.Count > 0)
                     {
                         queueScan = GetQueuedDeploymentTasks(queueScanCancellation.Token);
                     }
@@ -354,8 +352,9 @@ namespace ShipItSharp.Core.Deployment
                         .Where(task => task.State == TaskStatus.Queued)
                         .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
                         .ToList();
-                    var queuedJobTaskIds = taskRegister.Keys
-                        .Where(taskId => taskRegister[taskId].State == TaskStatus.Queued && queuedTasks.Any(task => task.TaskId == taskId))
+                    var queuedJobTaskIds = queuedTasks.Select(task => task.TaskId)
+                        .Where(queuedIds.Contains)
+                        .Distinct()
                         .ToList();
                     var leadingQueuePosition = queuedJobTaskIds.Count == 0
                         ? 0
@@ -395,7 +394,8 @@ namespace ShipItSharp.Core.Deployment
                         }
                     }
 
-                    uiLogger.WriteProgress(totalCount - taskRegister.Count, totalCount, $"Deploying the requested projects ({totalCount - taskRegister.Count} of {totalCount} done)...");
+                    var completedCount = totalCount - pendingProjects.Count;
+                    uiLogger.WriteProgress(completedCount, totalCount, $"Deploying the requested projects ({completedCount} of {totalCount} done)...");
                     await Task.Delay(3000);
                 }
             }

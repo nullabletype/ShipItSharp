@@ -83,7 +83,8 @@ namespace ShipItSharp.Console.ConsoleTools
             }
             
             _cancelToken = new CancellationTokenSource();
-            _ = Task.Run(() => StartStatusThread(_cancelToken.Token)).ConfigureAwait(false);
+            var token = _cancelToken.Token;
+            _ = Task.Run(() => StartStatusThread(token)).ConfigureAwait(false);
         }
 
         private async Task StartStatusThread(CancellationToken token)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
 using NUnit.Framework;
@@ -147,6 +148,111 @@ public class DeployerTests
     }
 
     [Test]
+    public async Task StartJob_UpdatesProgressAndCompletesWhileQueueLookupIsPending()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var projects = new[]
+        {
+            new ProjectDeployment { ProjectName = "Payments", ReleaseId = "Releases-1" },
+            new ProjectDeployment { ProjectName = "Orders", ReleaseId = "Releases-2" }
+        };
+        releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
+        releases.GetRelease("Releases-2").Returns(new Release { Id = "Releases-2", Version = "1" });
+        deployments.CreateDeploymentTask(projects[0], "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
+        deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
+        deployments.GetTaskDetails(Arg.Any<string>()).Returns(call => new TaskDetails { TaskId = call.Arg<string>(), State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-1").Returns(
+            new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
+        deployments.GetTaskStatus("ServerTasks-2").Returns(
+            new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.InProgress }, new TaskStub { State = TaskStatus.Done });
+        var queueLookup = new TaskCompletionSource<IEnumerable<TaskStub>>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken queueToken = default;
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            queueToken = call.Arg<CancellationToken>();
+            queueToken.Register(() => queueLookup.TrySetCanceled(queueToken));
+            return queueLookup.Task;
+        });
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = projects.ToList() };
+
+        await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger).WaitAsync(System.TimeSpan.FromSeconds(15));
+
+        uiLogger.Received().WriteProgress(1, 2, Arg.Any<string>());
+        uiLogger.Received().WriteProgress(2, 2, Arg.Any<string>());
+        Assert.That(queueToken.IsCancellationRequested, Is.True);
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Completed: 2")));
+        await deployments.DidNotReceiveWithAnyArgs().GetDeploymentTasks(default, default);
+    }
+
+    [Test]
+    public async Task StartJob_ContinuesMonitoringWhenQueueLookupFails()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var project = new ProjectDeployment { ProjectName = "Payments", ReleaseId = "Releases-1" };
+        releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
+        deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
+        deployments.GetTaskDetails("ServerTasks-1").Returns(new TaskDetails { TaskId = "ServerTasks-1", State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-1").Returns(
+            new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<IEnumerable<TaskStub>>(new System.InvalidOperationException("queue unavailable")));
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = new List<ProjectDeployment> { project } };
+
+        await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger);
+
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("queue unavailable")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Completed: 1")));
+    }
+
+    [Test]
+    public async Task StartJob_CountsMissingAndFailedTasksAsFailures()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var projects = new[]
+        {
+            new ProjectDeployment { ProjectName = "Missing", ReleaseId = "Releases-1" },
+            new ProjectDeployment { ProjectName = "Failed", ReleaseId = "Releases-2" }
+        };
+        releases.GetRelease(Arg.Any<string>()).Returns(call => new Release { Id = call.Arg<string>(), Version = "1" });
+        deployments.CreateDeploymentTask(projects[0], "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
+        deployments.CreateDeploymentTask(projects[1], "Environments-1", "Releases-2", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-2" });
+        deployments.GetTaskDetails(Arg.Any<string>()).Returns(call => new TaskDetails { TaskId = call.Arg<string>(), State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-1").Returns(Task.FromResult<TaskStub>(null));
+        deployments.GetTaskStatus("ServerTasks-2").Returns(new TaskStub
+        {
+            State = TaskStatus.Failed, ErrorMessage = "Failed step", Links = new Dictionary<string, string> { ["Web"] = "/task/2" }
+        });
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = projects.ToList() };
+
+        await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger);
+
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Completed: 0")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Failed: 2")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("Failed step")));
+        uiLogger.Received().WriteLine(Arg.Is<string>(line => line.Contains("https://octopus.example/task/2")));
+    }
+
+    [Test]
     public async Task StartJob_ReportsLeadingDeploymentQueuePosition_WhenItIsQueued()
     {
         var helper = Substitute.For<IOctopusHelper>();
@@ -167,6 +273,14 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
         deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
         deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-2").Returns(
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.InProgress },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done });
+        deployments.GetTaskStatus("ServerTasks-3").Returns(
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done });
         var queueTime = System.DateTimeOffset.UtcNow;
         var firstPage = Enumerable.Range(1, 99)
             .Select(index => new TaskStub
@@ -177,7 +291,7 @@ public class DeployerTests
             })
             .Append(new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(100) })
             .ToArray();
-        deployments.GetDeploymentTasks(0, 100).Returns(
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(
             firstPage,
             new[]
             {
@@ -190,7 +304,7 @@ public class DeployerTests
                 new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done },
                 new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done }
             });
-        deployments.GetDeploymentTasks(100, 100).Returns(
+        deployments.GetQueuedDeploymentTasks(100, 100, Arg.Any<CancellationToken>()).Returns(
             new[] { new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(101) } });
         var deployer = CreateDeployer(helper, CreateDeploymentOutputLanguageProvider());
         var uiLogger = Substitute.For<IUiLogger>();
@@ -232,7 +346,15 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
         deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
         deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
-        deployments.GetDeploymentTasks(0, 100).Returns(
+        deployments.GetTaskStatus("ServerTasks-2").Returns(
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done });
+        deployments.GetTaskStatus("ServerTasks-3").Returns(
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done });
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(
             new[]
             {
                 new TaskStub { TaskId = "ServerTasks-1", State = TaskStatus.Queued, QueueTime = System.DateTimeOffset.UtcNow },
@@ -277,6 +399,38 @@ public class DeployerTests
     }
 
     [Test]
+    public async Task StartJob_DoesNotPrioritiseQueuedTasks_WhenQueueJumpIsRejected()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var releases = Substitute.For<IReleaseRepository>();
+        var deployments = Substitute.For<IDeploymentRepository>();
+        var interaction = Substitute.For<IDeploymentQueueInteraction>();
+        helper.Releases.Returns(releases);
+        helper.Deployments.Returns(deployments);
+        var project = new ProjectDeployment { ProjectName = "Payments", ReleaseId = "Releases-1" };
+        releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
+        deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
+        deployments.GetTaskDetails("ServerTasks-1").Returns(new TaskDetails { TaskId = "ServerTasks-1", State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-1").Returns(
+            new TaskStub { State = TaskStatus.Queued }, new TaskStub { State = TaskStatus.Done });
+        var now = System.DateTimeOffset.UtcNow;
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(new[]
+        {
+            new TaskStub { TaskId = "ServerTasks-ahead", State = TaskStatus.Queued, QueueTime = now },
+            new TaskStub { TaskId = "ServerTasks-1", State = TaskStatus.Queued, QueueTime = now.AddSeconds(1) }
+        });
+        interaction.QueueJumpRequested().Returns(true);
+        interaction.ConfirmQueueJump(Arg.Any<string>()).Returns(false);
+        var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = new List<ProjectDeployment> { project } };
+
+        await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider(), interaction).StartJob(job, Substitute.For<IUiLogger>());
+
+        interaction.Received(1).ConfirmQueueJump(Arg.Any<string>());
+        await deployments.DidNotReceiveWithAnyArgs().PrioritiseTask(default);
+    }
+
+    [Test]
     public async Task StartJob_ReportsQueueJumpFailureAndContinuesMonitoring_WhenPrioritisingThrows()
     {
         var helper = Substitute.For<IOctopusHelper>();
@@ -298,6 +452,14 @@ public class DeployerTests
             .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-3" });
         deployments.GetTaskDetails("ServerTasks-2").Returns(new TaskDetails { TaskId = "ServerTasks-2", State = TaskStatus.Queued });
         deployments.GetTaskDetails("ServerTasks-3").Returns(new TaskDetails { TaskId = "ServerTasks-3", State = TaskStatus.Queued });
+        deployments.GetTaskStatus("ServerTasks-2").Returns(
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Done });
+        deployments.GetTaskStatus("ServerTasks-3").Returns(
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued },
+            new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Done });
         var queueTime = System.DateTimeOffset.UtcNow;
         var queuedTasks = new[]
         {
@@ -305,7 +467,7 @@ public class DeployerTests
             new TaskStub { TaskId = "ServerTasks-2", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(1) },
             new TaskStub { TaskId = "ServerTasks-3", State = TaskStatus.Queued, QueueTime = queueTime.AddMinutes(2) }
         };
-        deployments.GetDeploymentTasks(0, 100).Returns(
+        deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(
             queuedTasks,
             queuedTasks,
             new[]
@@ -380,6 +542,7 @@ public class DeployerTests
             ["ShipItSharpDeploymentToTarget"] = "ShipItSharp deployment to {0}",
             ["StatusRun"] = "run",
             ["StatusDone"] = "done",
+            ["StatusFailed"] = "failed",
             ["CreatingReleaseForProject"] = "Creating release for {0}",
             ["CreatedReleaseForProject"] = "Created release {0} {1}",
             ["CreatingOctopusTaskForProject"] = "Creating Octopus task for {0} to {1}",
@@ -396,7 +559,12 @@ public class DeployerTests
             ["StatusQueued"] = "queued",
             ["ConfirmQueueJump"] = "Move all {0} queued task(s) from this deployment job to the top of the queue?",
             ["QueueJumpRequested"] = "Moved {0} deployment task(s) to the top of the queue.",
-            ["QueueJumpFailed"] = "Could not move deployment task {0} to the top of the queue: {1}"
+            ["QueueJumpFailed"] = "Could not move deployment task {0} to the top of the queue: {1}",
+            ["OctopusTaskNotFound"] = "Task {0} not found",
+            ["ProjectFailedWithError"] = "{0} failed: {1}",
+            ["FailedProjects"] = "Failed projects",
+            ["FailedProjectLink"] = "{0}: {1}",
+            ["QueueLookupFailed"] = "Could not look up the deployment queue: {0}"
         };
 
         var language = Substitute.For<ILanguageProvider>();

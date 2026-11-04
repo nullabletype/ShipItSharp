@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Octopus.Client.Exceptions;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Deployment.Models;
 using ShipItSharp.Core.Octopus.Interfaces;
@@ -91,9 +92,34 @@ namespace ShipItSharp.Core.Octopus.Repositories
         {
             var taskDeets = await _octopusHelper.Client.Get<ResourceCollection<TaskResource>>((await _octopusHelper.Client.Repository.LoadRootDocument(CancellationToken.None)).Links["Tasks"], new { skip, take, name = "Deploy" }, CancellationToken.None);
 
+            return ConvertTasks(taskDeets.Items);
+        }
+
+        public async Task<IEnumerable<TaskStub>> GetQueuedDeploymentTasks(int skip, int take, CancellationToken cancellationToken)
+        {
+            var root = await _octopusHelper.Client.Repository.LoadRootDocument(cancellationToken);
+            var page = await _octopusHelper.Client.Get<ResourceCollection<TaskResource>>(root.Links["Tasks"], new { skip, take, name = "Deploy", states = "Queued" }, cancellationToken);
+            return ConvertTasks(page.Items);
+        }
+
+        public async Task<TaskStub> GetTaskStatus(string taskId)
+        {
+            try
+            {
+                var task = await _octopusHelper.Client.Repository.Tasks.Get(taskId, CancellationToken.None);
+                return ConvertTasks(new[] { task }).Single();
+            }
+            catch (OctopusResourceNotFoundException)
+            {
+                return null;
+            }
+        }
+
+        private static IEnumerable<TaskStub> ConvertTasks(IEnumerable<TaskResource> taskResources)
+        {
             var tasks = new List<TaskStub>();
 
-            foreach (var currentTask in taskDeets.Items)
+            foreach (var currentTask in taskResources)
             {
                 string deploymentId = null;
                 if ((currentTask.Arguments != null) && currentTask.Arguments.ContainsKey("DeploymentId"))
@@ -103,7 +129,7 @@ namespace ShipItSharp.Core.Octopus.Repositories
                 tasks.Add(new TaskStub
                 {
                     State = currentTask.State == TaskState.Success ? TaskStatus.Done :
-                        currentTask.State == TaskState.Executing ? TaskStatus.InProgress :
+                        currentTask.State == TaskState.Executing || currentTask.State == TaskState.Cancelling ? TaskStatus.InProgress :
                         currentTask.State == TaskState.Queued ? TaskStatus.Queued : TaskStatus.Failed,
                     ErrorMessage = currentTask.ErrorMessage,
                     FinishedSuccessfully = currentTask.FinishedSuccessfully,

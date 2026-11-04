@@ -217,7 +217,7 @@ public class DeployerTests
     }
 
     [Test]
-    public void StartJob_StopsAnimationWhenAStatusPollFails()
+    public async Task StartJob_StopsAnimationWhenAStatusPollFails()
     {
         var helper = Substitute.For<IOctopusHelper>();
         var project = new ProjectDeployment { ProjectName = "Payments", ReleaseId = "Releases-1" };
@@ -230,7 +230,7 @@ public class DeployerTests
         var uiLogger = Substitute.For<IUiLogger>();
         var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = new List<ProjectDeployment> { project } };
 
-        var thrown = Assert.ThrowsAsync<System.InvalidOperationException>(() =>
+        var thrown = await Assert.ThrowsAsync<System.InvalidOperationException>(() =>
             CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger));
         Assert.That(thrown, Is.SameAs(failure));
         Received.InOrder(() =>

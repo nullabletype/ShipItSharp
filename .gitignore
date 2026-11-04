@@ -27,3 +27,4 @@
 .vs
 .idea/
 src/Core/publish/
+.agent-work/

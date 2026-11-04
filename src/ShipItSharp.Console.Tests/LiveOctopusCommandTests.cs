@@ -457,7 +457,13 @@ public class LiveOctopusCommandTests
                 .Returns(new TaskDetails { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued });
             deployments.GetTaskDetails(secondDeployment.TaskId)
                 .Returns(new TaskDetails { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued });
-            deployments.GetDeploymentTasks(0, 100).Returns(
+            deployments.GetTaskStatus(firstDeployment.TaskId).Returns(
+                new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued },
+                new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Done });
+            deployments.GetTaskStatus(secondDeployment.TaskId).Returns(
+                new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued },
+                new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Done });
+            deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(
                 new[]
                 {
                     new TaskStub { TaskId = blockingDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = blockingTaskBefore.QueueTime },

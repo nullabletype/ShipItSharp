@@ -558,6 +558,9 @@
     <data name="QueueJumpFailed" xml:space="preserve">
       <value>Could not move deployment task {0} to the top of the queue: {1}</value>
     </data>
+    <data name="QueueLookupFailed" xml:space="preserve">
+      <value>Could not look up the deployment queue: {0}</value>
+    </data>
     <data name="TaskStatusProgress" xml:space="preserve">
       <value>Current status: {0}. Percentage: {1}. Estimated time remaining: {2}</value>
     </data>

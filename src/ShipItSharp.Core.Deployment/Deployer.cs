@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ShipItSharp.Core.Configuration.Interfaces;
 using ShipItSharp.Core.Deployment.Interfaces;
@@ -283,117 +284,151 @@ namespace ShipItSharp.Core.Deployment
 
         private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, TaskDetails> taskRegister, Dictionary<string, ProjectDeployment> projectRegister, string targetName)
         {
-            var done = false;
             var totalCount = taskRegister.Count();
             int? lastReportedQueuePosition = null;
             var queueJumpAttempted = false;
             _queueInteraction.Reset();
+            using var queueScanCancellation = new CancellationTokenSource();
+            Task<(List<TaskStub> Tasks, Exception Error)> queueScan = null;
 
-            while (!done)
+            try
             {
-                var tasks = await GetAllDeploymentTasks();
-                var queuedTasks = tasks
-                    .Where(task => task.State == TaskStatus.Queued)
-                    .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
-                    .ToList();
-                var queuedJobTaskIds = taskRegister.Keys
-                    .Where(taskId => queuedTasks.Any(task => task.TaskId == taskId))
-                    .ToList();
-                var leadingQueuePosition = queuedJobTaskIds.Count == 0
-                    ? 0
-                    : queuedTasks.FindIndex(task => task.TaskId == queuedJobTaskIds[0]) + 1;
-                if (leadingQueuePosition > 1 && leadingQueuePosition != lastReportedQueuePosition)
+                while (true)
                 {
-                    uiLogger.CleanCurrentLine();
-                    WriteDeploymentStatus(uiLogger, "StatusQueued", string.Format(UiString("LeadingDeploymentQueuePosition"), leadingQueuePosition));
-                    lastReportedQueuePosition = leadingQueuePosition;
-                }
-
-                var shouldReadQueueJump = queuedJobTaskIds.Count > 0 && (leadingQueuePosition > 1 || queueJumpAttempted);
-                var queueJumpRequested = shouldReadQueueJump && _queueInteraction.QueueJumpRequested();
-                if (!queueJumpAttempted && leadingQueuePosition > 1 && queueJumpRequested)
-                {
-                    uiLogger.CleanCurrentLine();
-                    if (_queueInteraction.ConfirmQueueJump(string.Format(UiString("ConfirmQueueJump"), queuedJobTaskIds.Count)))
+                    var taskIds = taskRegister.Keys.ToList();
+                    var statuses = await Task.WhenAll(taskIds.Select(id => _helper.Deployments.GetTaskStatus(id)));
+                    for (var index = 0; index < taskIds.Count; index++)
                     {
-                        queueJumpAttempted = true;
-                        var prioritisedTaskCount = 0;
-                        foreach (var taskId in queuedJobTaskIds.AsEnumerable().Reverse())
+                        var taskId = taskIds[index];
+                        var found = statuses[index];
+                        var project = projectRegister[taskId];
+                        if (found == null)
                         {
-                            try
-                            {
-                                await _helper.Deployments.PrioritiseTask(taskId);
-                                prioritisedTaskCount++;
-                            }
-                            catch (Exception exception)
-                            {
-                                WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("QueueJumpFailed"), taskId, exception.Message));
-                            }
+                            uiLogger.CleanCurrentLine();
+                            WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("OctopusTaskNotFound"), taskId));
+                            failedProjects.Add(project, new TaskDetails { TaskId = taskId });
+                            taskRegister.Remove(taskId);
                         }
-                        if (prioritisedTaskCount > 0)
+                        else if (found.State == TaskStatus.Done)
                         {
-                            WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("QueueJumpRequested"), prioritisedTaskCount));
-                        }
-                    }
-                }
-
-                foreach (var currentTask in taskRegister.ToList())
-                {
-                    var found = tasks.FirstOrDefault(t => t.TaskId == currentTask.Key);
-                    if (found == null)
-                    {
-                        uiLogger.CleanCurrentLine();
-                        WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("OctopusTaskNotFound"), currentTask.Key));
-                        taskRegister.Remove(currentTask.Key);
-                    }
-                    else
-                    {
-                        if (found.State == TaskStatus.Done)
-                        {
-                            var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("ProjectDeployedToEnvironment"), project.ProjectName, targetName));
-                            taskRegister.Remove(currentTask.Key);
+                            taskRegister.Remove(taskId);
                         }
                         else if (found.State == TaskStatus.Failed)
                         {
-                            var finishedTask = await _helper.Deployments.GetTaskDetails(found.TaskId);
-                            var project = projectRegister[currentTask.Key];
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("ProjectFailedWithError"), project.ProjectName, found.ErrorMessage));
-                            failedProjects.Add(project, finishedTask);
-                            taskRegister.Remove(currentTask.Key);
+                            failedProjects.Add(project, new TaskDetails { TaskId = taskId, Links = found.Links });
+                            taskRegister.Remove(taskId);
+                        }
+                        else
+                        {
+                            taskRegister[taskId].State = found.State;
                         }
                     }
+
+                    uiLogger.WriteProgress(totalCount - taskRegister.Count, totalCount, $"Deploying the requested projects ({totalCount - taskRegister.Count} of {totalCount} done)...");
+                    if (taskRegister.Count == 0)
+                    {
+                        break;
+                    }
+
+                    if (queueScan == null && taskRegister.Values.Any(task => task.State == TaskStatus.Queued))
+                    {
+                        queueScan = GetQueuedDeploymentTasks(queueScanCancellation.Token);
+                    }
+
+                    (List<TaskStub> Tasks, Exception Error) scanResult = (null, null);
+                    if (queueScan != null && queueScan.IsCompleted)
+                    {
+                        scanResult = await queueScan;
+                        queueScan = null;
+                    }
+                    if (scanResult.Error != null)
+                    {
+                        uiLogger.CleanCurrentLine();
+                        WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("QueueLookupFailed"), scanResult.Error.Message));
+                    }
+                    var queuedTasks = (scanResult.Tasks ?? new List<TaskStub>())
+                        .Where(task => task.State == TaskStatus.Queued)
+                        .OrderBy(task => task.QueueTime ?? DateTimeOffset.MaxValue)
+                        .ToList();
+                    var queuedJobTaskIds = taskRegister.Keys
+                        .Where(taskId => taskRegister[taskId].State == TaskStatus.Queued && queuedTasks.Any(task => task.TaskId == taskId))
+                        .ToList();
+                    var leadingQueuePosition = queuedJobTaskIds.Count == 0
+                        ? 0
+                        : queuedTasks.FindIndex(task => task.TaskId == queuedJobTaskIds[0]) + 1;
+                    if (leadingQueuePosition > 1 && leadingQueuePosition != lastReportedQueuePosition)
+                    {
+                        uiLogger.CleanCurrentLine();
+                        WriteDeploymentStatus(uiLogger, "StatusQueued", string.Format(UiString("LeadingDeploymentQueuePosition"), leadingQueuePosition));
+                        lastReportedQueuePosition = leadingQueuePosition;
+                    }
+
+                    var shouldReadQueueJump = queuedJobTaskIds.Count > 0 && (leadingQueuePosition > 1 || queueJumpAttempted);
+                    var queueJumpRequested = shouldReadQueueJump && _queueInteraction.QueueJumpRequested();
+                    if (!queueJumpAttempted && leadingQueuePosition > 1 && queueJumpRequested)
+                    {
+                        uiLogger.CleanCurrentLine();
+                        if (_queueInteraction.ConfirmQueueJump(string.Format(UiString("ConfirmQueueJump"), queuedJobTaskIds.Count)))
+                        {
+                            queueJumpAttempted = true;
+                            var prioritisedTaskCount = 0;
+                            foreach (var taskId in queuedJobTaskIds.AsEnumerable().Reverse())
+                            {
+                                try
+                                {
+                                    await _helper.Deployments.PrioritiseTask(taskId);
+                                    prioritisedTaskCount++;
+                                }
+                                catch (Exception exception)
+                                {
+                                    WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("QueueJumpFailed"), taskId, exception.Message));
+                                }
+                            }
+                            if (prioritisedTaskCount > 0)
+                            {
+                                WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("QueueJumpRequested"), prioritisedTaskCount));
+                            }
+                        }
+                    }
+
+                    uiLogger.WriteProgress(totalCount - taskRegister.Count, totalCount, $"Deploying the requested projects ({totalCount - taskRegister.Count} of {totalCount} done)...");
+                    await Task.Delay(3000);
                 }
-
-                if (taskRegister.Count == 0)
-                {
-                    done = true;
-                }
-
-                uiLogger.WriteProgress(totalCount - taskRegister.Count, totalCount, $"Deploying the requested projects ({totalCount - taskRegister.Count} of {totalCount} done)...");
-
-                await Task.Delay(3000);
+            }
+            finally
+            {
+                queueScanCancellation.Cancel();
             }
             uiLogger.StopAnimation();
             uiLogger.CleanCurrentLine();
         }
 
-        private async Task<List<TaskStub>> GetAllDeploymentTasks()
+        private async Task<(List<TaskStub> Tasks, Exception Error)> GetQueuedDeploymentTasks(CancellationToken cancellationToken)
         {
             const int pageSize = 100;
             var tasks = new List<TaskStub>();
             var skip = 0;
             IReadOnlyCollection<TaskStub> page;
-            do
+            try
             {
-                page = (await _helper.Deployments.GetDeploymentTasks(skip, pageSize)).ToList();
-                tasks.AddRange(page);
-                skip += pageSize;
-            } while (page.Count == pageSize);
+                do
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    page = (await _helper.Deployments.GetQueuedDeploymentTasks(skip, pageSize, cancellationToken)).ToList();
+                    tasks.AddRange(page);
+                    skip += pageSize;
+                } while (page.Count == pageSize);
 
-            return tasks;
+                return (tasks, null);
+            }
+            catch (Exception exception)
+            {
+                return (null, exception);
+            }
         }
 
         private static string GetDeploymentTargetName(EnvironmentDeployment deployment)

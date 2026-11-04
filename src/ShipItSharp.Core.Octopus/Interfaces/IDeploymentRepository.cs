@@ -22,6 +22,7 @@
 
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Octopus.Client.Model;
 using ShipItSharp.Core.Deployment.Models;
@@ -32,6 +33,8 @@ namespace ShipItSharp.Core.Octopus.Interfaces
     {
         Task<Deployment.Models.Deployment> CreateDeploymentTask(ProjectDeployment project, string environmentId, string releaseId, bool toTopOfQueue = false, string machineId = null);
         Task<IEnumerable<TaskStub>> GetDeploymentTasks(int skip, int take);
+        Task<IEnumerable<TaskStub>> GetQueuedDeploymentTasks(int skip, int take, CancellationToken cancellationToken);
+        Task<TaskStub> GetTaskStatus(string taskId);
         Task<IEnumerable<Deployment.Models.Deployment>> GetDeployments(string[] deploymentIds);
         Task<IEnumerable<Deployment.Models.Deployment>> GetDeployments(string releaseId);
         bool Search(DeploymentResource deploymentResource, string projectId, string envId);

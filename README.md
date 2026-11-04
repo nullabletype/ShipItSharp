@@ -134,6 +134,8 @@ Command options can also be passed with the short aliases shown in each command'
 
 State-changing environment, release, variable, channel-cleanup, and task commands ask for confirmation before applying changes. Pass `--noprompt` only for explicitly unattended execution. Deployment profile commands and `env ensure` retain their existing automation-oriented behaviour without an additional confirmation.
 
+When Octopus rate-limits a deployment status read, its client honours `Retry-After` within its retry policy (up to three retries and up to 30 seconds per wait). If the client still returns HTTP 429, ShipItSharp reports the project as `Unconfirmed` and continues monitoring the others. Check the task ID printed for that project in Octopus before deciding whether to redeploy.
+
 ## Development setup
 
 Clone the repository and restore dependencies:

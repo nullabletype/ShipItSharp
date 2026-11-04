@@ -28,6 +28,7 @@ namespace ShipItSharp.Core.Deployment.Models
         Done,
         InProgress,
         Failed,
-        Queued
+        Queued,
+        Unconfirmed
     }
 }

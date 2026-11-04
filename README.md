@@ -169,6 +169,8 @@ The console app changes its working directory to the built executable directory 
 
 ## Project layout
 
+Agent-assisted contributions follow [PROJECT.md](PROJECT.md) and the [delivery and independent review workflow](docs/agent-workflow.md). Use the bounded task and pull request templates to record acceptance evidence and pending checks.
+
 - `src/ShipItSharp.Console`: CLI entry point and command registration.
 - `src/ShipItSharp.Core`: shared command orchestration and job runners.
 - `src/ShipItSharp.Core.Configuration`: configuration loading and validation.

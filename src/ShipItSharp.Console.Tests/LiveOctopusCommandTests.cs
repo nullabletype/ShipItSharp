@@ -394,18 +394,33 @@ public class LiveOctopusCommandTests
     {
         var deployment = await CreateQueuedSampleDeployment(_sourceEnvironment, $"2.0.{VersionSeed}.2");
 
-        var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name, "--noprompt");
+        var repository = new OctopusHelper(_client).Deployments;
+        try
+        {
+            var queued = await repository.GetTaskStatus(deployment.TaskId);
+            Assert.That(queued.TaskId, Is.EqualTo(deployment.TaskId));
+            Assert.That(queued.State, Is.EqualTo(DeploymentTaskStatus.Queued));
+            var queue = await repository.GetQueuedDeploymentTasks(0, 100, CancellationToken.None);
+            Assert.That(queue.Select(task => task.TaskId), Does.Contain(deployment.TaskId));
+            Assert.That(queue.All(task => task.State == DeploymentTaskStatus.Queued), Is.True);
 
-        AssertCommandSucceeded(result);
-        Assert.That(result.Output, Does.Contain("Cancelled"));
-        Assert.That(result.Output, Does.Contain(deployment.TaskId));
+            var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name, "--noprompt");
+            AssertCommandSucceeded(result);
+            Assert.That(result.Output, Does.Contain("Cancelled"));
+            Assert.That(result.Output, Does.Contain(deployment.TaskId));
 
-        var task = await WaitForTaskState(
-            deployment.TaskId,
-            state => state is TaskState.Canceled or TaskState.Cancelling,
-            TimeSpan.FromSeconds(30));
-
-        Assert.That(task.State, Is.EqualTo(TaskState.Canceled).Or.EqualTo(TaskState.Cancelling));
+            await WaitForTaskState(deployment.TaskId, state => state == TaskState.Canceled, TimeSpan.FromSeconds(30));
+            var finished = await repository.GetTaskStatus(deployment.TaskId);
+            Assert.That(finished.State, Is.EqualTo(DeploymentTaskStatus.Failed));
+            Assert.That(finished.IsComplete, Is.True);
+            var remainingQueue = await repository.GetQueuedDeploymentTasks(0, 100, CancellationToken.None);
+            Assert.That(remainingQueue.Select(task => task.TaskId), Does.Not.Contain(deployment.TaskId));
+            Assert.That(await repository.GetTaskStatus("ServerTasks-2147483647"), Is.Null);
+        }
+        finally
+        {
+            await CancelTaskIfActive(deployment.TaskId);
+        }
     }
 
     [Test]
@@ -419,7 +434,6 @@ public class LiveOctopusCommandTests
         {
             var firstTaskBefore = await _client.Repository.Tasks.Get(firstDeployment.TaskId, CancellationToken.None);
             var secondTaskBefore = await _client.Repository.Tasks.Get(secondDeployment.TaskId, CancellationToken.None);
-            var blockingTaskBefore = await _client.Repository.Tasks.Get(blockingDeployment.TaskId, CancellationToken.None);
             var firstQueuedBehindBefore = await GetQueuedBehindTaskIds(firstTaskBefore);
             var secondQueuedBehindBefore = await GetQueuedBehindTaskIds(secondTaskBefore);
             Assert.That(firstQueuedBehindBefore, Does.Contain(blockingDeployment.TaskId));
@@ -453,30 +467,27 @@ public class LiveOctopusCommandTests
                 .Returns(new ShipItSharp.Core.Deployment.Models.Deployment { TaskId = firstDeployment.TaskId });
             deployments.CreateDeploymentTask(projects[1], _sourceEnvironment.Id, secondDeployment.ReleaseId, false, null)
                 .Returns(new ShipItSharp.Core.Deployment.Models.Deployment { TaskId = secondDeployment.TaskId });
-            deployments.GetTaskDetails(firstDeployment.TaskId)
-                .Returns(new TaskDetails { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued });
-            deployments.GetTaskDetails(secondDeployment.TaskId)
-                .Returns(new TaskDetails { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued });
-            deployments.GetTaskStatus(firstDeployment.TaskId).Returns(
-                new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued },
-                new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Done });
-            deployments.GetTaskStatus(secondDeployment.TaskId).Returns(
-                new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued },
-                new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Done });
-            deployments.GetQueuedDeploymentTasks(0, 100, Arg.Any<CancellationToken>()).Returns(
-                new[]
-                {
-                    new TaskStub { TaskId = blockingDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = blockingTaskBefore.QueueTime },
-                    new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = firstTaskBefore.QueueTime },
-                    new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Queued, QueueTime = secondTaskBefore.QueueTime }
-                },
-                new[]
-                {
-                    new TaskStub { TaskId = firstDeployment.TaskId, State = DeploymentTaskStatus.Done },
-                    new TaskStub { TaskId = secondDeployment.TaskId, State = DeploymentTaskStatus.Done }
-                });
-            deployments.PrioritiseTask(Arg.Any<string>())
-                .Returns(call => realHelper.Deployments.PrioritiseTask(call.Arg<string>()));
+            // These tasks are scheduled 30 minutes ahead. Finish the monitor after the real queue jump
+            // so the assertions below can inspect the queue while the deployments are still queued.
+            var movedTaskIds = new HashSet<string>();
+            using var monitorTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+            deployments.GetTaskStatus(Arg.Any<string>()).Returns(async call =>
+            {
+                monitorTimeout.Token.ThrowIfCancellationRequested();
+                var taskId = call.Arg<string>();
+                return movedTaskIds.Contains(taskId)
+                    ? new TaskStub { TaskId = taskId, State = DeploymentTaskStatus.Done }
+                    : await realHelper.Deployments.GetTaskStatus(taskId);
+            });
+            deployments.GetQueuedDeploymentTasks(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                .Returns(call => realHelper.Deployments.GetQueuedDeploymentTasks(
+                    call.ArgAt<int>(0), call.ArgAt<int>(1), call.Arg<CancellationToken>()));
+            deployments.PrioritiseTask(Arg.Any<string>()).Returns(async call =>
+            {
+                var taskId = call.Arg<string>();
+                await realHelper.Deployments.PrioritiseTask(taskId);
+                movedTaskIds.Add(taskId);
+            });
             var deployer = new Deployer(helper, configuration, TestLanguageProvider.Create(), interaction);
             var job = new EnvironmentDeployment
             {

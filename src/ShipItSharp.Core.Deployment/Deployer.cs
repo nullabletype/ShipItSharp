@@ -251,10 +251,9 @@ namespace ShipItSharp.Core.Deployment
                 }
             }
 
-            if (deployment.DeployAsync)
-            {
-                await DeployAsync(uiLogger, failedProjects, projectRegister, targetName);
-            }
+            var unconfirmed = deployment.DeployAsync
+                ? await DeployAsync(uiLogger, failedProjects, projectRegister, targetName)
+                : 0;
 
             if (failedProjects.Any())
             {
@@ -274,14 +273,15 @@ namespace ShipItSharp.Core.Deployment
             }
             if (!suppressMessages)
             {
-                var shipped = deployment.ProjectDeployments.Count - failedProjects.Count;
-                WriteDeploymentSummary(uiLogger, shipped, failedProjects.Count, stopwatch.Elapsed);
+                var shipped = deployment.ProjectDeployments.Count - failedProjects.Count - unconfirmed;
+                WriteDeploymentSummary(uiLogger, shipped, failedProjects.Count, unconfirmed, stopwatch.Elapsed);
             }
         }
 
-        private async Task DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, ProjectDeployment> pendingProjects, string targetName)
+        private async Task<int> DeployAsync(IUiLogger uiLogger, Dictionary<ProjectDeployment, TaskDetails> failedProjects, Dictionary<string, ProjectDeployment> pendingProjects, string targetName)
         {
             var totalCount = pendingProjects.Count;
+            var unconfirmed = 0;
             int? lastReportedQueuePosition = null;
             var queueJumpAttempted = false;
             _queueInteraction.Reset();
@@ -305,6 +305,13 @@ namespace ShipItSharp.Core.Deployment
                             uiLogger.CleanCurrentLine();
                             WriteDeploymentStatus(uiLogger, "StatusFailed", string.Format(UiString("OctopusTaskNotFound"), taskId));
                             failedProjects.Add(project, new TaskDetails { TaskId = taskId });
+                            pendingProjects.Remove(taskId);
+                        }
+                        else if (found.State == TaskStatus.Unconfirmed)
+                        {
+                            uiLogger.CleanCurrentLine();
+                            WriteDeploymentStatus(uiLogger, "StatusCheck", string.Format(UiString("TaskStatusRateLimited"), project.ProjectName, taskId));
+                            unconfirmed++;
                             pendingProjects.Remove(taskId);
                         }
                         else if (found.State == TaskStatus.Done)
@@ -405,6 +412,7 @@ namespace ShipItSharp.Core.Deployment
                 uiLogger.StopAnimation();
                 uiLogger.CleanCurrentLine();
             }
+            return unconfirmed;
         }
 
         private async Task<(List<TaskStub> Tasks, Exception Error)> GetQueuedDeploymentTasks(CancellationToken cancellationToken)
@@ -441,12 +449,16 @@ namespace ShipItSharp.Core.Deployment
             return $"{deployment.EnvironmentName} on machine {deployment.MachineName}";
         }
 
-        private void WriteDeploymentSummary(IUiLogger uiLogger, int completed, int failed, TimeSpan elapsed)
+        private void WriteDeploymentSummary(IUiLogger uiLogger, int completed, int failed, int unconfirmed, TimeSpan elapsed)
         {
             uiLogger.WriteLine(UiString("DeploymentSummary"));
             WriteDeploymentStatus(uiLogger, "StatusDone", string.Format(UiString("DeploymentSummaryCompleted"), completed));
             WriteDeploymentStatus(uiLogger, failed == 0 ? "StatusDone" : "StatusFailed", string.Format(UiString("DeploymentSummaryFailed"), failed));
-            WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("DeploymentSummaryTotal"), completed + failed));
+            if (unconfirmed > 0)
+            {
+                WriteDeploymentStatus(uiLogger, "StatusCheck", string.Format(UiString("DeploymentSummaryUnconfirmed"), unconfirmed));
+            }
+            WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("DeploymentSummaryTotal"), completed + failed + unconfirmed));
             WriteDeploymentStatus(uiLogger, "StatusRun", string.Format(UiString("DeploymentElapsedTime"), elapsed.ToString(@"hh\:mm\:ss")));
         }
 

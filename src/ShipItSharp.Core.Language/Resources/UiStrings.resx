@@ -468,6 +468,12 @@
     <data name="DeploymentSummaryFailed" xml:space="preserve">
       <value>Failed: {0}</value>
     </data>
+    <data name="DeploymentSummaryUnconfirmed" xml:space="preserve">
+      <value>Unconfirmed: {0}</value>
+    </data>
+    <data name="TaskStatusRateLimited" xml:space="preserve">
+      <value>{0}: could not confirm deployment status because Octopus rate-limited task reads. Check task {1} in Octopus.</value>
+    </data>
     <data name="DeploymentSummaryTotal" xml:space="preserve">
       <value>Total: {0}</value>
     </data>
@@ -533,6 +539,9 @@
     </data>
     <data name="StatusDone" xml:space="preserve">
       <value>done</value>
+    </data>
+    <data name="StatusCheck" xml:space="preserve">
+      <value>check</value>
     </data>
     <data name="StatusFailed" xml:space="preserve">
       <value>failed</value>

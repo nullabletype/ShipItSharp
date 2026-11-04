@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Octopus.Client.Exceptions;
@@ -112,6 +113,11 @@ namespace ShipItSharp.Core.Octopus.Repositories
             catch (OctopusResourceNotFoundException)
             {
                 return null;
+            }
+            catch (OctopusException exception) when (exception.HttpStatusCode == (int)HttpStatusCode.TooManyRequests)
+            {
+                // The client applies Retry-After before surfacing a rate limit it cannot recover from.
+                return new TaskStub { TaskId = taskId, State = TaskStatus.Unconfirmed };
             }
         }
 

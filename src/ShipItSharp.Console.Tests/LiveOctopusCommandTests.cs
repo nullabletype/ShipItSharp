@@ -400,9 +400,7 @@ public class LiveOctopusCommandTests
             var queued = await repository.GetTaskStatus(deployment.TaskId);
             Assert.That(queued.TaskId, Is.EqualTo(deployment.TaskId));
             Assert.That(queued.State, Is.EqualTo(DeploymentTaskStatus.Queued));
-            var queue = await repository.GetQueuedDeploymentTasks(0, 100, CancellationToken.None);
-            Assert.That(queue.Select(task => task.TaskId), Does.Contain(deployment.TaskId));
-            Assert.That(queue.All(task => task.State == DeploymentTaskStatus.Queued), Is.True);
+            Assert.That(await QueueContainsTask(repository, deployment.TaskId), Is.True);
 
             var result = await RunShipIt("task", "cancel", "-e", _sourceEnvironment.Name, "--noprompt");
             AssertCommandSucceeded(result);
@@ -413,8 +411,7 @@ public class LiveOctopusCommandTests
             var finished = await repository.GetTaskStatus(deployment.TaskId);
             Assert.That(finished.State, Is.EqualTo(DeploymentTaskStatus.Failed));
             Assert.That(finished.IsComplete, Is.True);
-            var remainingQueue = await repository.GetQueuedDeploymentTasks(0, 100, CancellationToken.None);
-            Assert.That(remainingQueue.Select(task => task.TaskId), Does.Not.Contain(deployment.TaskId));
+            Assert.That(await QueueContainsTask(repository, deployment.TaskId), Is.False);
             Assert.That(await repository.GetTaskStatus("ServerTasks-2147483647"), Is.Null);
         }
         finally
@@ -924,6 +921,24 @@ public class LiveOctopusCommandTests
         release.SelectedPackages.Add(new SelectedPackage(_samplePackage.ActionName, null, _samplePackage.Version));
 
         return await _client.Repository.Releases.Create(release, CancellationToken.None);
+    }
+
+    private static async Task<bool> QueueContainsTask(IDeploymentRepository repository, string taskId)
+    {
+        const int pageSize = 100;
+        for (var skip = 0; ; skip += pageSize)
+        {
+            var page = (await repository.GetQueuedDeploymentTasks(skip, pageSize, CancellationToken.None)).ToList();
+            Assert.That(page.All(task => task.State == DeploymentTaskStatus.Queued), Is.True);
+            if (page.Any(task => task.TaskId == taskId))
+            {
+                return true;
+            }
+            if (page.Count < pageSize)
+            {
+                return false;
+            }
+        }
     }
 
     private async Task CancelTaskIfActive(string taskId)

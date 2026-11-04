@@ -217,6 +217,30 @@ public class DeployerTests
     }
 
     [Test]
+    public void StartJob_StopsAnimationWhenAStatusPollFails()
+    {
+        var helper = Substitute.For<IOctopusHelper>();
+        var project = new ProjectDeployment { ProjectName = "Payments", ReleaseId = "Releases-1" };
+        helper.Releases.GetRelease("Releases-1").Returns(new Release { Id = "Releases-1", Version = "1" });
+        helper.Deployments.CreateDeploymentTask(project, "Environments-1", "Releases-1", false, null)
+            .Returns(new Deployment.Models.Deployment { TaskId = "ServerTasks-1" });
+        var failure = new System.InvalidOperationException("status unavailable");
+        helper.Deployments.GetTaskStatus("ServerTasks-1").Returns(
+            Task.FromResult(new TaskStub { State = TaskStatus.InProgress }), Task.FromException<TaskStub>(failure));
+        var uiLogger = Substitute.For<IUiLogger>();
+        var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = new List<ProjectDeployment> { project } };
+
+        Assert.That(async () => await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger),
+            Throws.SameAs(failure));
+        Received.InOrder(() =>
+        {
+            uiLogger.WriteProgress(0, 1, Arg.Any<string>());
+            uiLogger.StopAnimation();
+            uiLogger.CleanCurrentLine();
+        });
+    }
+
+    [Test]
     public async Task StartJob_CountsMissingAndFailedTasksAsFailures()
     {
         var helper = Substitute.For<IOctopusHelper>();

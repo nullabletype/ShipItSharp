@@ -33,6 +33,7 @@ namespace ShipItSharp.Console.ConsoleTools
     {
         private const int MaxProgressWidth = 28;
         private readonly string[] _statusFrames = { "|", "/", "-", "\\" };
+        private readonly object _renderLock = new();
         private CancellationTokenSource _cancelToken;
         private int _currentItem;
         private string _currentMessage = string.Empty;
@@ -50,67 +51,70 @@ namespace ShipItSharp.Console.ConsoleTools
 
         public void CleanCurrentLine()
         {
-            if (_cancelToken != null && !_cancelToken.IsCancellationRequested)
+            lock (_renderLock)
             {
-                _cancelToken.Cancel();
+                StopAnimation();
+                ClearLine();
             }
-
-            ClearLine();
         }
 
         public void StopAnimation()
         {
-            if ((_cancelToken != null) && !_cancelToken.IsCancellationRequested)
+            lock (_renderLock)
             {
-                _cancelToken.Cancel();
+                _cancelToken?.Cancel();
+                _cancelToken?.Dispose();
+                _cancelToken = null;
             }
         }
 
         public void WriteProgress(int current, int total, string message)
         {
-            if (total < 1)
+            lock (_renderLock)
             {
-                total = 1;
-            }
+                _totalItems = Math.Max(1, total);
+                _currentMessage = message;
+                _currentItem = Math.Clamp(current, 0, _totalItems);
 
-            _currentMessage = message;
-            _totalItems = total;
-            _currentItem = Math.Clamp(current, 0, total);
+                if (current == total)
+                {
+                    StopAnimation();
+                    WriteSingleLine(BuildProgressSegments());
+                    return;
+                }
 
-            if (_cancelToken is { IsCancellationRequested: false })
-            {
-                return;
+                if (_cancelToken != null)
+                {
+                    return;
+                }
+
+                _cancelToken = new CancellationTokenSource();
+                _ = AnimateProgress(_cancelToken.Token);
             }
-            
-            _cancelToken = new CancellationTokenSource();
-            var token = _cancelToken.Token;
-            _ = Task.Run(() => StartStatusThread(token)).ConfigureAwait(false);
         }
 
-        private async Task StartStatusThread(CancellationToken token)
+        private async Task AnimateProgress(CancellationToken token)
         {
-            await Task.Run(() =>
+            try
             {
                 while (true)
                 {
-                    if (token.IsCancellationRequested)
+                    lock (_renderLock)
                     {
-                        token.ThrowIfCancellationRequested();
-                        return;
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        WriteSingleLine(BuildProgressSegments());
+                        _status = (_status + 1) % _statusFrames.Length;
                     }
-
-                    WriteSingleLine(BuildProgressSegments());
-
-                    _status++;
-
-                    if (_status > _statusFrames.Length - 1)
-                    {
-                        _status = 0;
-                    }
-
-                    Thread.Sleep(500);
+                    await Task.Delay(500, token).ConfigureAwait(false);
                 }
-            }, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // The line was cleared or the operation finished.
+            }
         }
 
         private ConsoleSegment[] BuildProgressSegments()

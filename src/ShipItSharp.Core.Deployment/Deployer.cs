@@ -402,9 +402,9 @@ namespace ShipItSharp.Core.Deployment
             finally
             {
                 queueScanCancellation.Cancel();
+                uiLogger.StopAnimation();
+                uiLogger.CleanCurrentLine();
             }
-            uiLogger.StopAnimation();
-            uiLogger.CleanCurrentLine();
         }
 
         private async Task<(List<TaskStub> Tasks, Exception Error)> GetQueuedDeploymentTasks(CancellationToken cancellationToken)

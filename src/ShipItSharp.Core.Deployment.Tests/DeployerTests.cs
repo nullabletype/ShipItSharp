@@ -230,8 +230,9 @@ public class DeployerTests
         var uiLogger = Substitute.For<IUiLogger>();
         var job = new EnvironmentDeployment { EnvironmentId = "Environments-1", EnvironmentName = "Prod", DeployAsync = true, ProjectDeployments = new List<ProjectDeployment> { project } };
 
-        Assert.That(async () => await CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger),
-            Throws.SameAs(failure));
+        var thrown = Assert.ThrowsAsync<System.InvalidOperationException>(() =>
+            CreateDeployer(helper, CreateDeploymentOutputLanguageProvider()).StartJob(job, uiLogger));
+        Assert.That(thrown, Is.SameAs(failure));
         Received.InOrder(() =>
         {
             uiLogger.WriteProgress(0, 1, Arg.Any<string>());
